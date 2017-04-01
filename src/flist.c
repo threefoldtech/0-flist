@@ -11,7 +11,7 @@
 
 #define KEYLENGTH 32
 
-static const char *b2key(char *path) {
+static const char *pathkey(char *path) {
     uint8_t hash[KEYLENGTH];
     char *hexhash;
 
@@ -104,7 +104,7 @@ static int flist_walk_dir(database_t *database, const char *key) {
 
 int flist_walk(database_t *database) {
     // root directory is an empty key
-    const char *key = b2key("");
+    const char *key = pathkey("");
 
     // walking starting from the root
     flist_walk_dir(database, key);
