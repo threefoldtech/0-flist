@@ -16,6 +16,11 @@ void diep(char *str) {
 	exit(EXIT_FAILURE);
 }
 
+void dies(char *str) {
+	fprintf(stderr, "[-] %s\n", str);
+	return EXIT_FAILURE;
+}
+
 int usage(char *basename) {
 	fprintf(stderr, "[-] Usage: %s archive.flist\n", basename);
 	return EXIT_FAILURE;

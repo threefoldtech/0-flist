@@ -29,6 +29,43 @@ static const char *pathkey(char *path) {
     return (const char *) hexhash;
 }
 
+//
+// FIXME: ugle, use bitwise
+//
+static char *permsingle(char value) {
+    if(value == '0') return "---";
+    if(value == '1') return "--x";
+    if(value == '2') return "-w-";
+    if(value == '3') return "-wx";
+    if(value == '4') return "r--";
+    if(value == '5') return "r-x";
+    if(value == '6') return "rw-";
+    if(value == '7') return "rwx";
+    return "???";
+}
+
+//
+// FIXME: ugle, use bitwise
+//
+static char *permstr(unsigned int mode, char *modestr, size_t slen) {
+    char octstr[16];
+
+    if(slen < 12)
+        return NULL;
+
+    snprintf(octstr, sizeof(octstr), "%o", mode);
+    if(strlen(octstr) != 6) {
+        strcpy(modestr, "?????????");
+        return NULL;
+    }
+
+    strcpy(modestr, permsingle(octstr[3]));
+    strcpy(modestr + 3, permsingle(octstr[4]));
+    strcpy(modestr + 6, permsingle(octstr[5]));
+
+    return modestr;
+}
+
 static int flist_walk_dir(database_t *database, const char *key) {
     // reading capnp message from database
     value_t *value = database_get(database, key);
@@ -59,12 +96,35 @@ static int flist_walk_dir(database_t *database, const char *key) {
 
     for(int i = 0; i < capn_len(dir.contents); i++) {
         inodep.p = capn_getp(dir.contents.p, i, 1);
-
         read_Inode(&inode, inodep);
 
+        // reading permissions
+        value_t *perms;
+        perms = database_get(database, inode.aclkey.str);
+        // if(!perms->data)
+        //    dies("cannot get acl from database");
+
+        ACI_ptr acip;
+        struct ACI aci;
+
+        struct capn permsctx;
+        if(capn_init_mem(&permsctx, (unsigned char *) perms->data, perms->length, 0)) {
+            // fprintf(stderr, "[-] capnp: init error\n");
+        }
+
+        acip.p = capn_getp(capn_root(&permsctx), 0, 1);
+        read_ACI(&aci, acip);
+
+        char modestr[16];
+        permstr(aci.mode, modestr, sizeof(modestr));
+
+        const char *uname = (aci.uname.len) ? aci.uname.str : "????";
+        const char *gname = (aci.gname.len) ? aci.gname.str : "????";
+
+        // writing inode information
         switch(inode.attributes_which) {
             case Inode_attributes_dir:
-                printf("d---------  nobody nobody ");
+                printf("d%s  %s %s ", modestr, uname, gname);
 
                 struct SubDir sub;
                 read_SubDir(&sub, inode.attributes.dir);
@@ -75,12 +135,12 @@ static int flist_walk_dir(database_t *database, const char *key) {
                 break;
 
             case Inode_attributes_file:
-                printf("----------  nobody nobody ");
+                printf("-%s  %s %s ", modestr, uname, gname);
                 printf("%8lu  %s\n", inode.size, inode.name.str);
                 break;
 
             case Inode_attributes_link:
-                printf("lrwxrwxrwx  nobody nobody ");
+                printf("lrwxrwxrwx  %s %s ", uname, gname);
 
                 struct Link link;
                 read_Link(&link, inode.attributes.link);
@@ -89,7 +149,7 @@ static int flist_walk_dir(database_t *database, const char *key) {
                 break;
 
             case Inode_attributes_special:
-                printf("b---------  nobody nobody ");
+                printf("b%s  %s %s ", modestr, uname, gname);
                 printf("%8lu  %s\n", inode.size, inode.name.str);
                 break;
         }
