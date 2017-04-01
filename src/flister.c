@@ -4,6 +4,8 @@
 #include <errno.h>
 #include "archive.h"
 #include "ramdisk.h"
+#include "database.h"
+#include "flist.h"
 
 void warnp(char *str) {
 	fprintf(stderr, "[-] %s: %s\n", str, strerror(errno));
@@ -41,7 +43,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("[+] loading rocksdb database\n");
+	database_t *database = database_open(tmpfs);
 
+	printf("[+] walking over database\n");
+	flist_walk(database);
+
+	printf("[+] closing database\n");
+	database_close(database);
 
 clean:
 	printf("[+] cleaning ramdisk\n");
