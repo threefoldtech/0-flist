@@ -3,9 +3,11 @@
 
     void diep(char *str);
     void dies(char *str);
+    void warnp(char *str);
 
     typedef struct settings_t {
         int verbose;
+        int ramdisk;
         char *archive;
 
         int list;

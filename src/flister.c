@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include "flister.h"
 #include "archive.h"
-#include "ramdisk.h"
+#include "workspace.h"
 #include "database.h"
 #include "flist.h"
 
@@ -17,6 +17,7 @@ static struct option long_options[] = {
 	{"tree",    no_argument,       0, 't'},
 	{"archive", required_argument, 0, 'a'},
 	{"verbose", no_argument,       0, 'v'},
+	{"ramdisk", no_argument,       0, 'r'},
 	{"help",    no_argument,       0, 'h'},
 	{0, 0, 0, 0}
 };
@@ -42,28 +43,36 @@ int usage(char *basename) {
 	fprintf(stderr, "  -a --archive    archive filename (required)\n");
 	fprintf(stderr, "  -l --list       list archive content\n");
 	fprintf(stderr, "  -t --tree       list archive content in a tree view\n");
+	fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
 	fprintf(stderr, "  -v --verbose    enable verbose messages\n");
 	fprintf(stderr, "  -h --help       shows this help message\n");
 	exit(EXIT_FAILURE);
 }
 
 static int flister() {
-	char *tmpfs;
+	char *workspace;
 
-	verbose("[+] initializing ramdisk\n");
-	if(!(tmpfs = ramdisk_create()))
-		diep("ramdisk_create");
+	verbose("[+] initializing workspace\n");
+	if(!(workspace = workspace_create()))
+		diep("workspace_create");
 
-	verbose("[+] ramdisk: %s\n", tmpfs);
+	if(settings.ramdisk) {
+		verbose("[+] initializing ramdisk\n");
+
+		if(!ramdisk_create(workspace))
+			diep("ramdisk_create");
+	}
+
+	verbose("[+] workspace: %s\n", workspace);
 
 	verbose("[+] extracting archive\n");
-	if(!archive_extract(settings.archive, tmpfs)) {
+	if(!archive_extract(settings.archive, workspace)) {
 		warnp("archive_extract");
 		goto clean;
 	}
 
 	verbose("[+] loading rocksdb database\n");
-	database_t *database = database_open(tmpfs);
+	database_t *database = database_open(workspace);
 
 	verbose("[+] walking over database\n");
 	flist_walk(database);
@@ -72,11 +81,18 @@ static int flister() {
 	database_close(database);
 
 clean:
-	verbose("[+] cleaning ramdisk\n");
-	if(!ramdisk_destroy(tmpfs))
-		diep("ramdisk_destroy");
+	if(settings.ramdisk) {
+		verbose("[+] cleaning ramdisk\n");
 
-	free(tmpfs);
+		if(!ramdisk_destroy(workspace))
+			diep("ramdisk_destroy");
+	}
+
+	verbose("[+] cleaning workspace\n");
+	if(!workspace_destroy(workspace))
+		diep("workspace_destroy");
+
+	free(workspace);
 
 	return 0;
 }
@@ -90,6 +106,7 @@ int main(int argc, char *argv[]) {
 	settings.tree = 0;
 	settings.verbose = 0;
 	settings.archive = NULL;
+	settings.ramdisk = 0;
 
 	while(1) {
 		i = getopt_long(argc, argv, "ltfa:vh", long_options, &option_index);
@@ -112,6 +129,10 @@ int main(int argc, char *argv[]) {
 
 			case 'v':
 				settings.verbose = 1;
+				break;
+
+			case 'r':
+				settings.ramdisk = 1;
 				break;
 
 			case '?':
