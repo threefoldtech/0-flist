@@ -50,18 +50,18 @@ char *archive_extract(char *filename, char *target) {
 		return NULL;
 
 	// uncompression tar file to our ramdisk
-	printf("[+] uncompressing archive: %s\n", filename);
+	verbose("[+] uncompressing archive: %s\n", filename);
 	if(!(destination = archive_prepare(filename, target)))
 		return NULL;
 
 	// loading tar and extracting contents
-	printf("[+] loading archive: %s\n", destination);
+	verbose("[+] loading archive: %s\n", destination);
 	if(tar_open(&th, destination, NULL, O_RDONLY, 0644, TAR_GNU))
 		return NULL;
 
 	// TODO: ensure security on files
 
-	printf("[+] extracting archive\n");
+	verbose("[+] extracting archive\n");
 	if(tar_extract_all(th, target))
 		filename = NULL;
 

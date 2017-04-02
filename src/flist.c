@@ -11,6 +11,8 @@
 
 #define KEYLENGTH 32
 
+static int flist_walk_dir(database_t *database, const char *key, int level);
+
 static const char *pathkey(char *path) {
     uint8_t hash[KEYLENGTH];
     char *hexhash;
@@ -66,25 +68,58 @@ static char *permstr(unsigned int mode, char *modestr, size_t slen) {
     return modestr;
 }
 
-static int flist_walk_dir(database_t *database, const char *key) {
-    // reading capnp message from database
-    value_t *value = database_get(database, key);
-
-    if(!value->data) {
-        fprintf(stderr, "[-] walk: key [%s] not found\n", key);
-        exit(EXIT_FAILURE);
-    }
-
-    //
-    // parsing capnp message and iterating over the contents
-    //
-    struct capn ctx;
-    if(capn_init_mem(&ctx, (unsigned char *) value->data, value->length, 0))
-        fprintf(stderr, "[-] capnp: init error\n");
-
-    Dir_ptr dirp;
+//
+// listings
+//
+static void flist_tree(database_t *database, Dir_ptr dirp, int level) {
     struct Dir dir;
-    dirp.p = capn_getp(capn_root(&ctx), 0, 1);
+    read_Dir(&dir, dirp);
+
+    for(int i = 0; i < level; i++)
+        printf("    ");
+
+    printf("| /%s\n", dir.location.str);
+    // printf("Parent: %s\n", dir.parent.str);
+    // printf("Size: %lu\n", dir.size);
+
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    for(int i = 0; i < capn_len(dir.contents); i++) {
+        inodep.p = capn_getp(dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
+
+        for(int i = 0; i < level; i++)
+            printf("    ");
+
+        struct SubDir sub;
+        struct Link link;
+
+        // writing inode information
+        switch(inode.attributes_which) {
+            case Inode_attributes_dir:
+                read_SubDir(&sub, inode.attributes.dir);
+
+                printf("+-- %s\n", inode.name.str);
+                flist_walk_dir(database, sub.key.str, level + 1);
+                break;
+
+            case Inode_attributes_link:
+                read_Link(&link, inode.attributes.link);
+
+                printf("| %s -> %s\n", inode.name.str, link.target.str);
+                break;
+
+            case Inode_attributes_special:
+            case Inode_attributes_file:
+                printf("| %s\n", inode.name.str);
+                break;
+        }
+    }
+}
+
+static void flist_ls(database_t *database, Dir_ptr dirp, int level) {
+    struct Dir dir;
     read_Dir(&dir, dirp);
 
     printf("[+] directory: /%s\n", dir.location.str);
@@ -130,7 +165,7 @@ static int flist_walk_dir(database_t *database, const char *key) {
                 read_SubDir(&sub, inode.attributes.dir);
 
                 printf("%8lu  %-12s (%s)\n", inode.size, inode.name.str, sub.key.str);
-                flist_walk_dir(database, sub.key.str);
+                flist_walk_dir(database, sub.key.str, level + 1);
 
                 break;
 
@@ -154,6 +189,72 @@ static int flist_walk_dir(database_t *database, const char *key) {
                 break;
         }
     }
+}
+
+static void flist_dump(database_t *database, Dir_ptr dirp, int level) {
+    struct Dir dir;
+    read_Dir(&dir, dirp);
+
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    for(int i = 0; i < capn_len(dir.contents); i++) {
+        inodep.p = capn_getp(dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
+
+        // print full path
+        if(dir.location.len) {
+            printf("/%s/%s\n", dir.location.str, inode.name.str);
+
+        } else printf("/%s\n", inode.name.str);
+
+        // walking over internal directories
+        if(inode.attributes_which == Inode_attributes_dir) {
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            // recursive list contents
+            flist_walk_dir(database, sub.key.str, level + 1);
+        }
+    }
+}
+
+//
+// walker
+//
+static int flist_walk_dir(database_t *database, const char *key, int level) {
+    // reading capnp message from database
+    value_t *value = database_get(database, key);
+
+    if(!value->data) {
+        fprintf(stderr, "[-] walk: key [%s] not found\n", key);
+        exit(EXIT_FAILURE);
+    }
+
+    //
+    // parsing capnp message and iterating over the contents
+    //
+    struct capn ctx;
+    if(capn_init_mem(&ctx, (unsigned char *) value->data, value->length, 0))
+        fprintf(stderr, "[-] capnp: init error\n");
+
+    Dir_ptr dirp;
+    dirp.p = capn_getp(capn_root(&ctx), 0, 1);
+
+    //
+    // printing 'ls' format the directory
+    //
+    // flist_ls(database, dirp, level);
+
+    //
+    // printing 'tree' format the directory
+    //
+    // flist_tree(database, dirp, level);
+
+    //
+    // simple files dump
+    //
+    flist_dump(database, dirp, level);
 
     // cleaning stuff
     database_value_free(value);
@@ -167,7 +268,7 @@ int flist_walk(database_t *database) {
     const char *key = pathkey("");
 
     // walking starting from the root
-    flist_walk_dir(database, key);
+    flist_walk_dir(database, key, 0);
 
     // cleaning
     free((char *) key);
