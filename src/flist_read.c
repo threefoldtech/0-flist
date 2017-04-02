@@ -6,7 +6,7 @@
 #include <rocksdb/c.h>
 #include <blake2.h>
 #include "flister.h"
-#include "flist.h"
+#include "flist_read.h"
 #include "flist.capnp.h"
 
 #define KEYLENGTH 32

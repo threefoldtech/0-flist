@@ -8,16 +8,19 @@
 #include "archive.h"
 #include "workspace.h"
 #include "database.h"
-#include "flist.h"
+#include "flist_read.h"
+#include "flist_write.h"
 
 settings_t settings;
 
 static struct option long_options[] = {
 	{"list",    no_argument,       0, 'l'},
+	{"create",  no_argument,       0, 'c'},
 	{"tree",    no_argument,       0, 't'},
 	{"archive", required_argument, 0, 'a'},
 	{"verbose", no_argument,       0, 'v'},
 	{"ramdisk", no_argument,       0, 'r'},
+	{"root",    required_argument, 0, 'p'},
 	{"help",    no_argument,       0, 'h'},
 	{0, 0, 0, 0}
 };
@@ -37,12 +40,16 @@ void dies(char *str) {
 }
 
 int usage(char *basename) {
-	fprintf(stderr, "Usage: %s --archive <filename> [--list] [--tree] [--verbose]\n", basename);
+	fprintf(stderr, "Usage: %s [options] --verbose\n", basename);
+	fprintf(stderr, "       %s --archive <filename> --list [--tree]\n", basename);
+	fprintf(stderr, "       %s --archive <filename> --create --root <root-path>\n", basename);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Command line options:\n");
 	fprintf(stderr, "  -a --archive    archive filename (required)\n");
 	fprintf(stderr, "  -l --list       list archive content\n");
 	fprintf(stderr, "  -t --tree       list archive content in a tree view\n");
+	fprintf(stderr, "  -c --create     create an archive, root is set via --root\n");
+	fprintf(stderr, "  -p --root       root-path from where archive is created\n");
 	fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
 	fprintf(stderr, "  -v --verbose    enable verbose messages\n");
 	fprintf(stderr, "  -h --help       shows this help message\n");
@@ -64,18 +71,34 @@ static int flister() {
 	}
 
 	verbose("[+] workspace: %s\n", workspace);
+	database_t *database = NULL;
 
-	verbose("[+] extracting archive\n");
-	if(!archive_extract(settings.archive, workspace)) {
-		warnp("archive_extract");
-		goto clean;
+	//
+	// listing
+	//
+	if(settings.list) {
+		verbose("[+] extracting archive\n");
+		if(!archive_extract(settings.archive, workspace)) {
+			warnp("archive_extract");
+			goto clean;
+		}
+
+		verbose("[+] loading rocksdb database\n");
+		database = database_open(workspace);
+
+		verbose("[+] walking over database\n");
+		flist_walk(database);
 	}
 
-	verbose("[+] loading rocksdb database\n");
-	database_t *database = database_open(workspace);
+	//
+	// creating
+	//
+	if(settings.create) {
+		verbose("[+] creating rocksdb database\n");
+		database = database_create(workspace);
 
-	verbose("[+] walking over database\n");
-	flist_walk(database);
+		flist_create(database, settings.root);
+	}
 
 	verbose("[+] closing database\n");
 	database_close(database);
@@ -107,9 +130,11 @@ int main(int argc, char *argv[]) {
 	settings.verbose = 0;
 	settings.archive = NULL;
 	settings.ramdisk = 0;
+	settings.root = NULL;
+	settings.create = 0;
 
 	while(1) {
-		i = getopt_long(argc, argv, "ltfa:vh", long_options, &option_index);
+		i = getopt_long(argc, argv, "lcta:vrp:h", long_options, &option_index);
 
 		if(i == -1)
 			break;
@@ -117,6 +142,7 @@ int main(int argc, char *argv[]) {
 		switch(i) {
 			case 'l':
 				settings.list = 1;
+				settings.create = 0;
 				break;
 
 			case 't':
@@ -135,6 +161,16 @@ int main(int argc, char *argv[]) {
 				settings.ramdisk = 1;
 				break;
 
+			case 'p':
+				settings.root = strdup(optarg);
+				settings.rootlen = strlen(settings.root);
+				break;
+
+			case 'c':
+				settings.create = 1;
+				settings.list = 0;
+				break;
+
 			case '?':
 			case 'h':
 				usage(argv[0]);
@@ -149,11 +185,20 @@ int main(int argc, char *argv[]) {
 	if(!settings.archive)
 		usage(argv[0]);
 
+	if(settings.create && !settings.root)
+		usage(argv[0]);
+
+	#ifndef FLIST_DEBUG
+	if(settings.create)
+		dies("sorry, creating a flist is not ready for production now.");
+	#endif
+
 	// process
 	int value = flister();
 
 	// cleaning
 	free(settings.archive);
+	free(settings.root);
 
 	return value;
 }

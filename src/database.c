@@ -18,7 +18,7 @@ static void diedb(char *str) {
     exit(EXIT_FAILURE);
 }
 
-database_t *database_open(char *root) {
+static database_t *database_init(char *root, int create) {
     database_t *database;
     char *err = NULL;
 
@@ -31,12 +31,16 @@ database_t *database_open(char *root) {
 
     // initializing rocksdb options
     long cpus = sysconf(_SC_NPROCESSORS_ONLN);
-    rocksdb_options_increase_parallelism(database->options, (int)(cpus));
+    rocksdb_options_increase_parallelism(database->options, (int) cpus);
     rocksdb_options_optimize_level_style_compaction(database->options, 0);
+
+    if(create)
+        rocksdb_options_set_create_if_missing(database->options, 1);
 
     // opening database and options handler
     database->db = rocksdb_open(database->options, root, &err);
     database->readoptions = rocksdb_readoptions_create();
+    database->writeoptions = rocksdb_writeoptions_create();
 
     if(err)
         diedb(err);
@@ -44,10 +48,19 @@ database_t *database_open(char *root) {
     return database;
 }
 
+database_t *database_open(char *root) {
+    return database_init(root, 0);
+}
+
+database_t *database_create(char *root) {
+    return database_init(root, 1);
+}
+
 void database_close(database_t *database) {
     // closing handlers, database and freeing struct
     rocksdb_options_destroy(database->options);
     rocksdb_readoptions_destroy(database->readoptions);
+    rocksdb_writeoptions_destroy(database->writeoptions);
     rocksdb_close(database->db);
     free(database);
 }

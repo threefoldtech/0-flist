@@ -8,6 +8,7 @@
         rocksdb_t *db;
         rocksdb_options_t *options;
         rocksdb_readoptions_t *readoptions;
+        rocksdb_writeoptions_t *writeoptions;
 
     } database_t;
 
@@ -18,6 +19,7 @@
     } value_t;
 
     database_t *database_open(char *root);
+    database_t *database_create(char *root);
     void database_close(database_t *database);
 
     value_t *database_get(database_t *database, const char *key);

@@ -8,8 +8,12 @@
     typedef struct settings_t {
         int verbose;
         int ramdisk;
-        char *archive;
 
+        char *archive;
+        char *root;
+        size_t rootlen;
+
+        int create;
         int list;
         int tree;
 
