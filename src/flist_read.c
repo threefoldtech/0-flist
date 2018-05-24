@@ -32,7 +32,7 @@ static const char *pathkey(char *path) {
 }
 
 //
-// FIXME: ugle, use bitwise
+// FIXME: ugly, use bitwise
 //
 static char *permsingle(char value) {
     if(value == '0') return "---";
@@ -47,7 +47,7 @@ static char *permsingle(char value) {
 }
 
 //
-// FIXME: ugle, use bitwise
+// FIXME: ugly, use bitwise
 //
 static char *permstr(unsigned int mode, char *modestr, size_t slen) {
     char octstr[16];
@@ -55,15 +55,16 @@ static char *permstr(unsigned int mode, char *modestr, size_t slen) {
     if(slen < 12)
         return NULL;
 
-    snprintf(octstr, sizeof(octstr), "%o", mode);
-    if(strlen(octstr) != 6) {
+
+    int length = snprintf(octstr, sizeof(octstr), "%o", mode);
+    if(length < 3 && length > 6) {
         strcpy(modestr, "?????????");
         return NULL;
     }
 
-    strcpy(modestr, permsingle(octstr[3]));
-    strcpy(modestr + 3, permsingle(octstr[4]));
-    strcpy(modestr + 6, permsingle(octstr[5]));
+    strcpy(modestr, permsingle(octstr[length - 3]));
+    strcpy(modestr + 3, permsingle(octstr[length - 2]));
+    strcpy(modestr + 6, permsingle(octstr[length - 1]));
 
     return modestr;
 }
