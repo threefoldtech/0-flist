@@ -21,6 +21,8 @@ typedef struct {
     int size;
     int current;
 
+    // Dir_ptr
+
     UT_hash_handle hh;
 
 } dir_entry_t;
@@ -50,8 +52,6 @@ static const char *pathkey(char *path) {
 
     return (const char *) hexhash;
 }
-
-
 
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     ssize_t length = ftwbuf->base - settings.rootlen - 1;
@@ -128,12 +128,13 @@ static void flist_memory_clean() {
 }
 
 int flist_create(database_t *database, char *root) {
-    printf("PREPARING FLIST: %s\n", root);
+    printf("[+] preparing flist for: %s\n", root);
 
+    printf("[+] analyzing directory\n");
     if(nftw(root, flist_prepare_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
-    printf("CREATING FLIST: %s\n", root);
+    printf("[+] building database\n");
 
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");

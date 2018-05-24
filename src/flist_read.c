@@ -123,22 +123,38 @@ static void flist_ls(database_t *database, Dir_ptr dirp, int level) {
     struct Dir dir;
     read_Dir(&dir, dirp);
 
-    printf("[+] directory: /%s\n", dir.location.str);
+    printf("/%s:\n", dir.location.str);
+    // printf("[+] directory: /%s\n", dir.location.str);
     // printf("Parent: %s\n", dir.parent.str);
     // printf("Size: %lu\n", dir.size);
 
     Inode_ptr inodep;
     struct Inode inode;
 
+    // dumping contents
     for(int i = 0; i < capn_len(dir.contents); i++) {
         inodep.p = capn_getp(dir.contents.p, i, 1);
         read_Inode(&inode, inodep);
 
-        // reading permissions
         value_t *perms;
-        perms = database_get(database, inode.aclkey.str);
-        // if(!perms->data)
-        //    dies("cannot get acl from database");
+
+        // why reading root dir for acl ??
+        if(inode.attributes_which == Inode_attributes_dir) {
+            // reading permissions
+            perms = database_get(database, dir.aclkey.str);
+            if(!perms->data) {
+                dies("cannot get acl from database");
+            }
+
+        } else {
+            // reading permissions
+            perms = database_get(database, inode.aclkey.str);
+            if(!perms->data) {
+                dies("cannot get acl from database");
+            }
+
+
+        }
 
         ACI_ptr acip;
         struct ACI aci;
@@ -160,34 +176,96 @@ static void flist_ls(database_t *database, Dir_ptr dirp, int level) {
         // writing inode information
         switch(inode.attributes_which) {
             case Inode_attributes_dir:
-                printf("d%s  %s %s ", modestr, uname, gname);
+                printf("d%s  %-5s %-5s ", modestr, uname, gname);
 
                 struct SubDir sub;
                 read_SubDir(&sub, inode.attributes.dir);
 
-                printf("%8lu  %-12s (%s)\n", inode.size, inode.name.str, sub.key.str);
-                flist_walk_dir(database, sub.key.str, level + 1);
+                // printf("%8lu  %-12s (%s)\n", inode.size, inode.name.str, sub.key.str);
+                printf("%8lu (  no blocks) %-12s\n", inode.size, inode.name.str);
+                // flist_walk_dir(database, sub.key.str, level + 1);
 
                 break;
 
-            case Inode_attributes_file:
-                printf("-%s  %s %s ", modestr, uname, gname);
-                printf("%8lu  %s\n", inode.size, inode.name.str);
+            case Inode_attributes_file: ;
+                struct File file;
+                read_File(&file, inode.attributes.file);
+
+                printf("-%s  %-5s %-5s ", modestr, uname, gname);
+                printf("%8lu (%4lu blocks) %s\n", inode.size, capn_len(file.blocks), inode.name.str);
                 break;
 
             case Inode_attributes_link:
-                printf("lrwxrwxrwx  %s %s ", uname, gname);
+                printf("lrwxrwxrwx  %-5s %-5s ", uname, gname);
 
                 struct Link link;
                 read_Link(&link, inode.attributes.link);
 
-                printf("%8lu  %s -> %s\n", inode.size, inode.name.str, link.target.str);
+                printf("%8lu (  no blocks) %s -> %s\n", inode.size, inode.name.str, link.target.str);
                 break;
 
             case Inode_attributes_special:
-                printf("b%s  %s %s ", modestr, uname, gname);
-                printf("%8lu  %s\n", inode.size, inode.name.str);
+                printf("b%s  %-5s %-5s ", modestr, uname, gname);
+                printf("%8lu %s\n", inode.size, inode.name.str);
                 break;
+        }
+    }
+
+    printf("\n");
+
+    // walking over directories
+    for(int i = 0; i < capn_len(dir.contents); i++) {
+        inodep.p = capn_getp(dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
+
+        if(inode.attributes_which == Inode_attributes_dir) {
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            flist_walk_dir(database, sub.key.str, level + 1);
+        }
+    }
+}
+
+static void flist_blocks(database_t *database, Dir_ptr dirp, int level) {
+    struct Dir dir;
+    read_Dir(&dir, dirp);
+
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    for(int i = 0; i < capn_len(dir.contents); i++) {
+        inodep.p = capn_getp(dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
+
+        // print full path
+        if(dir.location.len) {
+            printf("/%s/%s\n", dir.location.str, inode.name.str);
+
+        } else printf("/%s\n", inode.name.str);
+
+        if(inode.attributes_which == Inode_attributes_file) {
+            struct File file;
+            read_File(&file, inode.attributes.file);
+
+            FileBlock_ptr blockp;
+            struct FileBlock block;
+
+            for(int i = 0; i < capn_len(file.blocks); i++) {
+                blockp.p = capn_getp(file.blocks.p, i, 1);
+                read_FileBlock(&block, blockp);
+
+                //
+            }
+        }
+
+        // walking over internal directories
+        if(inode.attributes_which == Inode_attributes_dir) {
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            // recursive list contents
+            flist_walk_dir(database, sub.key.str, level + 1);
         }
     }
 }
@@ -245,7 +323,8 @@ static int flist_walk_dir(database_t *database, const char *key, int level) {
     //
     // printing 'ls' format the directory
     //
-    // flist_ls(database, dirp, level);
+    flist_ls(database, dirp, level);
+    // flist_blocks(database, dirp, level);
 
     //
     // printing 'tree' format the directory
@@ -255,7 +334,7 @@ static int flist_walk_dir(database_t *database, const char *key, int level) {
     //
     // simple files dump
     //
-    flist_dump(database, dirp, level);
+    // flist_dump(database, dirp, level);
 
     // cleaning stuff
     database_value_free(value);
