@@ -18,7 +18,6 @@
 // - one directory is identified by blake2 hash of it's full path
 // - the root directory is the blake2 hash of empty string
 //
-//
 
 typedef struct directory_t {
     value_t *value;
@@ -55,12 +54,16 @@ static directory_t *flist_directory_get(database_t *database, const char *key) {
         return NULL;
     }
 
+    // build capn context
     if(capn_init_mem(&dir->ctx, (unsigned char *) dir->value->data, dir->value->length, 0)) {
         fprintf(stderr, "[-] directory: capnp: init error\n");
         database_value_free(dir->value);
         return NULL;
     }
 
+    // populate dir struct from context
+    // the contents is always a directory (one key per directory)
+    // and the whole contents is on the content field
     dir->dirp.p = capn_getp(capn_root(&dir->ctx), 0, 1);
     read_Dir(&dir->dir, dir->dirp);
 
@@ -237,7 +240,7 @@ static void flist_ls(walker_t *walker, directory_t *root, void *userptr) {
 
         struct capn permsctx;
         if(capn_init_mem(&permsctx, (unsigned char *) perms->data, perms->length, 0)) {
-            // fprintf(stderr, "[-] capnp: init error\n");
+            fprintf(stderr, "[-] capnp: init error\n");
         }
 
         acip.p = capn_getp(capn_root(&permsctx), 0, 1);
@@ -257,10 +260,7 @@ static void flist_ls(walker_t *walker, directory_t *root, void *userptr) {
                 struct SubDir sub;
                 read_SubDir(&sub, inode.attributes.dir);
 
-                // printf("%8lu  %-12s (%s)\n", inode.size, inode.name.str, sub.key.str);
                 printf("%8lu (       --- ) %-12s\n", inode.size, inode.name.str);
-                // flist_walk_dir(database, sub.key.str, level + 1);
-
                 break;
 
             case Inode_attributes_file: ;
@@ -396,11 +396,11 @@ static int flist_directory_walk(walker_t *walker, const char *key, void *userptr
     return 0;
 }
 
+// walking entry point
 int flist_walk(database_t *database) {
     walker_t walker = {
         .database = database,
-        // .callback = flist_ls,
-        .callback = flist_tree,
+        .callback = flist_ls,
     };
 
     // root directory is an empty key
