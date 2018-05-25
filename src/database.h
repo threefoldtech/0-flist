@@ -23,5 +23,5 @@
     void database_close(database_t *database);
 
     value_t *database_get(database_t *database, const char *key);
-    void database_value_free(value_t *value);
+    value_t *database_value_free(value_t *value);
 #endif
