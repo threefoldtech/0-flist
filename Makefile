@@ -1,13 +1,13 @@
 default: all
 
-debug:
+release:
 	cd src && $(MAKE) $@
 	cp src/flister .
+	strip -s flister
 
 all:
 	cd src && $(MAKE) $@
 	cp src/flister .
-	strip -s flister
 
 mrproper:
 	cd src && $(MAKE) $@
