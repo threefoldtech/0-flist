@@ -65,14 +65,14 @@ void database_close(database_t *database) {
     free(database);
 }
 
-value_t *database_get(database_t *database, const char *key) {
+value_t *database_get(database_t *database, char *key) {
     value_t *value;
     char *err = NULL;
 
     if(!(value = calloc(1, sizeof(value_t))))
         diep("malloc");
 
-    value->data = rocksdb_get(database->db, database->readoptions, (char *) key, strlen(key), &value->length, &err);
+    value->data = rocksdb_get(database->db, database->readoptions, key, strlen(key), &value->length, &err);
 
     if(err)
         warndb(err);
@@ -85,4 +85,29 @@ value_t *database_value_free(value_t *value) {
     free(value);
 
     return NULL;
+}
+
+int database_set(database_t *database, char *key, char *payload, size_t length) {
+    char *err = NULL;
+
+	rocksdb_put(database->db, database->writeoptions, key, strlen(key), payload, length, &err);
+
+	if(err) {
+        warndb(err);
+        return 1;
+    }
+
+    return 0;
+}
+
+// poor implementation of exists
+int database_exists(database_t *database, char *key) {
+    int retval = 0;
+
+    value_t *value = database_get(database, key);
+    if(value->data)
+        retval = 1;
+
+    database_value_free(value);
+    return retval;
 }
