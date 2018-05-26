@@ -25,16 +25,16 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-void warnp(char *str) {
+void warnp(const char *str) {
 	fprintf(stderr, "[-] %s: %s\n", str, strerror(errno));
 }
 
-void diep(char *str) {
+void diep(const char *str) {
 	warnp(str);
 	exit(EXIT_FAILURE);
 }
 
-void dies(char *str) {
+void dies(const char *str) {
 	fprintf(stderr, "[-] %s\n", str);
 	exit(EXIT_FAILURE);
 }

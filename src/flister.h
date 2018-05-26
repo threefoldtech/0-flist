@@ -1,9 +1,9 @@
 #ifndef FLISTER_H
     #define FLISTER_H
 
-    void diep(char *str);
-    void dies(char *str);
-    void warnp(char *str);
+    void diep(const char *str);
+    void dies(const char *str);
+    void warnp(const char *str);
 
     typedef struct settings_t {
         int verbose;

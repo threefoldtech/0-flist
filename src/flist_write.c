@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <rocksdb/c.h>
 #include <blake2.h>
-#include <uthash.h>
 #include <linux/limits.h>
 #include "flister.h"
 #include "flist_write.h"
@@ -56,13 +55,13 @@ static directory_t *directory_create(char *fullpath, char *name) {
 
     // some cleaning (remove trailing slash)
     size_t lf = strlen(directory->fullpath);
-    if(directory->fullpath[lf - 1] = '/')
+    if(directory->fullpath[lf - 1] == '/')
         directory->fullpath[lf - 1] = '\0';
 
     return directory;
 }
 
-static inode_t *inode_create(char *name, size_t size, char *type) {
+static inode_t *inode_create(const char *name, size_t size, char *type) {
     inode_t *inode;
 
     if(!(inode = calloc(sizeof(inode_t), 1)))
@@ -217,10 +216,11 @@ static const char *pathkey(char *path) {
     return (const char *) hexhash;
 }
 
-static inode_t *flist_process_file(char *iname, const struct stat *sb, char *fullpath) {
+static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *fullpath) {
     inode_t *inode;
 
-    inode = inode_create(itemname, sb->st_size, "fixme");
+    inode = inode_create(iname, sb->st_size, "fixme");
+    return inode;
 }
 
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
@@ -279,7 +279,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     //
     // we can just parse the stat struct, fill-in our inode object and add it to the
     // currentdir object
-    char *itemname = fpath + ftwbuf->base;
+    const char *itemname = fpath + ftwbuf->base;
     printf("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
     inode_t *inode = flist_process_file(itemname, sb, fpath);
@@ -301,7 +301,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     return 0;
 }
 
-int flist_create(database_t *database, char *root) {
+int flist_create(database_t *database, const char *root) {
     printf("[+] preparing flist for: %s\n", root);
 
     if(!(rootdir = directory_create("", "")))
