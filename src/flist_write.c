@@ -1,9 +1,11 @@
 #define _DEFAULT_SOURCE
+#define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include <ftw.h>
 #include <unistd.h>
 #include <rocksdb/c.h>
@@ -13,6 +15,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/sysmacros.h>
+#include <openssl/md5.h>
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
@@ -20,19 +23,31 @@
 #define KEYLENGTH 32
 
 typedef struct acl_t {
-    char *uname;
-    char *gname;
-    uint16_t mode;
+    char *uname;     // username (user id if not found)
+    char *gname;     // group name (group id if not found)
+    uint16_t mode;   // integer file mode
+    char *key;       // hash of the payload (dedupe in db)
 
 } acl_t;
 
+// link internal type to capnp type directly
+// this make things easier later
 typedef enum inode_type_t {
-    INODE_DIRECTORY,
-    INODE_FILE,
-    INODE_LINK,
-    INODE_SPECIAL,
+    INODE_DIRECTORY = Inode_attributes_dir,
+    INODE_FILE = Inode_attributes_file,
+    INODE_LINK = Inode_attributes_link,
+    INODE_SPECIAL = Inode_attributes_special,
 
 } inode_type_t;
+
+typedef enum inode_special_t {
+    SOCKET,
+    BLOCK,
+    CHARDEV,
+    FIFOPIPE,
+    UNKNOWN,
+
+} inode_special_t;
 
 const char *inode_type_str[] = {
     "INODE_DIRECTORY",
@@ -42,22 +57,19 @@ const char *inode_type_str[] = {
 };
 
 typedef struct inode_t {
-    char *name;
-    char *fullpath;
-    size_t size;
+    char *name;       // relative inode name (filename)
+    char *fullpath;   // full relative path
+    size_t size;      // size in byte
+    acl_t acl;        // access control
 
-    inode_type_t type;
-    time_t modification;
-    time_t creation;
+    inode_type_t type;     // internal file type
+    time_t modification;   // modification time
+    time_t creation;       // creation time
 
-    char *subdirkey; // sub key
-
-    int stype;       // special type
-    char *sdata;     // special metadata
-
-    char *link;      // symlink target
-
-    acl_t acl;
+    char *subdirkey;       // for directory: directory target key
+    inode_special_t stype; // for special: special type
+    char *sdata;           // for special: special metadata
+    char *link;            // for symlink: symlink target
 
     struct inode_t *next;
 
@@ -72,41 +84,101 @@ typedef struct directory_t {
     struct directory_t *dir_last;
     size_t dir_length;
 
-    char *fullpath;
-    char *name;
-    // attrs
+    char *fullpath;        // virtual full path
+    char *name;            // directory name
+    char *hashkey;         // internal hash (for db)
 
-    time_t creation;
-    time_t modification;
-    acl_t acl;
+    acl_t acl;             // access control
+    time_t creation;       // creation time
+    time_t modification;   // modification time
 
     struct directory_t *next;
 
 } directory_t;
 
+//
+// md5 helper
+//
+static char __hex[] = "0123456789abcdef";
+
+static unsigned char *md5(const char *buffer, size_t length) {
+    unsigned char *hash;
+    MD5_CTX md5;
+
+    if(!(hash = calloc(MD5_DIGEST_LENGTH, 1)))
+        diep("calloc");
+
+    MD5_Init(&md5);
+    MD5_Update(&md5, buffer, length);
+    MD5_Final(hash, &md5);
+
+    return hash;
+}
+
+static char *hashhex(unsigned char *hash, int dlength) {
+    char *buffer = calloc((dlength * 2) + 1, sizeof(char));
+    char *writer = buffer;
+
+    for(int i = 0, j = 0; i < dlength; i++, j += 2) {
+        *writer++ = __hex[(hash[i] & 0xF0) >> 4];
+        *writer++ = __hex[hash[i] & 0x0F];
+    }
+
+    return buffer;
+}
+
+char *inode_acl_key(acl_t *acl) {
+    char *key;
+    char strmode[32];
+
+    // re-implementing the python original version
+    // the mode is created using 'oct(mode)[4:]'
+    //
+    // when doing oct(int), the returns is '0oXXXX'
+    // so we fake the same behavior
+    sprintf(strmode, "0o%o", acl->mode);
+
+    // intermediate string key
+    if(asprintf(&key, "user:%s\ngroup:%s\nmode:%s\n", acl->uname, acl->gname, strmode + 4) < 0)
+        diep("asprintf");
+
+    // hashing payload
+    unsigned char *hash = md5(key, strlen(key));
+    char *hashkey = hashhex(hash, MD5_DIGEST_LENGTH);
+    free(key);
+    free(hash);
+
+    return hashkey;
+}
+
+
 static char *uidstr(struct passwd *passwd, uid_t uid) {
+    char *target;
+
     // if username cannot be found
     // let use user id as username
     if(!passwd) {
         warnp("getpwuid");
+        if(asprintf(&target, "%d", uid) < 0)
+            diep("asprintf");
 
-        size_t len = snprintf(NULL, 0, "%d", uid);
-        char *target = malloc(sizeof(char) * len);
-        sprintf(target, "%d", uid);
+        return target;
     }
 
     return strdup(passwd->pw_name);
 }
 
 static char *gidstr(struct group *group, gid_t gid) {
+    char *target;
+
     // if group name cannot be found
     // let use group id as groupname
     if(!group) {
         warnp("getgrpid");
+        if(asprintf(&target, "%d", gid) < 0)
+            diep("asprintf");
 
-        size_t len = snprintf(NULL, 0, "%d", gid);
-        char *target = malloc(sizeof(char) * len);
-        sprintf(target, "%d", gid);
+        return target;
     }
 
     return strdup(group->gr_name);
@@ -118,6 +190,7 @@ acl_t inode_acl(const struct stat *sb) {
     acl.mode = sb->st_mode;
     acl.uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
     acl.gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
+    acl.key = inode_acl_key(&acl);
 
     return acl;
 }
@@ -125,7 +198,18 @@ acl_t inode_acl(const struct stat *sb) {
 void inode_acl_free(acl_t *acl) {
     free(acl->uname);
     free(acl->gname);
+    free(acl->key);
 }
+
+static char *path_key(const char *path) {
+    uint8_t hash[KEYLENGTH];
+
+    if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0)
+        dies("blake2 error");
+
+    return hashhex(hash, KEYLENGTH);
+}
+
 
 static directory_t *rootdir = NULL;
 static directory_t *currentdir = NULL;
@@ -144,12 +228,15 @@ static directory_t *directory_create(char *fullpath, char *name) {
     if(directory->fullpath[lf - 1] == '/')
         directory->fullpath[lf - 1] = '\0';
 
+    directory->hashkey = path_key(directory->fullpath);
+
     return directory;
 }
 
 void directory_free(directory_t *directory) {
     free(directory->fullpath);
     free(directory->name);
+    free(directory->hashkey);
     free(directory);
 }
 
@@ -327,36 +414,56 @@ static void directory_tree_free(directory_t *root) {
 //          be careful if you want to add threads on the layer
 //
 
-static const char *pathkey(const char *path) {
-    uint8_t hash[KEYLENGTH];
-    char *hexhash;
-
-    if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0) {
-        fprintf(stderr, "[-] blake2 error\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if(!(hexhash = malloc(sizeof(char) * ((KEYLENGTH * 2) + 1))))
-        diep("malloc");
-
-    for(int i = 0; i < KEYLENGTH; i++)
-        sprintf(hexhash + (i * 2), "%02x", hash[i]);
-
-    return (const char *) hexhash;
-}
-
 //
 // capnp dumper
 //
-void directory_tree_capn(directory_t *root) {
-    /*
+static capn_text chars_to_text(const char *chars) {
+    return (capn_text) {
+        .len = (int) strlen(chars),
+        .str = chars,
+        .seg = NULL,
+    };
+}
+
+
+void directory_tree_capn(directory_t *root, database_t *database, directory_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
     struct capn_segment *cs = cr.seg;
 
-    struct
-    */
+    printf("[+] populating directory: %s\n", root->fullpath);
+
+    // creating this directory entry
+    struct Dir dir = {
+        .name = chars_to_text(root->name),
+        .location = chars_to_text(root->name),
+        .contents = new_Inode_list(cs, root->inode_length),
+        .parent = chars_to_text(parent->hashkey),
+        .size = 4096,
+        .aclkey = chars_to_text(root->acl.key),
+        .modificationTime = root->modification,
+        .creationTime = root->creation,
+    };
+
+    // populating contents
+    int index = 0;
+    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
+        struct Inode target;
+
+        target.name = chars_to_text(inode->name);
+        target.size = inode->size;
+        target.attributes_which = inode->type;
+        target.aclkey = chars_to_text(inode->acl.key);
+        target.modificationTime = inode->modification;
+        target.creationTime = inode->creation;
+
+        index += 1;
+    }
+
+    // walking over the sub-directories
+    for(directory_t *subdir = root->dir_list; subdir; subdir = subdir->next)
+        directory_tree_capn(subdir, database, root);
 }
 
 //
@@ -506,7 +613,7 @@ int flist_create(database_t *database, const char *root) {
 
     printf("===================================\n");
     printf("[+] building capnp from memory tree\n");
-    directory_tree_capn(rootdir);
+    directory_tree_capn(rootdir, database, rootdir);
 
     printf("[+] recursivly freeing directory tree\n");
     directory_tree_free(rootdir);
