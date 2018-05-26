@@ -19,6 +19,7 @@
 static char *archive_prepare(char *filename, char *target) {
     char *destination;
     char buffer[4096];
+    ssize_t len;
     FILE *dst;
     gzFile gsrc;
 
@@ -31,8 +32,8 @@ static char *archive_prepare(char *filename, char *target) {
     if(!(dst = fopen(destination, "w")))
         diep(destination);
 
-    while(gzread(gsrc, buffer, sizeof(buffer)))
-        fwrite(buffer, sizeof(buffer), 1, dst);
+    while((len = gzread(gsrc, buffer, sizeof(buffer))))
+        fwrite(buffer, 1, len, dst);
 
     fclose(dst);
     gzclose(gsrc);
