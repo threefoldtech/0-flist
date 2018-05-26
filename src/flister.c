@@ -170,6 +170,11 @@ int main(int argc, char *argv[]) {
             case 'p':
                 settings.root = strdup(optarg);
                 settings.rootlen = strlen(settings.root);
+
+                if(settings.root[settings.rootlen - 1] == '/') {
+                    settings.root[settings.rootlen - 1] = '\0';
+                    settings.rootlen -= 1;
+                }
                 break;
 
             case 'c':

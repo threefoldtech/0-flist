@@ -229,7 +229,6 @@ static directory_t *directory_create(char *fullpath, char *name) {
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = path_key(directory->fullpath);
-    printf("%s -> %s\n", directory->fullpath, directory->hashkey);
 
     return directory;
 }
@@ -348,7 +347,7 @@ static directory_t *directory_lookup_step(directory_t *root, char *token, char *
     return directory_lookup_step(subdir, token, incrpath);
 }
 
-static directory_t *directory_lookup(directory_t *root, char *fullpath) {
+static directory_t *directory_lookup(directory_t *root, const char *fullpath) {
     char *token;
     char *incrpath;
     char *fulldup;
@@ -384,11 +383,19 @@ static void directory_dumps(directory_t *root) {
     printf("[+] contents: subdirectories: %lu\n", root->dir_length);
     printf("[+] contents: inodes: %lu\n", root->inode_length);
 
-    for(directory_t *source = root->dir_list; source; source = source->next)
+    for(directory_t *source = root->dir_list; source; source = source->next) {
         directory_dumps(source);
 
-    for(inode_t *inode = root->inode_list; inode; inode = inode->next)
+        if(source->acl.key == NULL)
+            dies("directory aclkey not set");
+    }
+
+    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         inode_dumps(inode, root);
+
+        if(inode->acl.key == NULL)
+            dies("inode aclkey not set");
+    }
 }
 
 static void directory_tree_free(directory_t *root) {
@@ -517,7 +524,7 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
 
             // see: https://github.com/opensourcerouting/c-capnproto/blob/master/lib/capnp_c.h#L196
             capn_list8 data = capn_new_list8(cs, 1);
-            capn_setv8(data, 0, inode->sdata, strlen(inode->sdata));
+            capn_setv8(data, 0, (uint8_t *) inode->sdata, strlen(inode->sdata));
             sp.data.p = data.p;
 
             target.attributes.special = new_Special(cs);
@@ -541,7 +548,7 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
     }
 
     // commit capnp object
-    unsigned char *buffer = malloc(512 * 1024); // FIXME
+    unsigned char *buffer = malloc(8 * 512 * 1024); // FIXME
 
     Dir_ptr dp = new_Dir(cs);
     write_Dir(&dir, dp);
@@ -549,7 +556,7 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
     if(capn_setp(capn_root(&c), 0, dp.p))
         dies("capnp setp failed");
 
-    int sz = capn_write_mem(&c, buffer, 512 * 1024, 0); // FIXME
+    int sz = capn_write_mem(&c, buffer, 8 * 512 * 1024, 0); // FIXME
     capn_free(&c);
 
     // commit this object into the database
@@ -654,7 +661,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we sets everything for underlaying directories but nothing for the directory
     // itself (like it's acl, etc.) let set this now here
     if(typeflag == FTW_DP) {
-        char *virtual = fpath + settings.rootlen + 1;
+        const char *virtual = fpath + settings.rootlen + 1;
         printf("[+] all subdirectories done for: %s\n", virtual);
 
         directory_t *myself = directory_lookup(rootdir, virtual);
@@ -704,8 +711,13 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // this is maybe an empty directory, we don't know
     // in doubt, let's call lookup in order to create
     // entry if it doesn't exists
-    if(inode->type == INODE_DIRECTORY)
-        directory_lookup(rootdir, inode->fullpath);
+    if(inode->type == INODE_DIRECTORY) {
+        directory_t *check = directory_lookup(rootdir, inode->fullpath);
+
+        // if the directory is never reached anyway
+        // metadata won't be set anywhere else
+        flist_directory_metadata(check, sb);
+    }
 
     // if relpath is empty, we are doing some stuff
     // on the virtual root, let's reset the currentdir
