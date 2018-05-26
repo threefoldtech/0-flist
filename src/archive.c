@@ -71,8 +71,54 @@ char *archive_extract(char *filename, char *target) {
 
     return filename;
 }
-/*
-char *archive_create(char *filename, char *source) {
 
+static int archive_compress(char *source, char *destination) {
+    char buffer[4096];
+    ssize_t len;
+    FILE *src;
+    gzFile gdst;
+
+    if(!(src = fopen(source, "r")))
+        diep(source);
+
+    if(!(gdst = gzopen(destination, "w")))
+        diep(destination);
+
+    while((len = fread(buffer, 1, sizeof(buffer), src)))
+        gzwrite(gdst, buffer, len);
+
+    fclose(src);
+    gzclose(gdst);
+
+    return 0;
 }
-*/
+
+int archive_create(char *filename, char *source) {
+    TAR *th = NULL;
+    char *tempfile;
+
+    if(asprintf(&tempfile, "%s.uncompressed", filename) < 0)
+        diep("asprintf");
+
+    printf("[+] building uncompressed archive: %s\n", tempfile);
+    if(tar_open(&th, tempfile, NULL, O_WRONLY | O_CREAT, 0644, TAR_GNU))
+        return 1;
+
+    if(tar_append_tree(th, source, ".")) {
+        warnp("tar_append_tree");
+        tar_close(th);
+        return 1;
+    }
+
+    tar_close(th);
+
+    // compressing
+    printf("[+] compressing file: %s > %s\n", tempfile, filename);
+    int retval = archive_compress(tempfile, filename);
+
+    // cleaning
+    // unlink(tempfile);
+    free(tempfile);
+
+    return retval;
+}
