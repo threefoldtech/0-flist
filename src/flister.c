@@ -4,6 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#include <unistd.h>
 #include "flister.h"
 #include "archive.h"
 #include "workspace.h"
@@ -97,7 +98,12 @@ static int flister() {
         verbose("[+] creating rocksdb database\n");
         database = database_create(workspace);
 
+        // building database
         flist_create(database, settings.root);
+
+        // removing possible already existing db
+        unlink(settings.archive);
+        archive_create(settings.archive, workspace);
     }
 
     verbose("[+] closing database\n");
