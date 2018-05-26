@@ -9,16 +9,55 @@
 #include <rocksdb/c.h>
 #include <blake2.h>
 #include <linux/limits.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/sysmacros.h>
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 
 #define KEYLENGTH 32
 
+typedef struct acl_t {
+    char *uname;
+    char *gname;
+    uint16_t mode;
+
+} acl_t;
+
+typedef enum inode_type_t {
+    INODE_DIRECTORY,
+    INODE_FILE,
+    INODE_LINK,
+    INODE_SPECIAL,
+
+} inode_type_t;
+
+const char *inode_type_str[] = {
+    "INODE_DIRECTORY",
+    "INODE_FILE",
+    "INODE_LINK",
+    "INODE_SPECIAL",
+};
+
 typedef struct inode_t {
     char *name;
+    char *fullpath;
     size_t size;
-    char *type;
+
+    inode_type_t type;
+    time_t modification;
+    time_t creation;
+
+    char *subdirkey; // sub key
+
+    int stype;       // special type
+    char *sdata;     // special metadata
+
+    char *link;      // symlink target
+
+    acl_t acl;
 
     struct inode_t *next;
 
@@ -37,9 +76,56 @@ typedef struct directory_t {
     char *name;
     // attrs
 
+    time_t creation;
+    time_t modification;
+    acl_t acl;
+
     struct directory_t *next;
 
 } directory_t;
+
+static char *uidstr(struct passwd *passwd, uid_t uid) {
+    // if username cannot be found
+    // let use user id as username
+    if(!passwd) {
+        warnp("getpwuid");
+
+        size_t len = snprintf(NULL, 0, "%d", uid);
+        char *target = malloc(sizeof(char) * len);
+        sprintf(target, "%d", uid);
+    }
+
+    return strdup(passwd->pw_name);
+}
+
+static char *gidstr(struct group *group, gid_t gid) {
+    // if group name cannot be found
+    // let use group id as groupname
+    if(!group) {
+        warnp("getgrpid");
+
+        size_t len = snprintf(NULL, 0, "%d", gid);
+        char *target = malloc(sizeof(char) * len);
+        sprintf(target, "%d", gid);
+    }
+
+    return strdup(group->gr_name);
+}
+
+acl_t inode_acl(const struct stat *sb) {
+    acl_t acl;
+
+    acl.mode = sb->st_mode;
+    acl.uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
+    acl.gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
+
+    return acl;
+}
+
+void inode_acl_free(acl_t *acl) {
+    free(acl->uname);
+    free(acl->gname);
+}
 
 static directory_t *rootdir = NULL;
 static directory_t *currentdir = NULL;
@@ -61,26 +147,48 @@ static directory_t *directory_create(char *fullpath, char *name) {
     return directory;
 }
 
-static inode_t *inode_create(const char *name, size_t size, char *type) {
+void directory_free(directory_t *directory) {
+    free(directory->fullpath);
+    free(directory->name);
+    free(directory);
+}
+
+static inode_t *inode_create(const char *name, size_t size, const char *fullpath) {
     inode_t *inode;
 
     if(!(inode = calloc(sizeof(inode_t), 1)))
         return NULL;
 
     inode->name = strdup(name);
-    inode->type = strdup(type);
+    inode->fullpath = strdup(fullpath);
     inode->size = size;
 
     return inode;
 }
 
-void inode_dumps(inode_t *inode, directory_t *rootdir) {
-    if(rootdir) {
-        printf("[+] inode: %s: %s/%s (%lu)\n", inode->type, rootdir->fullpath, inode->name, inode->size);
-        return;
-    }
+void inode_free(inode_t *inode) {
+    inode_acl_free(&inode->acl);
+    free(inode->name);
+    free(inode->fullpath);
+    free(inode->sdata);
+    free(inode->link);
+    free(inode);
+}
 
-    printf("[+] inode: %s: %s (%lu)\n", inode->type, inode->name, inode->size);
+void inode_dumps(inode_t *inode, directory_t *rootdir) {
+    printf("[+] inode: rootdir: 0x%p\n", rootdir);
+    printf("[+] inode: %s: %s/%s\n", inode_type_str[inode->type], rootdir->fullpath, inode->name);
+
+    printf("[+] inode:   size: %lu bytes (%.2f MB)\n", inode->size, inode->size / (1024 * 1024.0));
+    printf("[+] inode:   ctime: %lu, mtime: %lu\n", inode->creation, inode->modification);
+    printf("[+] inode:   user: %s, group: %s\n", inode->acl.uname, inode->acl.gname);
+    printf("[+] inode:   mode: %o\n", inode->acl.mode);
+
+    if(inode->type == INODE_LINK)
+        printf("[+] inode:   symlink: %s\n", inode->link);
+
+    if(inode->type == INODE_SPECIAL)
+        printf("[+] inode:   special: %s\n", inode->sdata);
 }
 
 static directory_t *directory_appends_inode(directory_t *root, inode_t *inode) {
@@ -166,8 +274,10 @@ static directory_t *directory_lookup(directory_t *root, char *fullpath) {
         diep("directory lookup: strdup");
 
     // creating token
-    if(!(token = strtok(fulldup, "/")))
+    if(!(token = strtok(fulldup, "/"))) {
+        free(fulldup);
         return root;
+    }
 
     // incremental memory to build relative path step by step
     if(!(incrpath = calloc(sizeof(char), strlen(fullpath) + 1)))
@@ -176,6 +286,7 @@ static directory_t *directory_lookup(directory_t *root, char *fullpath) {
     // iterate over the fullpath, looking for directories
     directory_t *target = directory_lookup_step(root, token, incrpath);
     free(fulldup);
+    free(incrpath);
 
     return target;
 }
@@ -192,13 +303,31 @@ static void directory_dumps(directory_t *root) {
         inode_dumps(inode, root);
 }
 
+static void directory_tree_free(directory_t *root) {
+    for(directory_t *source = root->dir_list; source; ) {
+        directory_t *next = source->next;
+
+        directory_tree_free(source);
+        source = next;
+    }
+
+    for(inode_t *inode = root->inode_list; inode; ) {
+        inode_t *next = inode->next;
+
+        inode_free(inode);
+        inode = next;
+    }
+
+    directory_free(root);
+}
+
 //
 // WARNING: this code uses 'ftw', which is by design, not thread safe
 //          all functions used here need to be concidered as non-thread-safe
 //          be careful if you want to add threads on the layer
 //
 
-static const char *pathkey(char *path) {
+static const char *pathkey(const char *path) {
     uint8_t hash[KEYLENGTH];
     char *hexhash;
 
@@ -216,10 +345,65 @@ static const char *pathkey(char *path) {
     return (const char *) hexhash;
 }
 
-static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *fullpath) {
+//
+// capnp dumper
+//
+void directory_tree_capn(directory_t *root) {
+    /*
+    struct capn c;
+    capn_init_malloc(&c);
+    capn_ptr cr = capn_root(&c);
+    struct capn_segment *cs = cr.seg;
+
+    struct
+    */
+}
+
+//
+// walker
+//
+static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, directory_t *parent) {
     inode_t *inode;
 
-    inode = inode_create(iname, sb->st_size, "fixme");
+    char vpath[PATH_MAX];
+    sprintf(vpath, "%s/%s", parent->fullpath, iname);
+
+    inode = inode_create(iname, sb->st_size, vpath);
+
+    inode->creation = sb->st_ctime;
+    inode->modification = sb->st_mtime;
+    inode->acl = inode_acl(sb);
+
+    // special stuff related to different
+    // type of inode
+    if(S_ISDIR(sb->st_mode)) {
+        inode->type = INODE_DIRECTORY;
+    }
+
+    if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
+        inode->type = INODE_SPECIAL;
+        inode->sdata = calloc(sizeof(char), 32);
+
+        sprintf(inode->sdata, "%d,%d", major(sb->st_rdev), minor(sb->st_rdev));
+    }
+
+    if(S_ISFIFO(sb->st_mode) || S_ISSOCK(sb->st_mode)) {
+        inode->type = INODE_SPECIAL;
+        inode->sdata = "(nothing)";
+    }
+
+    if(S_ISLNK(sb->st_mode)) {
+        inode->type = INODE_LINK;
+        inode->link = calloc(sizeof(char), sb->st_size + 1);
+
+        if(readlink(realpath, inode->link, sb->st_size + 1) < 0)
+            warnp("readlink");
+    }
+
+    if(S_ISREG(sb->st_mode)) {
+        inode->type = INODE_FILE;
+    }
+
     return inode;
 }
 
@@ -266,7 +450,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
             return 1;
     }
 
-    printf(">> CURRENT DIRECTORY: %s (%s)\n", currentdir->name, currentdir->fullpath);
+    printf("[+] current directory: %s (%s)\n", currentdir->name, currentdir->fullpath);
 
     // processing the real entry
     // this can be a file, a directory, anything
@@ -282,8 +466,14 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     const char *itemname = fpath + ftwbuf->base;
     printf("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
-    inode_t *inode = flist_process_file(itemname, sb, fpath);
+    inode_t *inode = flist_process_file(itemname, sb, fpath, currentdir);
     directory_appends_inode(currentdir, inode);
+
+    // this is maybe an empty directory, we don't know
+    // in doubt, let's call lookup in order to create
+    // entry if it doesn't exists
+    if(inode->type == INODE_DIRECTORY)
+        directory_lookup(rootdir, inode->fullpath);
 
     // if relpath is empty, we are doing some stuff
     // on the virtual root, let's reset the currentdir
@@ -311,10 +501,15 @@ int flist_create(database_t *database, const char *root) {
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
-    printf("=========================\n");
+    printf("===================================\n");
     directory_dumps(rootdir);
 
-    // flist_memory_clean();
+    printf("===================================\n");
+    printf("[+] building capnp from memory tree\n");
+    directory_tree_capn(rootdir);
+
+    printf("[+] recursivly freeing directory tree\n");
+    directory_tree_free(rootdir);
 
     return 0;
 }
