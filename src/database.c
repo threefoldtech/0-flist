@@ -87,7 +87,7 @@ value_t *database_value_free(value_t *value) {
     return NULL;
 }
 
-int database_set(database_t *database, const char *key, const char *payload, size_t length) {
+int database_set(database_t *database, const char *key, const unsigned char *payload, size_t length) {
     char *err = NULL;
 
     rocksdb_put(database->db, database->writeoptions, (char *) key, strlen(key), (char *) payload, length, &err);

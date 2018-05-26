@@ -23,7 +23,7 @@
     void database_close(database_t *database);
 
     value_t *database_get(database_t *database, const char *key);
-    int database_set(database_t *database, const char *key, const char *payload, size_t length);
+    int database_set(database_t *database, const char *key, const unsigned char *payload, size_t length);
     int database_exists(database_t *database, const char *key);
 
     value_t *database_value_free(value_t *value);
