@@ -41,11 +41,11 @@ typedef enum inode_type_t {
 } inode_type_t;
 
 typedef enum inode_special_t {
-    SOCKET,
-    BLOCK,
-    CHARDEV,
-    FIFOPIPE,
-    UNKNOWN,
+    SOCKET = Special_Type_socket,
+    BLOCK = Special_Type_block,
+    CHARDEV = Special_Type_chardev,
+    FIFOPIPE = Special_Type_fifopipe,
+    UNKNOWN = Special_Type_unknown,
 
 } inode_special_t;
 
@@ -229,6 +229,7 @@ static directory_t *directory_create(char *fullpath, char *name) {
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = path_key(directory->fullpath);
+    printf("%s -> %s\n", directory->fullpath, directory->hashkey);
 
     return directory;
 }
@@ -425,6 +426,37 @@ static capn_text chars_to_text(const char *chars) {
     };
 }
 
+void inode_acl_persist(database_t *database, acl_t *acl) {
+    if(database_exists(database, acl->key))
+        return;
+
+    // create a capnp aci object
+    struct ACI aci = {
+        .uname = chars_to_text(acl->uname),
+        .gname = chars_to_text(acl->gname),
+        .mode = acl->mode,
+        .id = 0,
+    };
+
+    // prepare a writer
+    struct capn c;
+    capn_init_malloc(&c);
+    capn_ptr cr = capn_root(&c);
+    struct capn_segment *cs = cr.seg;
+    unsigned char buffer[4096];
+
+    ACI_ptr ap = new_ACI(cs);
+    write_ACI(&aci, ap);
+
+    if(capn_setp(capn_root(&c), 0, ap.p))
+        dies("acl capnp setp failed");
+
+    int sz = capn_write_mem(&c, buffer, 4096, 0);
+    capn_free(&c);
+
+    printf("[+] writing acl into db: %s\n", acl->key);
+    database_set(database, acl->key, buffer, sz);
+}
 
 void directory_tree_capn(directory_t *root, database_t *database, directory_t *parent) {
     struct capn c;
@@ -446,6 +478,8 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
         .creationTime = root->creation,
     };
 
+    inode_acl_persist(database, &root->acl);
+
     // populating contents
     int index = 0;
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
@@ -458,8 +492,69 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
         target.modificationTime = inode->modification;
         target.creationTime = inode->creation;
 
+        if(inode->type == INODE_DIRECTORY) {
+            struct SubDir sd = {
+                .key = chars_to_text(inode->subdirkey),
+            };
+
+            target.attributes.dir = new_SubDir(cs);
+            write_SubDir(&sd, target.attributes.dir);
+        }
+
+        if(inode->type == INODE_LINK) {
+            struct Link l = {
+                .target = chars_to_text(inode->link),
+            };
+
+            target.attributes.link = new_Link(cs);
+            write_Link(&l, target.attributes.link);
+        }
+
+        if(inode->type == INODE_SPECIAL) {
+            struct Special sp = {
+                .type = inode->stype,
+            };
+
+            // see: https://github.com/opensourcerouting/c-capnproto/blob/master/lib/capnp_c.h#L196
+            capn_list8 data = capn_new_list8(cs, 1);
+            capn_setv8(data, 0, inode->sdata, strlen(inode->sdata));
+            sp.data.p = data.p;
+
+            target.attributes.special = new_Special(cs);
+            write_Special(&sp, target.attributes.special);
+        }
+
+        if(inode->type == INODE_FILE) {
+            struct File f = {
+                .blockSize = 128, // ignored
+                // FIXME: .blocks
+            };
+
+            target.attributes.file = new_File(cs);
+            write_File(&f, target.attributes.file);
+        }
+
+        set_Inode(&target, dir.contents, index);
+        inode_acl_persist(database, &inode->acl);
+
         index += 1;
     }
+
+    // commit capnp object
+    unsigned char *buffer = malloc(512 * 1024); // FIXME
+
+    Dir_ptr dp = new_Dir(cs);
+    write_Dir(&dir, dp);
+
+    if(capn_setp(capn_root(&c), 0, dp.p))
+        dies("capnp setp failed");
+
+    int sz = capn_write_mem(&c, buffer, 512 * 1024, 0); // FIXME
+    capn_free(&c);
+
+    // commit this object into the database
+    printf("[+] writing into db: %s\n", root->hashkey);
+    database_set(database, root->hashkey, buffer, sz);
 
     // walking over the sub-directories
     for(directory_t *subdir = root->dir_list; subdir; subdir = subdir->next)
@@ -475,6 +570,15 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     char vpath[PATH_MAX];
     sprintf(vpath, "%s/%s", parent->fullpath, iname);
 
+    // override virtual path with only the
+    // inode name, if parent have no path
+    //
+    // if parent have no path, the parent is the root
+    // directory, and concatenate with it will ends
+    // with a leading slash
+    if(strlen(parent->fullpath) == 0)
+        sprintf(vpath, "%s", iname);
+
     inode = inode_create(iname, sb->st_size, vpath);
 
     inode->creation = sb->st_ctime;
@@ -485,6 +589,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     // type of inode
     if(S_ISDIR(sb->st_mode)) {
         inode->type = INODE_DIRECTORY;
+        inode->subdirkey = path_key(vpath);
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
@@ -514,27 +619,19 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     return inode;
 }
 
+static int flist_directory_metadata(directory_t *root, const struct stat *sb) {
+    printf("[+] fixing root directory: %s\n", root->fullpath);
+
+    root->creation = sb->st_ctime;
+    root->modification = sb->st_mtime;
+    root->acl = inode_acl(sb);
+
+    return 0;
+}
+
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     ssize_t length = ftwbuf->base - settings.rootlen - 1;
     char *relpath;
-
-    // flag FTW_DP is set when all subdirectories was
-    // parsed, now we know the remaining contents of this directory
-    // are only files, let reset currentdir, this will be looked up again
-    // later, we can't ensure the currentdir is still the relevant directory
-    // since it can be one level up
-    if(typeflag == FTW_DP) {
-        printf("DIRECTORY, ALL SUBS TREATED\n");
-        currentdir = NULL;
-    }
-
-    // if we reach level 0, we are processing the root directory
-    // this directory should not be proceed since we have a virtual root
-    // if we are here, we are all done with the walking process
-    if(ftwbuf->level == 0) {
-        printf("======== ROOT PATH, WE ARE DONE ========\n");
-        return 0;
-    }
 
     // building current path (called 'relative path')
     // this relative path is relative to the root filesystem tree
@@ -547,6 +644,34 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
          relpath = strndup(fpath + settings.rootlen, ftwbuf->base - settings.rootlen - 1);
 
     } else relpath = strdup("");
+
+    // flag FTW_DP is set when all subdirectories was
+    // parsed, now we know the remaining contents of this directory
+    // are only files, let reset currentdir, this will be looked up again
+    // later, we can't ensure the currentdir is still the relevant directory
+    // since it can be one level up
+    //
+    // we sets everything for underlaying directories but nothing for the directory
+    // itself (like it's acl, etc.) let set this now here
+    if(typeflag == FTW_DP) {
+        char *virtual = fpath + settings.rootlen + 1;
+        printf("[+] all subdirectories done for: %s\n", virtual);
+
+        directory_t *myself = directory_lookup(rootdir, virtual);
+        flist_directory_metadata(myself, sb);
+
+        // clear global currentdir
+        // will be reset later with right options
+        currentdir = NULL;
+    }
+
+    // if we reach level 0, we are processing the root directory
+    // this directory should not be proceed since we have a virtual root
+    // if we are here, we are all done with the walking process
+    if(ftwbuf->level == 0) {
+        printf("======== ROOT PATH, WE ARE DONE ========\n");
+        return flist_directory_metadata(rootdir, sb);
+    }
 
     // if the global current directory is not set
     // we can be in the first call or in a call relative to a subdirectory
