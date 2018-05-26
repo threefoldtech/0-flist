@@ -4,11 +4,11 @@ SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 
 all: CFLAGS  = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG
-all: LDFLAGS = -g -pthread -ltar -lrt -lgflags -lz -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy
+all: LDFLAGS = -g -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto
 all: $(EXEC)
 
 release: CFLAGS  = -std=c99 -W -Wall -O2
-release: LDFLAGS = -static -pthread -ltar -lrt -lgflags -lz -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy
+release: LDFLAGS = -static -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto
 release: $(EXEC)
 
 $(EXEC): $(OBJ)
