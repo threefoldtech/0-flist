@@ -476,7 +476,7 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
     // creating this directory entry
     struct Dir dir = {
         .name = chars_to_text(root->name),
-        .location = chars_to_text(root->name),
+        .location = chars_to_text(root->fullpath),
         .contents = new_Inode_list(cs, root->inode_length),
         .parent = chars_to_text(parent->hashkey),
         .size = 4096,
