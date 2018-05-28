@@ -12,10 +12,10 @@ release: LDFLAGS = -static -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_
 release: $(EXEC)
 
 $(EXEC): $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:
 	rm -fv *.o

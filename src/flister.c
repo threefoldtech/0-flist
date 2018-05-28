@@ -9,7 +9,7 @@
 #include "archive.h"
 #include "workspace.h"
 #include "database.h"
-#include "flist_read.h"
+#include "flist_listing.h"
 #include "flist_write.h"
 
 settings_t settings;
@@ -93,7 +93,7 @@ static int flister_list(char *workspace) {
     database_t *database = database_open(workspace);
 
     verbose("[+] walking over database\n");
-    flist_walk(database);
+    flist_listing(database);
 
     verbose("[+] closing database\n");
     database_close(database);
