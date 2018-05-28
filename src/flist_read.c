@@ -403,6 +403,15 @@ int flist_walk(database_t *database) {
         .callback = flist_ls,
     };
 
+    if(settings.list == LIST_TREE)
+        walker.callback = flist_tree;
+
+    if(settings.list == LIST_DUMP)
+        walker.callback = flist_dump;
+
+    if(settings.list == LIST_BLOCKS)
+        walker.callback = flist_blocks;
+
     // root directory is an empty key
     const char *key = pathkey("");
 

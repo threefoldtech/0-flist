@@ -16,8 +16,8 @@ settings_t settings;
 
 static struct option long_options[] = {
     {"list",    no_argument,       0, 'l'},
-    {"create",  no_argument,       0, 'c'},
-    {"tree",    no_argument,       0, 't'},
+    {"create",  required_argument, 0, 'c'},
+    {"output",  required_argument, 0, 'o'},
     {"archive", required_argument, 0, 'a'},
     {"verbose", no_argument,       0, 'v'},
     {"ramdisk", no_argument,       0, 'r'},
@@ -42,19 +42,61 @@ void dies(const char *str) {
 
 int usage(char *basename) {
     fprintf(stderr, "Usage: %s [options] --verbose\n", basename);
-    fprintf(stderr, "       %s --archive <filename> --list [--tree]\n", basename);
-    fprintf(stderr, "       %s --archive <filename> --create --root <root-path>\n", basename);
+    fprintf(stderr, "       %s --archive <filename> --list [--output tree]\n", basename);
+    fprintf(stderr, "       %s --archive <filename> --create <root-path>\n", basename);
     fprintf(stderr, "\n");
     fprintf(stderr, "Command line options:\n");
-    fprintf(stderr, "  -a --archive    archive filename (required)\n");
+    fprintf(stderr, "  -a --archive <flist>    archive (flist) filename\n");
+    fprintf(stderr, "                          (this option is always required)\n\n");
+
+    fprintf(stderr, "  -c --create <root>      create an archive from <root> directory\n\n");
+
     fprintf(stderr, "  -l --list       list archive content\n");
-    fprintf(stderr, "  -t --tree       list archive content in a tree view\n");
-    fprintf(stderr, "  -c --create     create an archive, root is set via --root\n");
-    fprintf(stderr, "  -p --root       root-path from where archive is created\n");
+    fprintf(stderr, "  -o --output     list output format, possible values:\n");
+    fprintf(stderr, "                    ls      show kind of 'ls -al' contents (default)\n");
+    fprintf(stderr, "                    tree    show contents in a tree view\n");
+    fprintf(stderr, "                    dump    debug dump of contents\n");
+    fprintf(stderr, "                    json    file list summary in json format\n\n");
+    fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n\n");
+
     fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
     fprintf(stderr, "  -v --verbose    enable verbose messages\n");
     fprintf(stderr, "  -h --help       shows this help message\n");
     exit(EXIT_FAILURE);
+}
+
+static int flister_create(char *workspace) {
+    database_t *database = database_create(workspace);
+
+    // building database
+    flist_create(database, settings.create);
+
+    // removing possible already existing db
+    unlink(settings.archive);
+    archive_create(settings.archive, workspace);
+
+    verbose("[+] closing database\n");
+    database_close(database);
+
+    return 0;
+}
+
+static int flister_list(char *workspace) {
+    if(!archive_extract(settings.archive, workspace)) {
+        warnp("archive_extract");
+        return 1;
+    }
+
+    verbose("[+] loading rocksdb database\n");
+    database_t *database = database_open(workspace);
+
+    verbose("[+] walking over database\n");
+    flist_walk(database);
+
+    verbose("[+] closing database\n");
+    database_close(database);
+
+    return 0;
 }
 
 static int flister() {
@@ -72,42 +114,23 @@ static int flister() {
     }
 
     verbose("[+] workspace: %s\n", workspace);
-    database_t *database = NULL;
-
-    //
-    // listing
-    //
-    if(settings.list) {
-        verbose("[+] extracting archive\n");
-        if(!archive_extract(settings.archive, workspace)) {
-            warnp("archive_extract");
-            goto clean;
-        }
-
-        verbose("[+] loading rocksdb database\n");
-        database = database_open(workspace);
-
-        verbose("[+] walking over database\n");
-        flist_walk(database);
-    }
 
     //
     // creating
     //
     if(settings.create) {
         verbose("[+] creating rocksdb database\n");
-        database = database_create(workspace);
-
-        // building database
-        flist_create(database, settings.root);
-
-        // removing possible already existing db
-        unlink(settings.archive);
-        archive_create(settings.archive, workspace);
+        flister_create(workspace);
     }
 
-    verbose("[+] closing database\n");
-    database_close(database);
+    //
+    // listing
+    //
+    if(settings.list) {
+        verbose("[+] extracting archive\n");
+        if(flister_list(workspace))
+            goto clean;
+    }
 
 clean:
     if(settings.ramdisk) {
@@ -131,13 +154,11 @@ int main(int argc, char *argv[]) {
     int i;
 
     // initializing settings
-    settings.list = 1;
-    settings.tree = 0;
+    settings.list = LIST_DISABLED;
     settings.verbose = 0;
     settings.archive = NULL;
     settings.ramdisk = 0;
-    settings.root = NULL;
-    settings.create = 0;
+    settings.create = NULL;
 
     while(1) {
         i = getopt_long(argc, argv, "lcta:vrp:h", long_options, &option_index);
@@ -147,12 +168,25 @@ int main(int argc, char *argv[]) {
 
         switch(i) {
             case 'l':
-                settings.list = 1;
-                settings.create = 0;
+                settings.list = LIST_LS;
                 break;
 
-            case 't':
-                settings.tree = 1;
+            case 'o':
+                if(!strcmp(optarg, "ls"))
+                    settings.list = LIST_LS;
+
+                if(!strcmp(optarg, "tree"))
+                    settings.list = LIST_TREE;
+
+                if(!strcmp(optarg, "dump"))
+                    settings.list = LIST_DUMP;
+
+                if(!strcmp(optarg, "json"))
+                    settings.list = LIST_JSON;
+
+                if(!strcmp(optarg, "blocks"))
+                    settings.list = LIST_BLOCKS;
+
                 break;
 
             case 'a':
@@ -167,19 +201,16 @@ int main(int argc, char *argv[]) {
                 settings.ramdisk = 1;
                 break;
 
-            case 'p':
-                settings.root = strdup(optarg);
-                settings.rootlen = strlen(settings.root);
+            case 'c':
+                // root path
+                settings.create = strdup(optarg);
+                settings.rootlen = strlen(settings.create);
 
-                if(settings.root[settings.rootlen - 1] == '/') {
-                    settings.root[settings.rootlen - 1] = '\0';
+                if(settings.create[settings.rootlen - 1] == '/') {
+                    settings.create[settings.rootlen - 1] = '\0';
                     settings.rootlen -= 1;
                 }
-                break;
 
-            case 'c':
-                settings.create = 1;
-                settings.list = 0;
                 break;
 
             case '?':
@@ -196,20 +227,12 @@ int main(int argc, char *argv[]) {
     if(!settings.archive)
         usage(argv[0]);
 
-    if(settings.create && !settings.root)
-        usage(argv[0]);
-
-    #ifndef FLIST_DEBUG
-    if(settings.create)
-        dies("sorry, creating a flist is not ready for production now.");
-    #endif
-
     // process
     int value = flister();
 
     // cleaning
     free(settings.archive);
-    free(settings.root);
+    free(settings.create);
 
     return value;
 }
