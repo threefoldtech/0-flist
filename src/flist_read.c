@@ -291,22 +291,19 @@ static void flist_json(walker_t *walker, directory_t *root) {
 
         if(inode.attributes_which == Inode_attributes_file) {
             json->regular += 1;
-
-            sprintf(path, "file:/%s", inode.name.str);
             json_object_set_new(this, "size", json_integer(inode.size));
         }
 
         if(inode.attributes_which == Inode_attributes_link) {
-            json->symlink += 1;
+            struct Link link;
+            read_Link(&link, inode.attributes.link);
 
-            sprintf(path, "link:/%s", inode.name.str);
-            // json_object_set_new(this, "target", json_string());
+            json->symlink += 1;
+            json_object_set_new(this, "target", json_string(link.target.str));
         }
 
         if(inode.attributes_which == Inode_attributes_special) {
             json->special += 1;
-
-            sprintf(path, "special:/%s", inode.name.str);
         }
 
         json_array_append_new(json->content, this);
