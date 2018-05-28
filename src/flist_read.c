@@ -29,13 +29,15 @@ typedef struct directory_t {
 
 typedef struct walker_t {
     database_t *database;
-    void (*callback)(struct walker_t *, directory_t *, void *userptr);
+    void *userptr;
+    void (*callback)(struct walker_t *, directory_t *);
+    void (*postproc)(struct walker_t *);
 
 } walker_t;
 
 #define KEYLENGTH 32
 
-static int flist_directory_walk(walker_t *walker, const char *key, void *userptr);
+static int flist_directory_walk(walker_t *walker, const char *key);
 
 //
 // directory object reader
@@ -135,14 +137,25 @@ static char *permstr(unsigned int mode, char *modestr, size_t slen) {
     return modestr;
 }
 
+typedef struct tree_obj_t {
+    int level;
+
+} tree_obj_t;
+
+static void *flist_tree_init() {
+    void *target;
+
+    if(!(target = calloc(sizeof(tree_obj_t), 1)))
+        diep("calloc");
+
+    return target;
+}
+
 // generate a tree dump of all entries
-static void flist_tree(walker_t *walker, directory_t *root, void *userptr) {
-    int level = 0;
+static void flist_tree(walker_t *walker, directory_t *root) {
+    tree_obj_t *obj = (tree_obj_t *) walker->userptr;
 
-    if(userptr)
-        level = *((int *) userptr);
-
-    for(int i = 0; i < level; i++)
+    for(int i = 0; i < obj->level; i++)
         printf("    ");
 
     printf("| /%s\n", root->dir.location.str);
@@ -154,7 +167,7 @@ static void flist_tree(walker_t *walker, directory_t *root, void *userptr) {
         inodep.p = capn_getp(root->dir.contents.p, i, 1);
         read_Inode(&inode, inodep);
 
-        for(int i = 0; i < level; i++)
+        for(int i = 0; i < obj->level; i++)
             printf("    ");
 
         struct SubDir sub;
@@ -167,8 +180,10 @@ static void flist_tree(walker_t *walker, directory_t *root, void *userptr) {
 
                 printf("+-- %s\n", inode.name.str);
 
-                int newlevel = level + 1;
-                flist_directory_walk(walker, sub.key.str, &newlevel);
+                obj->level += 1;
+                flist_directory_walk(walker, sub.key.str);
+                obj->level -= 1;
+
                 break;
 
             case Inode_attributes_link:
@@ -187,9 +202,7 @@ static void flist_tree(walker_t *walker, directory_t *root, void *userptr) {
 
 // dumps contents using kind of 'ls -al' view
 // generate a list with type, permissions, size, blocks, name
-static void flist_ls(walker_t *walker, directory_t *root, void *userptr) {
-    (void) userptr;
-
+static void flist_ls(walker_t *walker, directory_t *root) {
     printf("/%s:\n", root->dir.location.str);
     // printf("[+] directory: /%s\n", dir.location.str);
     // printf("Parent: %s\n", dir.parent.str);
@@ -303,13 +316,12 @@ static void flist_ls(walker_t *walker, directory_t *root, void *userptr) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // we don't need userptr
-            flist_directory_walk(walker, sub.key.str, NULL);
+            flist_directory_walk(walker, sub.key.str);
         }
     }
 }
 
-static void flist_blocks(walker_t *walker, directory_t *root, void *userptr) {
-    (void) userptr;
+static void flist_blocks(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;
     struct Inode inode;
 
@@ -345,15 +357,14 @@ static void flist_blocks(walker_t *walker, directory_t *root, void *userptr) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // recursive list contents
-            flist_directory_walk(walker, sub.key.str, NULL);
+            flist_directory_walk(walker, sub.key.str);
         }
     }
 }
 
 // dumps (in a 'find' way) file contents
 // simple print one line per entries, with full path
-static void flist_dump(walker_t *walker, directory_t *root, void *userptr) {
-    (void) userptr;
+static void flist_dump(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;
     struct Inode inode;
 
@@ -373,7 +384,7 @@ static void flist_dump(walker_t *walker, directory_t *root, void *userptr) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // recursive list contents
-            flist_directory_walk(walker, sub.key.str, NULL);
+            flist_directory_walk(walker, sub.key.str);
         }
     }
 }
@@ -381,14 +392,14 @@ static void flist_dump(walker_t *walker, directory_t *root, void *userptr) {
 //
 // walker
 //
-static int flist_directory_walk(walker_t *walker, const char *key, void *userptr) {
+static int flist_directory_walk(walker_t *walker, const char *key) {
     directory_t *dir;
 
     if(!(dir = flist_directory_get(walker->database, key)))
         return 1;
 
     // walking over this directory
-    walker->callback(walker, dir, userptr);
+    walker->callback(walker, dir);
 
     // cleaning this directory
     flist_directory_close(dir);
@@ -400,11 +411,15 @@ static int flist_directory_walk(walker_t *walker, const char *key, void *userptr
 int flist_walk(database_t *database) {
     walker_t walker = {
         .database = database,
+        .userptr = NULL,
         .callback = flist_ls,
+        .postproc = NULL,
     };
 
-    if(settings.list == LIST_TREE)
+    if(settings.list == LIST_TREE) {
         walker.callback = flist_tree;
+        walker.userptr = flist_tree_init();
+    }
 
     if(settings.list == LIST_DUMP)
         walker.callback = flist_dump;
@@ -416,7 +431,7 @@ int flist_walk(database_t *database) {
     const char *key = pathkey("");
 
     // walking starting from the root
-    flist_directory_walk(&walker, key, NULL);
+    flist_directory_walk(&walker, key);
 
     // cleaning
     free((char *) key);
