@@ -23,6 +23,9 @@
         char *create;      // create root path
         size_t rootlen;    // create root string length
 
+        char *uploadhost;  // backend upload host
+        int uploadport;    // backend upload port
+
         list_mode_t list;  // list view mode
 
     } settings_t;

@@ -19,6 +19,7 @@ static struct option long_options[] = {
     {"create",  required_argument, 0, 'c'},
     {"output",  required_argument, 0, 'o'},
     {"archive", required_argument, 0, 'a'},
+    {"upload",  required_argument, 0, 'u'},
     {"verbose", no_argument,       0, 'v'},
     {"ramdisk", no_argument,       0, 'r'},
     {"root",    required_argument, 0, 'p'},
@@ -46,10 +47,11 @@ int usage(char *basename) {
     fprintf(stderr, "       %s --archive <filename> --create <root-path>\n", basename);
     fprintf(stderr, "\n");
     fprintf(stderr, "Command line options:\n");
-    fprintf(stderr, "  -a --archive <flist>    archive (flist) filename\n");
-    fprintf(stderr, "                          (this option is always required)\n\n");
+    fprintf(stderr, "  -a --archive <flist>     archive (flist) filename\n");
+    fprintf(stderr, "                           (this option is always required)\n\n");
 
-    fprintf(stderr, "  -c --create <root>      create an archive from <root> directory\n\n");
+    fprintf(stderr, "  -c --create <root>       create an archive from <root> directory\n\n");
+    fprintf(stderr, "  -u --upload <host:port>  upload files from creating archive, to the backend\n\n");
 
     fprintf(stderr, "  -l --list       list archive content\n");
     fprintf(stderr, "  -o --output     list output format, possible values:\n");
@@ -159,6 +161,8 @@ int main(int argc, char *argv[]) {
     settings.archive = NULL;
     settings.ramdisk = 0;
     settings.create = NULL;
+    settings.uploadhost = NULL;
+    settings.uploadport = 16379;
 
     while(1) {
         i = getopt_long(argc, argv, "lcta:vrp:h", long_options, &option_index);
@@ -167,11 +171,12 @@ int main(int argc, char *argv[]) {
             break;
 
         switch(i) {
-            case 'l':
+            case 'l': {
                 settings.list = LIST_LS;
                 break;
+            }
 
-            case 'o':
+            case 'o': {
                 if(!strcmp(optarg, "ls"))
                     settings.list = LIST_LS;
 
@@ -188,20 +193,45 @@ int main(int argc, char *argv[]) {
                     settings.list = LIST_BLOCKS;
 
                 break;
+            }
 
-            case 'a':
+            case 'a': {
                 settings.archive = strdup(optarg);
                 break;
+            }
 
-            case 'v':
+            case 'u': {
+                char *token;
+                size_t length;
+
+                settings.uploadhost = strdup(optarg);
+
+                // does the host contains the port
+                if((token = strchr(settings.uploadhost, ':'))) {
+                    length = token - settings.uploadhost;
+
+                    settings.uploadport = atoi(token + 1);
+                    settings.uploadhost[length] = '\0';
+                }
+
+                // maybe only the port was set with colon
+                // let's deny this
+                if(strlen(settings.uploadhost) == 0)
+                    dies("upload: missing hostname");
+                break;
+            }
+
+            case 'v': {
                 settings.verbose = 1;
                 break;
+            }
 
-            case 'r':
+            case 'r': {
                 settings.ramdisk = 1;
                 break;
+            }
 
-            case 'c':
+            case 'c': {
                 // root path
                 settings.create = strdup(optarg);
                 settings.rootlen = strlen(settings.create);
@@ -212,6 +242,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 break;
+            }
 
             case '?':
             case 'h':
@@ -233,6 +264,7 @@ int main(int argc, char *argv[]) {
     // cleaning
     free(settings.archive);
     free(settings.create);
+    free(settings.uploadhost);
 
     return value;
 }
