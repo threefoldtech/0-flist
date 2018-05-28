@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -171,12 +172,10 @@ static void flist_tree(walker_t *walker, directory_t *root) {
         for(int i = 0; i < obj->level; i++)
             printf("    ");
 
-        struct SubDir sub;
-        struct Link link;
-
         // writing inode information
         switch(inode.attributes_which) {
-            case Inode_attributes_dir:
+            case Inode_attributes_dir: {
+                struct SubDir sub;
                 read_SubDir(&sub, inode.attributes.dir);
 
                 printf("+-- %s\n", inode.name.str);
@@ -186,12 +185,15 @@ static void flist_tree(walker_t *walker, directory_t *root) {
                 obj->level -= 1;
 
                 break;
+            }
 
-            case Inode_attributes_link:
+            case Inode_attributes_link: {
+                struct Link link;
                 read_Link(&link, inode.attributes.link);
 
                 printf("| %s -> %s\n", inode.name.str, link.target.str);
                 break;
+            }
 
             case Inode_attributes_special:
             case Inode_attributes_file:
@@ -208,6 +210,7 @@ typedef struct flist_json_t {
     json_t *root;
     json_t *content;
 
+    size_t regular;
     size_t symlink;
     size_t directory;
     size_t special;
@@ -228,17 +231,87 @@ static void *flist_json_init() {
 }
 
 static void flist_json_dump(walker_t *walker) {
-    printf("DUMPING JSON OBJECT\n");
+    flist_json_t *json = (flist_json_t *) walker->userptr;
+
+    json_object_set_new(json->root, "regular", json_integer(json->regular));
+    json_object_set_new(json->root, "symlink", json_integer(json->symlink));
+    json_object_set_new(json->root, "directory", json_integer(json->directory));
+    json_object_set_new(json->root, "special", json_integer(json->special));
+    json_object_set_new(json->root, "content", json->content);
+
+    // char *output = json_dumps(json->root, JSON_INDENT(2));
+    char *output = json_dumps(json->root, 0);
+    json_decref(json->root);
+
+    puts(output);
+    free(output);
+}
+
+static char *flist_fullpath(directory_t *root, struct Inode *inode) {
+    char *path;
+
+    if(strlen(root->dir.location.str)) {
+        // item under a directory
+        if(asprintf(&path, "/%s/%s", root->dir.location.str, inode->name.str) < 0)
+            diep("asprintf");
+
+    } else {
+        // item on the root
+        if(asprintf(&path, "/%s", inode->name.str) < 0)
+            diep("asprintf");
+    }
+
+    return path;
 }
 
 static void flist_json(walker_t *walker, directory_t *root) {
-    flist_json_t *target = (flist_json_t *) walker->userptr;
-    json_t *this = json_object();
+    flist_json_t *json = (flist_json_t *) walker->userptr;
 
+    Inode_ptr inodep;
+    struct Inode inode;
 
+    for(int i = 0; i < capn_len(root->dir.contents); i++) {
+        inodep.p = capn_getp(root->dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
 
-    json_array_append_new(target->content, this);
+        char *path = flist_fullpath(root, &inode);
 
+        json_t *this = json_object();
+        json_object_set_new(this, "path", json_string(path));
+        json_object_set_new(this, "size", json_integer(0));
+
+        if(inode.attributes_which == Inode_attributes_dir) {
+            // recursive walking
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+            flist_directory_walk(walker, sub.key.str);
+
+            json->directory += 1;
+        }
+
+        if(inode.attributes_which == Inode_attributes_file) {
+            json->regular += 1;
+
+            sprintf(path, "file:/%s", inode.name.str);
+            json_object_set_new(this, "size", json_integer(inode.size));
+        }
+
+        if(inode.attributes_which == Inode_attributes_link) {
+            json->symlink += 1;
+
+            sprintf(path, "link:/%s", inode.name.str);
+            // json_object_set_new(this, "target", json_string());
+        }
+
+        if(inode.attributes_which == Inode_attributes_special) {
+            json->special += 1;
+
+            sprintf(path, "special:/%s", inode.name.str);
+        }
+
+        json_array_append_new(json->content, this);
+        free(path);
+    }
 
 }
 
@@ -480,6 +553,9 @@ int flist_walk(database_t *database) {
 
     // walking starting from the root
     flist_directory_walk(&walker, key);
+
+    if(walker.postproc)
+        walker.postproc(&walker);
 
     // cleaning
     free((char *) key);
