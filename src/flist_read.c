@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <rocksdb/c.h>
 #include <blake2.h>
+#include <jansson.h>
 #include "flister.h"
 #include "flist_read.h"
 #include "flist.capnp.h"
@@ -198,6 +199,47 @@ static void flist_tree(walker_t *walker, directory_t *root) {
                 break;
         }
     }
+}
+
+//
+// json
+//
+typedef struct flist_json_t {
+    json_t *root;
+    json_t *content;
+
+    size_t symlink;
+    size_t directory;
+    size_t special;
+
+} flist_json_t;
+
+static void *flist_json_init() {
+    flist_json_t *obj;
+
+    // create initial json root object
+    if(!(obj = (flist_json_t *) calloc(sizeof(flist_json_t), 1)))
+        diep("malloc");
+
+    obj->root = json_object();
+    obj->content = json_array();
+
+    return obj;
+}
+
+static void flist_json_dump(walker_t *walker) {
+    printf("DUMPING JSON OBJECT\n");
+}
+
+static void flist_json(walker_t *walker, directory_t *root) {
+    flist_json_t *target = (flist_json_t *) walker->userptr;
+    json_t *this = json_object();
+
+
+
+    json_array_append_new(target->content, this);
+
+
 }
 
 // dumps contents using kind of 'ls -al' view
@@ -426,6 +468,12 @@ int flist_walk(database_t *database) {
 
     if(settings.list == LIST_BLOCKS)
         walker.callback = flist_blocks;
+
+    if(settings.list == LIST_JSON) {
+        walker.callback = flist_json;
+        walker.postproc = flist_json_dump;
+        walker.userptr = flist_json_init();
+    }
 
     // root directory is an empty key
     const char *key = pathkey("");
