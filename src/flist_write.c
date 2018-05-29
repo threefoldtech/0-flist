@@ -224,8 +224,9 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
     directory->name = strdup(name);
 
     // some cleaning (remove trailing slash)
+    // but ignoring empty fullpath
     size_t lf = strlen(directory->fullpath);
-    if(directory->fullpath[lf - 1] == '/')
+    if(lf && directory->fullpath[lf - 1] == '/')
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = path_key(directory->fullpath);
@@ -234,6 +235,8 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
 }
 
 void dirnode_free(dirnode_t *directory) {
+    inode_acl_free(&directory->acl);
+
     free(directory->fullpath);
     free(directory->name);
     free(directory->hashkey);
@@ -259,6 +262,7 @@ void inode_free(inode_t *inode) {
     free(inode->fullpath);
     free(inode->sdata);
     free(inode->link);
+    free(inode->subdirkey);
     free(inode);
 }
 
@@ -367,7 +371,8 @@ static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
     }
 
     // incremental memory to build relative path step by step
-    if(!(incrpath = calloc(sizeof(char), strlen(fullpath) + 1)))
+    // using length + trailing slash + end of string
+    if(!(incrpath = calloc(sizeof(char), strlen(fullpath) + 2)))
         diep("directory lookup: calloc");
 
     // iterate over the fullpath, looking for directories
@@ -563,6 +568,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
     printf("[+] writing into db: %s\n", root->hashkey);
     database_set(database, root->hashkey, buffer, sz);
 
+    free(buffer);
+
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
         dirnode_tree_capn(subdir, database, root);
@@ -631,7 +638,10 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
 
     root->creation = sb->st_ctime;
     root->modification = sb->st_mtime;
-    root->acl = inode_acl(sb);
+
+    // skipping already set acl
+    if(!root->acl.key)
+        root->acl = inode_acl(sb);
 
     return 0;
 }
@@ -677,6 +687,8 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // if we are here, we are all done with the walking process
     if(ftwbuf->level == 0) {
         printf("======== ROOT PATH, WE ARE DONE ========\n");
+        free(relpath);
+
         return flist_dirnode_metadata(rootdir, sb);
     }
 

@@ -2,11 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <unistd.h>
-#include <rocksdb/c.h>
 #include <blake2.h>
-#include <jansson.h>
 #include "flister.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
