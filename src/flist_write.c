@@ -19,6 +19,7 @@
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
+#include "flist_upload.h"
 
 #define KEYLENGTH 32
 
@@ -470,6 +471,15 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     database_set(database, acl->key, buffer, sz);
 }
 
+static capn_ptr capn_datatext(struct capn_segment *cs, char *payload) {
+    size_t length = strlen(payload);
+
+    capn_list8 data = capn_new_list8(cs, length);
+    capn_setv8(data, 0, (uint8_t *) payload, length);
+
+    return data.p;
+}
+
 void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
@@ -528,9 +538,11 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
             };
 
             // see: https://github.com/opensourcerouting/c-capnproto/blob/master/lib/capnp_c.h#L196
-            capn_list8 data = capn_new_list8(cs, 1);
-            capn_setv8(data, 0, (uint8_t *) inode->sdata, strlen(inode->sdata));
-            sp.data.p = data.p;
+            sp.data.p = capn_datatext(cs, inode->sdata);
+
+            // capn_list8 data = capn_new_list8(cs, 1);
+            // capn_setv8(data, 0, (uint8_t *) inode->sdata, strlen(inode->sdata));
+            // sp.data.p = data.p;
 
             target.attributes.special = new_Special(cs);
             write_Special(&sp, target.attributes.special);
@@ -538,9 +550,29 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
         if(inode->type == INODE_FILE) {
             struct File f = {
-                .blockSize = 128, // ignored
-                // FIXME: .blocks
+                .blockSize = 128, // ignored, hardcoded value
             };
+
+            // upload non-empty files
+            if(inode->size && settings.uploadhost) {
+                chunks_t *chunks;
+
+                if(!(chunks = upload_inode(settings.create, root->fullpath, inode->name)))
+                    dies("upload failed: unexpected error");
+
+                f.blocks = new_FileBlock_list(cs, chunks->length);
+
+                for(size_t i = 0; i < chunks->length; i++) {
+                    struct FileBlock block;
+
+                    block.hash.p = capn_datatext(cs, chunks->chunks[i].id);
+                    block.key.p = capn_datatext(cs, chunks->chunks[i].cipher);
+
+                    set_FileBlock(&block, f.blocks, i);
+                }
+
+                chunks_free(chunks);
+            }
 
             target.attributes.file = new_File(cs);
             write_File(&f, target.attributes.file);
@@ -766,6 +798,7 @@ int flist_create(database_t *database, const char *root) {
 
     printf("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(rootdir);
+    upload_free();
 
     return 0;
 }
