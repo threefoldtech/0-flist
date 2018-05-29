@@ -12,7 +12,7 @@ release: LDFLAGS = -static -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_
 release: $(EXEC)
 
 $(EXEC): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
