@@ -75,13 +75,13 @@ typedef struct inode_t {
 
 } inode_t;
 
-typedef struct directory_t {
+typedef struct dirnode_t {
     struct inode_t *inode_list;
     struct inode_t *inode_last;
     size_t inode_length;
 
-    struct directory_t *dir_list;
-    struct directory_t *dir_last;
+    struct dirnode_t *dir_list;
+    struct dirnode_t *dir_last;
     size_t dir_length;
 
     char *fullpath;        // virtual full path
@@ -92,9 +92,9 @@ typedef struct directory_t {
     time_t creation;       // creation time
     time_t modification;   // modification time
 
-    struct directory_t *next;
+    struct dirnode_t *next;
 
-} directory_t;
+} dirnode_t;
 
 //
 // md5 helper
@@ -211,13 +211,13 @@ static char *path_key(const char *path) {
 }
 
 
-static directory_t *rootdir = NULL;
-static directory_t *currentdir = NULL;
+static dirnode_t *rootdir = NULL;
+static dirnode_t *currentdir = NULL;
 
-static directory_t *directory_create(char *fullpath, char *name) {
-    directory_t *directory;
+static dirnode_t *dirnode_create(char *fullpath, char *name) {
+    dirnode_t *directory;
 
-    if(!(directory = calloc(sizeof(directory_t), 1)))
+    if(!(directory = calloc(sizeof(dirnode_t), 1)))
         return NULL;
 
     directory->fullpath = strdup(fullpath);
@@ -233,7 +233,7 @@ static directory_t *directory_create(char *fullpath, char *name) {
     return directory;
 }
 
-void directory_free(directory_t *directory) {
+void dirnode_free(dirnode_t *directory) {
     free(directory->fullpath);
     free(directory->name);
     free(directory->hashkey);
@@ -262,7 +262,7 @@ void inode_free(inode_t *inode) {
     free(inode);
 }
 
-void inode_dumps(inode_t *inode, directory_t *rootdir) {
+void inode_dumps(inode_t *inode, dirnode_t *rootdir) {
     printf("[+] inode: rootdir: 0x%p\n", rootdir);
     printf("[+] inode: %s: %s/%s\n", inode_type_str[inode->type], rootdir->fullpath, inode->name);
 
@@ -278,7 +278,7 @@ void inode_dumps(inode_t *inode, directory_t *rootdir) {
         printf("[+] inode:   special: %s\n", inode->sdata);
 }
 
-static directory_t *directory_appends_inode(directory_t *root, inode_t *inode) {
+static dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
     inode->next = NULL;
 
     if(!root->inode_list)
@@ -293,7 +293,7 @@ static directory_t *directory_appends_inode(directory_t *root, inode_t *inode) {
     return root;
 }
 
-static directory_t *directory_appends_directory(directory_t *root, directory_t *dir) {
+static dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     dir->next = NULL;
 
     if(!root->dir_list)
@@ -308,13 +308,13 @@ static directory_t *directory_appends_directory(directory_t *root, directory_t *
     return root;
 }
 
-static directory_t *directory_search(directory_t *root, char *dirname) {
+static dirnode_t *dirnode_search(dirnode_t *root, char *dirname) {
     // directory empty (no list already set)
     if(!root->dir_list)
         return NULL;
 
     // iterating over directories
-    for(directory_t *source = root->dir_list; source; source = source->next) {
+    for(dirnode_t *source = root->dir_list; source; source = source->next) {
         if(strcmp(source->name, dirname) == 0)
             return source;
     }
@@ -323,8 +323,8 @@ static directory_t *directory_search(directory_t *root, char *dirname) {
     return NULL;
 }
 
-static directory_t *directory_lookup_step(directory_t *root, char *token, char *incrpath) {
-    directory_t *subdir = NULL;
+static dirnode_t *dirnode_lookup_step(dirnode_t *root, char *token, char *incrpath) {
+    dirnode_t *subdir = NULL;
 
     // incrpath can be safely strcat, the memory allocated
     // is the same length of the fullpath
@@ -333,21 +333,21 @@ static directory_t *directory_lookup_step(directory_t *root, char *token, char *
 
     // looking for that directory
     // if it doesn't exists, create a new one
-    if(!(subdir = directory_search(root, token))) {
-        if(!(subdir = directory_create(incrpath, token)))
+    if(!(subdir = dirnode_search(root, token))) {
+        if(!(subdir = dirnode_create(incrpath, token)))
             return NULL;
 
-        directory_appends_directory(root, subdir);
+        dirnode_appends_dirnode(root, subdir);
     }
 
     // looking for newt token
     if(!(token = strtok(NULL, "/")))
         return subdir;
 
-    return directory_lookup_step(subdir, token, incrpath);
+    return dirnode_lookup_step(subdir, token, incrpath);
 }
 
-static directory_t *directory_lookup(directory_t *root, const char *fullpath) {
+static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
     char *token;
     char *incrpath;
     char *fulldup;
@@ -371,20 +371,20 @@ static directory_t *directory_lookup(directory_t *root, const char *fullpath) {
         diep("directory lookup: calloc");
 
     // iterate over the fullpath, looking for directories
-    directory_t *target = directory_lookup_step(root, token, incrpath);
+    dirnode_t *target = dirnode_lookup_step(root, token, incrpath);
     free(fulldup);
     free(incrpath);
 
     return target;
 }
 
-static void directory_dumps(directory_t *root) {
+static void dirnode_dumps(dirnode_t *root) {
     printf("[+] directory: %s [%s]\n", root->name, root->fullpath);
     printf("[+] contents: subdirectories: %lu\n", root->dir_length);
     printf("[+] contents: inodes: %lu\n", root->inode_length);
 
-    for(directory_t *source = root->dir_list; source; source = source->next) {
-        directory_dumps(source);
+    for(dirnode_t *source = root->dir_list; source; source = source->next) {
+        dirnode_dumps(source);
 
         if(source->acl.key == NULL)
             dies("directory aclkey not set");
@@ -398,11 +398,11 @@ static void directory_dumps(directory_t *root) {
     }
 }
 
-static void directory_tree_free(directory_t *root) {
-    for(directory_t *source = root->dir_list; source; ) {
-        directory_t *next = source->next;
+static void dirnode_tree_free(dirnode_t *root) {
+    for(dirnode_t *source = root->dir_list; source; ) {
+        dirnode_t *next = source->next;
 
-        directory_tree_free(source);
+        dirnode_tree_free(source);
         source = next;
     }
 
@@ -413,7 +413,7 @@ static void directory_tree_free(directory_t *root) {
         inode = next;
     }
 
-    directory_free(root);
+    dirnode_free(root);
 }
 
 //
@@ -465,7 +465,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     database_set(database, acl->key, buffer, sz);
 }
 
-void directory_tree_capn(directory_t *root, database_t *database, directory_t *parent) {
+void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -564,14 +564,14 @@ void directory_tree_capn(directory_t *root, database_t *database, directory_t *p
     database_set(database, root->hashkey, buffer, sz);
 
     // walking over the sub-directories
-    for(directory_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        directory_tree_capn(subdir, database, root);
+    for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
+        dirnode_tree_capn(subdir, database, root);
 }
 
 //
 // walker
 //
-static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, directory_t *parent) {
+static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, dirnode_t *parent) {
     inode_t *inode;
 
     char vpath[PATH_MAX];
@@ -626,7 +626,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     return inode;
 }
 
-static int flist_directory_metadata(directory_t *root, const struct stat *sb) {
+static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
     printf("[+] fixing root directory: %s\n", root->fullpath);
 
     root->creation = sb->st_ctime;
@@ -664,8 +664,8 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         const char *virtual = fpath + settings.rootlen + 1;
         printf("[+] all subdirectories done for: %s\n", virtual);
 
-        directory_t *myself = directory_lookup(rootdir, virtual);
-        flist_directory_metadata(myself, sb);
+        dirnode_t *myself = dirnode_lookup(rootdir, virtual);
+        flist_dirnode_metadata(myself, sb);
 
         // clear global currentdir
         // will be reset later with right options
@@ -677,7 +677,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // if we are here, we are all done with the walking process
     if(ftwbuf->level == 0) {
         printf("======== ROOT PATH, WE ARE DONE ========\n");
-        return flist_directory_metadata(rootdir, sb);
+        return flist_dirnode_metadata(rootdir, sb);
     }
 
     // if the global current directory is not set
@@ -685,7 +685,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // change, let's lookup (again) this relative directory to set the global
     // currentdir correctly
     if(!currentdir) {
-        if(!(currentdir = directory_lookup(rootdir, relpath)))
+        if(!(currentdir = dirnode_lookup(rootdir, relpath)))
             return 1;
     }
 
@@ -706,17 +706,17 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     printf("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
     inode_t *inode = flist_process_file(itemname, sb, fpath, currentdir);
-    directory_appends_inode(currentdir, inode);
+    dirnode_appends_inode(currentdir, inode);
 
     // this is maybe an empty directory, we don't know
     // in doubt, let's call lookup in order to create
     // entry if it doesn't exists
     if(inode->type == INODE_DIRECTORY) {
-        directory_t *check = directory_lookup(rootdir, inode->fullpath);
+        dirnode_t *check = dirnode_lookup(rootdir, inode->fullpath);
 
         // if the directory is never reached anyway
         // metadata won't be set anywhere else
-        flist_directory_metadata(check, sb);
+        flist_dirnode_metadata(check, sb);
     }
 
     // if relpath is empty, we are doing some stuff
@@ -738,7 +738,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
 int flist_create(database_t *database, const char *root) {
     printf("[+] preparing flist for: %s\n", root);
 
-    if(!(rootdir = directory_create("", "")))
+    if(!(rootdir = dirnode_create("", "")))
         return 1;
 
     printf("[+] building database\n");
@@ -746,14 +746,14 @@ int flist_create(database_t *database, const char *root) {
         diep("nftw");
 
     printf("===================================\n");
-    directory_dumps(rootdir);
+    dirnode_dumps(rootdir);
 
     printf("===================================\n");
     printf("[+] building capnp from memory tree\n");
-    directory_tree_capn(rootdir, database, rootdir);
+    dirnode_tree_capn(rootdir, database, rootdir);
 
     printf("[+] recursivly freeing directory tree\n");
-    directory_tree_free(rootdir);
+    dirnode_tree_free(rootdir);
 
     return 0;
 }
