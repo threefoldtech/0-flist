@@ -15,6 +15,12 @@
 
     } list_mode_t;
 
+    typedef struct merge_list_t {
+        size_t length;
+        char **sources;
+
+    } merge_list_t;
+
     typedef struct settings_t {
         int verbose;       // enable verbose output
         int ramdisk;       // do we extract to ramdisk
@@ -26,7 +32,8 @@
         char *uploadhost;  // backend upload host
         int uploadport;    // backend upload port
 
-        list_mode_t list;  // list view mode
+        list_mode_t list;    // list view mode
+        merge_list_t merge;  // list of merging flists
 
     } settings_t;
 

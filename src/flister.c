@@ -20,6 +20,7 @@ static struct option long_options[] = {
     {"output",  required_argument, 0, 'o'},
     {"archive", required_argument, 0, 'a'},
     {"upload",  required_argument, 0, 'u'},
+    {"merge",   required_argument, 0, 'm'},
     {"verbose", no_argument,       0, 'v'},
     {"ramdisk", no_argument,       0, 'r'},
     {"root",    required_argument, 0, 'p'},
@@ -101,6 +102,15 @@ static int flister_list(char *workspace) {
     return 0;
 }
 
+static int flister_merge(char *workspace) {
+    for(size_t i = 0; i < settings.merge.length; i++)
+        printf("Merging: <%s>\n", settings.merge.sources[i]);
+
+    //
+    //
+    return 0;
+}
+
 static int flister() {
     char *workspace;
 
@@ -134,6 +144,15 @@ static int flister() {
             goto clean;
     }
 
+    //
+    // merging
+    //
+    if(settings.merge.length) {
+        verbose("[+] merging flists\n");
+        if(flister_merge(workspace))
+            goto clean;
+    }
+
 clean:
     if(settings.ramdisk) {
         verbose("[+] cleaning ramdisk\n");
@@ -155,13 +174,11 @@ int main(int argc, char *argv[]) {
     int option_index = 0;
     int i;
 
-    // initializing settings
+    // reset settings
+    memset(&settings, 0, sizeof(settings_t));
+
+    // initializing default settings
     settings.list = LIST_DISABLED;
-    settings.verbose = 0;
-    settings.archive = NULL;
-    settings.ramdisk = 0;
-    settings.create = NULL;
-    settings.uploadhost = NULL;
     settings.uploadport = 16379;
 
     while(1) {
@@ -221,6 +238,19 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
+            case 'm': {
+                // shortcut
+                merge_list_t *m = &settings.merge;
+
+                m->length += 1;
+                if(!(m->sources = (char **) realloc(m->sources, m->length * sizeof(char *))))
+                    diep("merge realloc");
+
+                m->sources[m->length - 1] = optarg;
+                break;
+            }
+
+
             case 'v': {
                 settings.verbose = 1;
                 break;
@@ -265,6 +295,7 @@ int main(int argc, char *argv[]) {
     free(settings.archive);
     free(settings.create);
     free(settings.uploadhost);
+    free(settings.merge.sources);
 
     return value;
 }
