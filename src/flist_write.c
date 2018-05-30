@@ -728,10 +728,14 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we can be in the first call or in a call relative to a subdirectory
     // change, let's lookup (again) this relative directory to set the global
     // currentdir correctly
-    if(!currentdir) {
-        if(!(currentdir = dirnode_lookup(rootdir, relpath)))
-            return 1;
-    }
+    // if(!currentdir) {
+    //
+    // FIX: force to reset currentdir each time
+    //      there are some bug when trusting this safe
+    if(!(currentdir = dirnode_lookup(rootdir, relpath)))
+        return 1;
+
+    // } else printf("current dir set\n");
 
     printf("[+] current directory: %s (%s)\n", currentdir->name, currentdir->fullpath);
 
