@@ -74,12 +74,13 @@ static int flister_create(char *workspace) {
     // building database
     flist_create(database, settings.create);
 
+    // closing database before archiving
+    verbose("[+] closing database\n");
+    database_close(database);
+
     // removing possible already existing db
     unlink(settings.archive);
     archive_create(settings.archive, workspace);
-
-    verbose("[+] closing database\n");
-    database_close(database);
 
     return 0;
 }

@@ -117,7 +117,7 @@ int archive_create(char *filename, char *source) {
     int retval = archive_compress(tempfile, filename);
 
     // cleaning
-    // unlink(tempfile);
+    unlink(tempfile);
     free(tempfile);
 
     return retval;
