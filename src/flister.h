@@ -5,6 +5,12 @@
     void dies(const char *str);
     void warnp(const char *str);
 
+    #ifdef FLIST_DEBUG
+        #define debug(...) { printf(__VA_ARGS__); }
+    #else
+        #define debug(...) ((void)0)
+    #endif
+
     typedef enum list_mode_t {
         LIST_DISABLED,
         LIST_LS,

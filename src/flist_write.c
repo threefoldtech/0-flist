@@ -357,7 +357,7 @@ static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
     char *incrpath;
     char *fulldup;
 
-    printf("[+] directory lookup: %s\n", fullpath);
+    debug("[+] directory lookup: %s\n", fullpath);
 
     // duplicate fullpath
     // strtok change the string, we don't want to
@@ -467,7 +467,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     int sz = capn_write_mem(&c, buffer, 4096, 0);
     capn_free(&c);
 
-    printf("[+] writing acl into db: %s\n", acl->key);
+    verbose("[+] writing acl into db: %s\n", acl->key);
     if(database_set(database, acl->key, buffer, sz))
         dies("acl database error");
 }
@@ -487,7 +487,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
     capn_ptr cr = capn_root(&c);
     struct capn_segment *cs = cr.seg;
 
-    printf("[+] populating directory: %s\n", root->fullpath);
+    verbose("[+] populating directory: %s\n", root->fullpath);
 
     // creating this directory entry
     struct Dir dir = {
@@ -598,7 +598,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
     capn_free(&c);
 
     // commit this object into the database
-    printf("[+] writing into db: %s\n", root->hashkey);
+    verbose("[+] writing into db: %s\n", root->hashkey);
     if(database_set(database, root->hashkey, buffer, sz))
         dies("database error");
 
@@ -668,7 +668,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
 }
 
 static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
-    printf("[+] fixing root directory: %s\n", root->fullpath);
+    debug("[+] fixing root directory: %s\n", root->fullpath);
 
     root->creation = sb->st_ctime;
     root->modification = sb->st_mtime;
@@ -706,7 +706,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // itself (like it's acl, etc.) let set this now here
     if(typeflag == FTW_DP) {
         const char *virtual = fpath + settings.rootlen + 1;
-        printf("[+] all subdirectories done for: %s\n", virtual);
+        verbose("[+] all subdirectories done for: %s\n", virtual);
 
         dirnode_t *myself = dirnode_lookup(rootdir, virtual);
         flist_dirnode_metadata(myself, sb);
@@ -720,7 +720,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // this directory should not be proceed since we have a virtual root
     // if we are here, we are all done with the walking process
     if(ftwbuf->level == 0) {
-        printf("======== ROOT PATH, WE ARE DONE ========\n");
+        printf("[+] ======== ROOT PATH, WE ARE DONE ========\n");
         free(relpath);
 
         return flist_dirnode_metadata(rootdir, sb);
@@ -739,7 +739,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
 
     // } else printf("current dir set\n");
 
-    printf("[+] current directory: %s (%s)\n", currentdir->name, currentdir->fullpath);
+    debug("[+] current directory: %s (%s)\n", currentdir->name, currentdir->fullpath);
 
     // processing the real entry
     // this can be a file, a directory, anything
@@ -753,7 +753,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we can just parse the stat struct, fill-in our inode object and add it to the
     // currentdir object
     const char *itemname = fpath + ftwbuf->base;
-    printf("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
+    verbose("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
     inode_t *inode = flist_process_file(itemname, sb, fpath, currentdir);
     dirnode_appends_inode(currentdir, inode);
@@ -776,7 +776,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we set nftw to parse directories first, which mean we always goes
     // as deep as possible on each call
     if(strlen(relpath) == 0) {
-        printf("[+] touching virtual root directory, reseting current directory\n");
+        verbose("[+] touching virtual root directory, reseting current directory\n");
         currentdir = NULL;
     }
 
@@ -795,10 +795,12 @@ int flist_create(database_t *database, const char *root) {
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
+    /*
     printf("===================================\n");
     dirnode_dumps(rootdir);
+    */
 
-    printf("===================================\n");
+    printf("[+] =========================================\n");
     printf("[+] building capnp from memory tree\n");
     dirnode_tree_capn(rootdir, database, rootdir);
 

@@ -8,7 +8,7 @@ all: LDFLAGS = -g -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocks
 all: $(EXEC)
 
 release: CFLAGS  = -std=c99 -W -Wall -O2
-release: LDFLAGS = -static -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto -ljansson -l0stor -lhiredis
+release: LDFLAGS = -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto -ljansson -l0stor -lhiredis
 release: $(EXEC)
 
 $(EXEC): $(OBJ)

@@ -91,7 +91,7 @@ static chunks_t *upload_file(upload_t *context, char *filename) {
         diep("upload: chunks: calloc");
 
     // processing each chunks
-    printf("[+] processing %d chunks\n", buffer->chunks);
+    debug("[+] processing %d chunks\n", buffer->chunks);
     for(int i = 0; i < buffer->chunks; i++) {
         const unsigned char *data = buffer_next(buffer);
 
@@ -109,7 +109,7 @@ static chunks_t *upload_file(upload_t *context, char *filename) {
         chunk_free(chunk);
     }
 
-    printf("[+] finalsize: %lu bytes\n", chunks->upsize);
+    debug("[+] finalsize: %lu bytes\n", chunks->upsize);
 
     // cleaning
     buffer_free(buffer);
