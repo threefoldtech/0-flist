@@ -468,7 +468,8 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     capn_free(&c);
 
     printf("[+] writing acl into db: %s\n", acl->key);
-    database_set(database, acl->key, buffer, sz);
+    if(database_set(database, acl->key, buffer, sz))
+        dies("acl database error");
 }
 
 static capn_ptr capn_datatext(struct capn_segment *cs, char *payload) {
@@ -598,7 +599,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
     // commit this object into the database
     printf("[+] writing into db: %s\n", root->hashkey);
-    database_set(database, root->hashkey, buffer, sz);
+    if(database_set(database, root->hashkey, buffer, sz))
+        dies("database error");
 
     free(buffer);
 
@@ -802,6 +804,8 @@ int flist_create(database_t *database, const char *root) {
 
     printf("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(rootdir);
+    upload_inode_flush();
+
     upload_free();
 
     return 0;

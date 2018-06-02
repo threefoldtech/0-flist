@@ -37,6 +37,9 @@ static database_t *database_init(char *root, int create) {
     if(create)
         rocksdb_options_set_create_if_missing(database->options, 1);
 
+    // 512 MB
+    rocksdb_options_set_write_buffer_size(database->options, 512 * 1024 * 1024);
+
     // opening database and options handler
     database->db = rocksdb_open(database->options, root, &err);
     database->readoptions = rocksdb_readoptions_create();

@@ -14,12 +14,16 @@
 
 // FIXME: don't use global variable
 typedef struct upload_t {
-    redisContext *redis;
+    redisContext *redis;  // redis context
+    int pwrite;           // pending write
+    size_t buflen;        // buffer length
 
 } upload_t;
 
 upload_t upcontext = {
-    .redis = NULL
+    .redis = NULL,
+    .pwrite = 0,
+    .buflen = 0,
 };
 
 static redisContext *upload_connect(upload_t *context, char *hostname, int port) {
@@ -37,34 +41,39 @@ void upload_free() {
         redisFree(upcontext.redis);
 }
 
-static int chunk_upload(redisContext *redis, chunk_t *chunk) {
+void upload_flush(upload_t *context) {
     redisReply *reply;
-    int retval = 0;
 
-    // does key already exists
-    reply = redisCommand(redis, "EXISTS %s", chunk->id);
-    if(reply->type == REDIS_REPLY_INTEGER) {
-        if(reply->integer == 1) {
-            freeReplyObject(reply);
-            return 1;
+    printf("[+] upload: flushing: %d items (%.2f KB)\n", context->pwrite, context->buflen / 1024.0);
+
+    for(int i = 0; i < context->pwrite; i++) {
+        redisGetReply(context->redis, &reply);
+
+        if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
+            fprintf(stderr, "[-] redis error\n");
         }
+
+        freeReplyObject(reply);
     }
 
-    freeReplyObject(reply);
-
-    // insert new key
-    reply = redisCommand(redis, "SET %s %b", chunk->id, chunk->data, chunk->length);
-    if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
-        fprintf(stderr, "[-] redis error\n");
-        retval = 1;
-    }
-
-    freeReplyObject(reply);
-
-    return retval;
+    context->pwrite = 0;
+    context->buflen = 0;
 }
 
-static chunks_t *upload_file(redisContext *redis, char *filename) {
+static int chunk_upload(upload_t *context, chunk_t *chunk) {
+    // insert new key
+    redisAppendCommand(context->redis, "SET %s %b", chunk->id, chunk->data, chunk->length);
+    context->pwrite += 1;
+    context->buflen += chunk->length;
+
+    // flush 32 MB
+    if(context->buflen > 32 * 1024 * 1024) {
+        upload_flush(context);
+
+    return 0;
+}
+
+static chunks_t *upload_file(upload_t *context, char *filename) {
     buffer_t *buffer;
     chunks_t *chunks;
 
@@ -94,7 +103,7 @@ static chunks_t *upload_file(redisContext *redis, char *filename) {
         chunks->upsize += chunk->length;
 
         // hiredis upload
-        chunk_upload(redis, chunk);
+        chunk_upload(context, chunk);
 
         // cleaning
         chunk_free(chunk);
@@ -127,9 +136,12 @@ chunks_t *upload_inode(char *root, char *path, char *filename) {
     if(asprintf(&physical, "%s/%s/%s", root, path, filename) < 0)
         diep("asprintf");
 
-    chunks_t *chunks = upload_file(upcontext.redis, physical);
+    chunks_t *chunks = upload_file(&upcontext, physical);
     free(physical);
 
     return chunks;
 }
 
+void upload_inode_flush() {
+    upload_flush(&upcontext);
+}

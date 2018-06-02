@@ -17,6 +17,8 @@
     } chunks_t;
 
     chunks_t *upload_inode(char *root, char *path, char *filename);
+    void upload_inode_flush();
+
     void chunks_free(chunks_t *chunks);
 
     // FIXME
