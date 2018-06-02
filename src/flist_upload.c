@@ -47,7 +47,7 @@ void upload_flush(upload_t *context) {
     printf("[+] upload: flushing: %d items (%.2f KB)\n", context->pwrite, context->buflen / 1024.0);
 
     for(int i = 0; i < context->pwrite; i++) {
-        redisGetReply(context->redis, &reply);
+        redisGetReply(context->redis, (void **) &reply);
 
         if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
             fprintf(stderr, "[-] redis error\n");
@@ -67,7 +67,7 @@ static int chunk_upload(upload_t *context, chunk_t *chunk) {
     context->buflen += chunk->length;
 
     // flush 32 MB
-    if(context->buflen > 32 * 1024 * 1024) {
+    if(context->buflen > 32 * 1024 * 1024)
         upload_flush(context);
 
     return 0;
