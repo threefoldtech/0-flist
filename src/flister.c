@@ -23,6 +23,7 @@ static struct option long_options[] = {
     {"upload",  required_argument, 0, 'u'},
     {"merge",   required_argument, 0, 'm'},
     {"ramdisk", no_argument,       0, 'r'},
+    {"json",    no_argument,       0, 'j'},
     {"root",    required_argument, 0, 'p'},
     {"help",    no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -59,9 +60,10 @@ int usage(char *basename) {
     fprintf(stderr, "                    ls      show kind of 'ls -al' contents (default)\n");
     fprintf(stderr, "                    tree    show contents in a tree view\n");
     fprintf(stderr, "                    dump    debug dump of contents\n");
-    fprintf(stderr, "                    json    file list summary in json format\n\n");
+    fprintf(stderr, "                    json    file list summary in json format (same as --json)\n\n");
     fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n\n");
 
+    fprintf(stderr, "  -j --json       provide (exclusively) json output status\n");
     fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
     fprintf(stderr, "  -h --help       shows this help message\n");
     exit(EXIT_FAILURE);
@@ -85,6 +87,11 @@ static int flister_create(char *workspace) {
 }
 
 static int flister_list(char *workspace) {
+    // if json flag is set, ensure we output
+    // json format listing
+    if(settings.json)
+        settings.list = LIST_JSON;
+
     if(!archive_extract(settings.archive, workspace)) {
         warnp("archive_extract");
         return 1;
@@ -212,12 +219,19 @@ int main(int argc, char *argv[]) {
                 if(!strcmp(optarg, "dump"))
                     settings.list = LIST_DUMP;
 
-                if(!strcmp(optarg, "json"))
-                    settings.list = LIST_JSON;
-
                 if(!strcmp(optarg, "blocks"))
                     settings.list = LIST_BLOCKS;
 
+                if(!strcmp(optarg, "json")) {
+                    settings.json = 1;
+                    settings.list = LIST_JSON;
+                }
+
+                break;
+            }
+
+            case 'j': {
+                settings.json = 1;
                 break;
             }
 

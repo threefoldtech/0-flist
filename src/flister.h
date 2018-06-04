@@ -37,6 +37,7 @@
         char *uploadhost;  // backend upload host
         int uploadport;    // backend upload port
 
+        int json;            // json output flag
         list_mode_t list;    // list view mode
         merge_list_t merge;  // list of merging flists
 
