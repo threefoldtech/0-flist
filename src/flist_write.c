@@ -16,10 +16,44 @@
 #include <grp.h>
 #include <sys/sysmacros.h>
 #include <openssl/md5.h>
+#include <regex.h>
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "flist_upload.h"
+
+// hardcoded version of the 0-hub
+const char *excluderstr[] = {
+    "\\.pyc$",
+    ".*__pycache__",
+};
+
+regex_t excluders[sizeof(excluderstr) / sizeof(char *)] = {0};
+
+void excluders_init() {
+    int errcode;
+    char errstr[1024];
+
+    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
+        if((errcode = regcomp(&excluders[i], excluderstr[i], REG_NOSUB | REG_EXTENDED))) {
+            regerror(errcode, &excluders[i], errstr, sizeof(errstr));
+            dies(errstr);
+        }
+    }
+}
+
+int excluders_matches(const char *input) {
+    // allows empty strings
+    if(strlen(input) == 0)
+        return 0;
+
+    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
+        if(regexec(&excluders[i], input, 0, NULL, 0) != REG_NOMATCH)
+            return 1;
+    }
+
+    return 0;
+}
 
 #define KEYLENGTH 32
 
@@ -684,6 +718,13 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     ssize_t length = ftwbuf->base - settings.rootlen - 1;
     char *relpath;
 
+    // checking if entry is rejected by exclude filter
+    // if exclude match, we don't parse this entry at all
+    if(excluders_matches(fpath)) {
+        verbose("[+] skipping [%s] from exclude filters\n", fpath);
+        return 0;
+    }
+
     // building current path (called 'relative path')
     // this relative path is relative to the root filesystem tree
     // but is kind of absolute for our virtual root we are building
@@ -787,6 +828,9 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
 
 int flist_create(database_t *database, const char *root) {
     printf("[+] preparing flist for: %s\n", root);
+
+    // initialize excluders
+    excluders_init();
 
     if(!(rootdir = dirnode_create("", "")))
         return 1;
