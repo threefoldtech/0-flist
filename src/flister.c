@@ -10,6 +10,7 @@
 #include "workspace.h"
 #include "database.h"
 #include "flist_listing.h"
+#include "flist_merger.h"
 #include "flist_write.h"
 
 settings_t settings;
@@ -102,11 +103,20 @@ static int flister_list(char *workspace) {
 }
 
 static int flister_merge(char *workspace) {
-    for(size_t i = 0; i < settings.merge.length; i++)
-        printf("Merging: <%s>\n", settings.merge.sources[i]);
+    database_t *database = database_create(workspace);
 
-    //
-    //
+    // building database
+    flist_merger(database, &settings.merge);
+
+    // closing database before archiving
+    debug("[+] closing database\n");
+    database_close(database);
+
+    // removing possible already existing db
+    unlink(settings.archive);
+    archive_create(settings.archive, workspace);
+
+
     return 0;
 }
 
