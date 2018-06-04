@@ -21,7 +21,6 @@ static struct option long_options[] = {
     {"archive", required_argument, 0, 'a'},
     {"upload",  required_argument, 0, 'u'},
     {"merge",   required_argument, 0, 'm'},
-    {"verbose", no_argument,       0, 'v'},
     {"ramdisk", no_argument,       0, 'r'},
     {"root",    required_argument, 0, 'p'},
     {"help",    no_argument,       0, 'h'},
@@ -43,7 +42,7 @@ void dies(const char *str) {
 }
 
 int usage(char *basename) {
-    fprintf(stderr, "Usage: %s [options] --verbose\n", basename);
+    fprintf(stderr, "Usage: %s [options]\n", basename);
     fprintf(stderr, "       %s --archive <filename> --list [--output tree]\n", basename);
     fprintf(stderr, "       %s --archive <filename> --create <root-path>\n", basename);
     fprintf(stderr, "\n");
@@ -63,7 +62,6 @@ int usage(char *basename) {
     fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n\n");
 
     fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
-    fprintf(stderr, "  -v --verbose    enable verbose messages\n");
     fprintf(stderr, "  -h --help       shows this help message\n");
     exit(EXIT_FAILURE);
 }
@@ -75,7 +73,7 @@ static int flister_create(char *workspace) {
     flist_create(database, settings.create);
 
     // closing database before archiving
-    verbose("[+] closing database\n");
+    debug("[+] closing database\n");
     database_close(database);
 
     // removing possible already existing db
@@ -91,13 +89,13 @@ static int flister_list(char *workspace) {
         return 1;
     }
 
-    verbose("[+] loading rocksdb database\n");
+    debug("[+] loading rocksdb database\n");
     database_t *database = database_open(workspace);
 
-    verbose("[+] walking over database\n");
+    debug("[+] walking over database\n");
     flist_listing(database);
 
-    verbose("[+] closing database\n");
+    debug("[+] closing database\n");
     database_close(database);
 
     return 0;
@@ -115,24 +113,24 @@ static int flister_merge(char *workspace) {
 static int flister() {
     char *workspace;
 
-    verbose("[+] initializing workspace\n");
+    debug("[+] initializing workspace\n");
     if(!(workspace = workspace_create()))
         diep("workspace_create");
 
     if(settings.ramdisk) {
-        verbose("[+] initializing ramdisk\n");
+        debug("[+] initializing ramdisk\n");
 
         if(!ramdisk_create(workspace))
             diep("ramdisk_create");
     }
 
-    verbose("[+] workspace: %s\n", workspace);
+    debug("[+] workspace: %s\n", workspace);
 
     //
     // creating
     //
     if(settings.create) {
-        verbose("[+] creating rocksdb database\n");
+        debug("[+] creating rocksdb database\n");
         flister_create(workspace);
     }
 
@@ -140,7 +138,7 @@ static int flister() {
     // listing
     //
     if(settings.list) {
-        verbose("[+] extracting archive\n");
+        debug("[+] extracting archive\n");
         if(flister_list(workspace))
             goto clean;
     }
@@ -149,20 +147,20 @@ static int flister() {
     // merging
     //
     if(settings.merge.length) {
-        verbose("[+] merging flists\n");
+        debug("[+] merging flists\n");
         if(flister_merge(workspace))
             goto clean;
     }
 
 clean:
     if(settings.ramdisk) {
-        verbose("[+] cleaning ramdisk\n");
+        debug("[+] cleaning ramdisk\n");
 
         if(!ramdisk_destroy(workspace))
             diep("ramdisk_destroy");
     }
 
-    verbose("[+] cleaning workspace\n");
+    debug("[+] cleaning workspace\n");
     if(!workspace_destroy(workspace))
         diep("workspace_destroy");
 
@@ -248,12 +246,6 @@ int main(int argc, char *argv[]) {
                     diep("merge realloc");
 
                 m->sources[m->length - 1] = optarg;
-                break;
-            }
-
-
-            case 'v': {
-                settings.verbose = 1;
                 break;
             }
 

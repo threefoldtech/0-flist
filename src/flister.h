@@ -28,7 +28,6 @@
     } merge_list_t;
 
     typedef struct settings_t {
-        int verbose;       // enable verbose output
         int ramdisk;       // do we extract to ramdisk
         char *archive;     // required input/output archive
 
@@ -44,6 +43,4 @@
     } settings_t;
 
     extern settings_t settings;
-
-    #define verbose(...) { if(settings.verbose) { printf(__VA_ARGS__); } }
 #endif
