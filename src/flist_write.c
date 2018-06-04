@@ -22,6 +22,8 @@
 #include "flist.capnp.h"
 #include "flist_upload.h"
 
+// #define FLIST_WRITE_FULLDUMP
+
 // hardcoded version of the 0-hub
 const char *excluderstr[] = {
     "\\.pyc$",
@@ -418,6 +420,7 @@ static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
     return target;
 }
 
+#ifdef FLIST_WRITE_FULLDUMP
 static void dirnode_dumps(dirnode_t *root) {
     printf("[+] directory: %s [%s]\n", root->name, root->fullpath);
     printf("[+] contents: subdirectories: %lu\n", root->dir_length);
@@ -437,6 +440,7 @@ static void dirnode_dumps(dirnode_t *root) {
             dies("inode aclkey not set");
     }
 }
+#endif
 
 static void dirnode_tree_free(dirnode_t *root) {
     for(dirnode_t *source = root->dir_list; source; ) {
@@ -839,10 +843,10 @@ int flist_create(database_t *database, const char *root) {
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
-    /*
+    #ifdef FLIST_WRITE_FULLDUMP
     printf("===================================\n");
     dirnode_dumps(rootdir);
-    */
+    #endif
 
     debug("[+] =========================================\n");
     debug("[+] building capnp from memory tree\n");
