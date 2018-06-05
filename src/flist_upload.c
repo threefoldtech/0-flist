@@ -44,7 +44,7 @@ void upload_free() {
 void upload_flush(upload_t *context) {
     redisReply *reply;
 
-    printf("[+] upload: flushing: %d items (%.2f KB)\n", context->pwrite, context->buflen / 1024.0);
+    debug("[+] upload: flushing: %d items (%.2f KB)\n", context->pwrite, context->buflen / 1024.0);
 
     for(int i = 0; i < context->pwrite; i++) {
         redisGetReply(context->redis, (void **) &reply);

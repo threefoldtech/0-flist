@@ -100,7 +100,7 @@ int archive_create(char *filename, char *source) {
     if(asprintf(&tempfile, "%s.uncompressed", filename) < 0)
         diep("asprintf");
 
-    printf("[+] building uncompressed archive: %s\n", tempfile);
+    debug("[+] building uncompressed archive: %s\n", tempfile);
     if(tar_open(&th, tempfile, NULL, O_WRONLY | O_CREAT, 0644, TAR_GNU))
         return 1;
 
@@ -113,7 +113,7 @@ int archive_create(char *filename, char *source) {
     tar_close(th);
 
     // compressing
-    printf("[+] compressing file: %s > %s\n", tempfile, filename);
+    debug("[+] compressing file: %s > %s\n", tempfile, filename);
     int retval = archive_compress(tempfile, filename);
 
     // cleaning

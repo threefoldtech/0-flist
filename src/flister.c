@@ -293,11 +293,8 @@ int main(int argc, char *argv[]) {
 
             case '?':
             case 'h':
-                usage(argv[0]);
-            break;
-
             default:
-                abort();
+                usage(argv[0]);
         }
     }
 
