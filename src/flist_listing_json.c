@@ -8,17 +8,7 @@
 #include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_walker.h"
-
-typedef struct flist_json_t {
-    json_t *root;
-    json_t *content;
-
-    size_t regular;
-    size_t symlink;
-    size_t directory;
-    size_t special;
-
-} flist_json_t;
+#include "flist_listing.h"
 
 void *flist_json_init() {
     flist_json_t *obj;

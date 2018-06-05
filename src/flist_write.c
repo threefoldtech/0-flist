@@ -17,10 +17,12 @@
 #include <sys/sysmacros.h>
 #include <openssl/md5.h>
 #include <regex.h>
+#include <jansson.h>
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "flist_upload.h"
+#include "flist_listing.h"
 
 // #define FLIST_WRITE_FULLDUMP
 
@@ -442,6 +444,20 @@ static void dirnode_dumps(dirnode_t *root) {
 }
 #endif
 
+void dirnode_json(flist_json_t *json) {
+    json->root = json_object();
+    json_object_set_new(json->root, "regular", json_integer(json->regular));
+    json_object_set_new(json->root, "symlink", json_integer(json->symlink));
+    json_object_set_new(json->root, "directory", json_integer(json->directory));
+    json_object_set_new(json->root, "special", json_integer(json->special));
+
+    char *output = json_dumps(json->root, 0);
+    json_decref(json->root);
+
+    puts(output);
+    free(output);
+}
+
 static void dirnode_tree_free(dirnode_t *root) {
     for(dirnode_t *source = root->dir_list; source; ) {
         dirnode_t *next = source->next;
@@ -519,6 +535,8 @@ static capn_ptr capn_datatext(struct capn_segment *cs, char *payload) {
     return data.p;
 }
 
+flist_json_t jsonresponse = {0};
+
 void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
@@ -560,6 +578,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
             target.attributes.dir = new_SubDir(cs);
             write_SubDir(&sd, target.attributes.dir);
+
+            jsonresponse.directory += 1;
         }
 
         if(inode->type == INODE_LINK) {
@@ -569,6 +589,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
             target.attributes.link = new_Link(cs);
             write_Link(&l, target.attributes.link);
+
+            jsonresponse.symlink += 1;
         }
 
         if(inode->type == INODE_SPECIAL) {
@@ -585,6 +607,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
             target.attributes.special = new_Special(cs);
             write_Special(&sp, target.attributes.special);
+
+            jsonresponse.special += 1;
         }
 
         if(inode->type == INODE_FILE) {
@@ -615,6 +639,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
             target.attributes.file = new_File(cs);
             write_File(&f, target.attributes.file);
+
+            jsonresponse.regular += 1;
         }
 
         set_Inode(&target, dir.contents, index);
@@ -855,6 +881,9 @@ int flist_create(database_t *database, const char *root) {
     debug("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(rootdir);
     upload_inode_flush();
+
+    if(settings.json)
+        dirnode_json(&jsonresponse);
 
     upload_free();
 
