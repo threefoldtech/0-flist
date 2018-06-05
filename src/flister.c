@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <jansson.h>
 #include "flister.h"
 #include "archive.h"
 #include "workspace.h"
