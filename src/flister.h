@@ -18,6 +18,7 @@
         LIST_DUMP,
         LIST_JSON,
         LIST_BLOCKS,
+        LIST_CHECK,
 
     } list_mode_t;
 

@@ -11,6 +11,7 @@
 #include "flist_listing_json.h"
 #include "flist_listing_ls.h"
 #include "flist_listing_tree.h"
+#include "flist_listing_check.h"
 
 // walking entry point
 int flist_listing(database_t *database) {
@@ -36,6 +37,17 @@ int flist_listing(database_t *database) {
         walker.callback = flist_json;
         walker.postproc = flist_json_dump;
         walker.userptr = flist_json_init();
+    }
+
+    if(settings.list == LIST_CHECK) {
+        if(!(settings.backendhost)) {
+            fprintf(stderr, "[-] missing backend for integrity check\n");
+            return 0;
+        }
+
+        walker.callback = flist_check;
+        walker.postproc = flist_check_done;
+        walker.userptr = flist_check_init();
     }
 
     // root directory is an empty key

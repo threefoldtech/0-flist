@@ -62,7 +62,8 @@ int usage(char *basename) {
     fprintf(stderr, "                    tree    show contents in a tree view\n");
     fprintf(stderr, "                    dump    debug dump of contents\n");
     fprintf(stderr, "                    json    file list summary in json format (same as --json)\n\n");
-    fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n\n");
+    fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n");
+    fprintf(stderr, "                    check   proceed to backend integrity check\n\n");
 
     fprintf(stderr, "  -j --json       provide (exclusively) json output status\n");
     fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
@@ -227,6 +228,9 @@ int main(int argc, char *argv[]) {
                     settings.json = 1;
                     settings.list = LIST_JSON;
                 }
+
+                if(!strcmp(optarg, "check"))
+                    settings.list = LIST_CHECK;
 
                 break;
             }
