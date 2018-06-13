@@ -34,8 +34,8 @@
         char *create;      // create root path
         size_t rootlen;    // create root string length
 
-        char *uploadhost;  // backend upload host
-        int uploadport;    // backend upload port
+        char *backendhost;   // backend host
+        int backendport;     // backend port
 
         int json;            // json output flag
         list_mode_t list;    // list view mode

@@ -21,7 +21,7 @@ static struct option long_options[] = {
     {"create",  required_argument, 0, 'c'},
     {"output",  required_argument, 0, 'o'},
     {"archive", required_argument, 0, 'a'},
-    {"upload",  required_argument, 0, 'u'},
+    {"backend", required_argument, 0, 'b'},
     {"merge",   required_argument, 0, 'm'},
     {"ramdisk", no_argument,       0, 'r'},
     {"json",    no_argument,       0, 'j'},
@@ -54,7 +54,7 @@ int usage(char *basename) {
     fprintf(stderr, "                           (this option is always required)\n\n");
 
     fprintf(stderr, "  -c --create <root>       create an archive from <root> directory\n\n");
-    fprintf(stderr, "  -u --upload <host:port>  upload files from creating archive, to the backend\n\n");
+    fprintf(stderr, "  -b --backend <host:port> upload/download files from archive, on this backend\n\n");
 
     fprintf(stderr, "  -l --list       list archive content\n");
     fprintf(stderr, "  -o --output     list output format, possible values:\n");
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 
     // initializing default settings
     settings.list = LIST_DISABLED;
-    settings.uploadport = 16379;
+    settings.backendport = 16379;
 
     while(1) {
         i = getopt_long(argc, argv, "lcta:vrp:h", long_options, &option_index);
@@ -241,24 +241,25 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 'u': {
+            case 'b': {
                 char *token;
                 size_t length;
 
-                settings.uploadhost = strdup(optarg);
+                settings.backendhost = strdup(optarg);
 
                 // does the host contains the port
-                if((token = strchr(settings.uploadhost, ':'))) {
-                    length = token - settings.uploadhost;
+                if((token = strchr(settings.backendhost, ':'))) {
+                    length = token - settings.backendhost;
 
-                    settings.uploadport = atoi(token + 1);
-                    settings.uploadhost[length] = '\0';
+                    settings.backendport = atoi(token + 1);
+                    settings.backendhost[length] = '\0';
                 }
 
                 // maybe only the port was set with colon
                 // let's deny this
-                if(strlen(settings.uploadhost) == 0)
+                if(strlen(settings.backendhost) == 0)
                     dies("upload: missing hostname");
+
                 break;
             }
 
@@ -309,7 +310,7 @@ int main(int argc, char *argv[]) {
     // cleaning
     free(settings.archive);
     free(settings.create);
-    free(settings.uploadhost);
+    free(settings.backendhost);
     free(settings.merge.sources);
 
     return value;

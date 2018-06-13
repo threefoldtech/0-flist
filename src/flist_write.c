@@ -21,7 +21,7 @@
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
-#include "flist_upload.h"
+#include "flist_backend.h"
 #include "flist_listing.h"
 
 // #define FLIST_WRITE_FULLDUMP
@@ -617,7 +617,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
             };
 
             // upload non-empty files
-            if(inode->size && settings.uploadhost) {
+            if(inode->size && settings.backendhost) {
                 chunks_t *chunks;
 
                 if(!(chunks = upload_inode(settings.create, root->fullpath, inode->name)))

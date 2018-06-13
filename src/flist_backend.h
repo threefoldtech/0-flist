@@ -1,5 +1,5 @@
-#ifndef FLIST_UPLOAD_H
-    #define FLIST_UPLOAD_H
+#ifndef FLIST_BACKEND_H
+    #define FLIST_BACKEND_H
 
     #include "database.h"
 
@@ -16,8 +16,18 @@
 
     } chunks_t;
 
+    typedef struct backend_data_t {
+        void *opaque;
+        unsigned char *payload;
+        size_t length;
+
+    } backend_data_t;
+
     chunks_t *upload_inode(char *root, char *path, char *filename);
     void upload_inode_flush();
+
+    backend_data_t *download_block(char *id, char *cipher);
+    void download_free(backend_data_t *data);
 
     void chunks_free(chunks_t *chunks);
 
