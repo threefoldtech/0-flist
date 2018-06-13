@@ -19,6 +19,7 @@
         LIST_JSON,
         LIST_BLOCKS,
         LIST_CHECK,
+        LIST_CAT,
 
     } list_mode_t;
 
@@ -39,6 +40,7 @@
         int backendport;     // backend port
 
         int json;            // json output flag
+        char *targetfile;    // specific target file (see cat action)
         list_mode_t list;    // list view mode
         merge_list_t merge;  // list of merging flists
 

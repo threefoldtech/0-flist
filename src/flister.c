@@ -19,12 +19,13 @@ settings_t settings;
 static struct option long_options[] = {
     {"list",    no_argument,       0, 'l'},
     {"create",  required_argument, 0, 'c'},
-    {"output",  required_argument, 0, 'o'},
+    {"action",  required_argument, 0, 'o'},
     {"archive", required_argument, 0, 'a'},
     {"backend", required_argument, 0, 'b'},
     {"merge",   required_argument, 0, 'm'},
     {"ramdisk", no_argument,       0, 'r'},
     {"json",    no_argument,       0, 'j'},
+    {"file",    required_argument, 0, 'f'},
     {"root",    required_argument, 0, 'p'},
     {"help",    no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -57,15 +58,17 @@ int usage(char *basename) {
     fprintf(stderr, "  -b --backend <host:port> upload/download files from archive, on this backend\n\n");
 
     fprintf(stderr, "  -l --list       list archive content\n");
-    fprintf(stderr, "  -o --output     list output format, possible values:\n");
+    fprintf(stderr, "  --action        action to do while listing archive:\n");
     fprintf(stderr, "                    ls      show kind of 'ls -al' contents (default)\n");
     fprintf(stderr, "                    tree    show contents in a tree view\n");
     fprintf(stderr, "                    dump    debug dump of contents\n");
     fprintf(stderr, "                    json    file list summary in json format (same as --json)\n\n");
     fprintf(stderr, "                    blocks  dump files backend blocks (hash, key)\n");
-    fprintf(stderr, "                    check   proceed to backend integrity check\n\n");
+    fprintf(stderr, "                    check   proceed to backend integrity check\n");
+    fprintf(stderr, "                    cat     request file download (with --file option)\n\n");
 
     fprintf(stderr, "  -j --json       provide (exclusively) json output status\n");
+    fprintf(stderr, "  -f --file       specific inside file to target\n");
     fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
     fprintf(stderr, "  -h --help       shows this help message\n");
     exit(EXIT_FAILURE);
@@ -232,6 +235,9 @@ int main(int argc, char *argv[]) {
                 if(!strcmp(optarg, "check"))
                     settings.list = LIST_CHECK;
 
+                if(!strcmp(optarg, "cat"))
+                    settings.list = LIST_CAT;
+
                 break;
             }
 
@@ -296,6 +302,11 @@ int main(int argc, char *argv[]) {
 
                 break;
             }
+
+            case 'f': {
+                settings.targetfile = optarg;
+                break;
+           }
 
             case '?':
             case 'h':
