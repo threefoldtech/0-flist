@@ -4,7 +4,7 @@
     typedef struct walker_t {
         database_t *database;
         void *userptr;
-        void (*callback)(struct walker_t *, directory_t *);
+        int (*callback)(struct walker_t *, directory_t *);
         void (*postproc)(struct walker_t *);
 
     } walker_t;

@@ -10,7 +10,7 @@
 
 // dumps contents using kind of 'ls -al' view
 // generate a list with type, permissions, size, blocks, name
-void flist_ls(walker_t *walker, directory_t *root) {
+int flist_ls(walker_t *walker, directory_t *root) {
     printf("/%s:\n", root->dir.location.str);
     // printf("[+] directory: /%s\n", dir.location.str);
     // printf("Parent: %s\n", dir.parent.str);
@@ -40,7 +40,7 @@ void flist_ls(walker_t *walker, directory_t *root) {
             // the object itself)
             directory_t *subdir;
             if(!(subdir = flist_directory_get(walker->database, sub.key.str)))
-                return;
+                return 0;
 
             // reading directory permissions
             perms = database_get(walker->database, subdir->dir.aclkey.str);
@@ -127,6 +127,8 @@ void flist_ls(walker_t *walker, directory_t *root) {
             flist_walk_directory(walker, sub.key.str);
         }
     }
+
+    return 0;
 }
 
 

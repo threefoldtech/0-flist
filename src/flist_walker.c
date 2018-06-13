@@ -16,7 +16,8 @@ int flist_walk_directory(walker_t *walker, const char *key) {
         return 1;
 
     // walking over this directory
-    walker->callback(walker, dir);
+    if(walker->callback(walker, dir))
+        return 1;
 
     // cleaning this directory
     flist_directory_close(dir);

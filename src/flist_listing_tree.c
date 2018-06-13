@@ -23,7 +23,7 @@ void *flist_tree_init() {
 }
 
 // generate a tree dump of all entries
-void flist_tree(walker_t *walker, directory_t *root) {
+int flist_tree(walker_t *walker, directory_t *root) {
     tree_obj_t *obj = (tree_obj_t *) walker->userptr;
 
     for(int i = 0; i < obj->level; i++)
@@ -70,6 +70,8 @@ void flist_tree(walker_t *walker, directory_t *root) {
                 break;
         }
     }
+
+    return 0;
 }
 
 

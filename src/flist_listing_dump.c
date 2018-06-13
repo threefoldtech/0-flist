@@ -8,7 +8,7 @@
 #include "flist_read.h"
 #include "flist_walker.h"
 
-void flist_blocks(walker_t *walker, directory_t *root) {
+int flist_blocks(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;
     struct Inode inode;
 
@@ -47,11 +47,13 @@ void flist_blocks(walker_t *walker, directory_t *root) {
             flist_walk_directory(walker, sub.key.str);
         }
     }
+
+    return 0;
 }
 
 // dumps (in a 'find' way) file contents
 // simple print one line per entries, with full path
-void flist_dump(walker_t *walker, directory_t *root) {
+int flist_dump(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;
     struct Inode inode;
 
@@ -74,6 +76,8 @@ void flist_dump(walker_t *walker, directory_t *root) {
             flist_walk_directory(walker, sub.key.str);
         }
     }
+
+    return 0;
 }
 
 

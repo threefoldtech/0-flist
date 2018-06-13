@@ -40,7 +40,7 @@ void flist_json_dump(walker_t *walker) {
     free(output);
 }
 
-void flist_json(walker_t *walker, directory_t *root) {
+int flist_json(walker_t *walker, directory_t *root) {
     flist_json_t *json = (flist_json_t *) walker->userptr;
 
     Inode_ptr inodep;
@@ -85,5 +85,7 @@ void flist_json(walker_t *walker, directory_t *root) {
         json_array_append_new(json->content, this);
         free(path);
     }
+
+    return 0;
 }
 
