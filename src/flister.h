@@ -5,6 +5,8 @@
     void dies(const char *str);
     void warnp(const char *str);
 
+    void *bufdup(void *source, size_t length);
+
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
     #else

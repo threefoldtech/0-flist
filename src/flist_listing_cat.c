@@ -68,8 +68,8 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
-                char *hash = strndup(block.hash.p.data, block.hash.p.len);
-                char *key = strndup(block.key.p.data, block.key.p.len);
+                uint8_t *hash = bufdup(block.hash.p.data, block.hash.p.len);
+                uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
                 backend_data_t *data;
 
                 if(!(data = download_block(hash, key))) {

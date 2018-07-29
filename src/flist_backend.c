@@ -64,7 +64,7 @@ void upload_flush(backend_t *context) {
 
 static int chunk_upload(backend_t *context, chunk_t *chunk) {
     // insert new key
-    redisAppendCommand(context->redis, "SET %s %b", chunk->id, chunk->data, chunk->length);
+    redisAppendCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
     context->pwrite += 1;
     context->buflen += chunk->length;
 
@@ -100,8 +100,8 @@ static chunks_t *upload_file(backend_t *context, char *filename) {
         // encrypting chunk
         chunk_t *chunk = encrypt_chunk(data, buffer->chunksize);
 
-        chunks->chunks[i].id = strdup(chunk->id);
-        chunks->chunks[i].cipher = strdup(chunk->cipher);
+        chunks->chunks[i].id = bufdup(chunk->id, LIB0STOR_HASH_LENGTH);
+        chunks->chunks[i].cipher = bufdup(chunk->cipher, LIB0STOR_HASH_LENGTH);
         chunks->upsize += chunk->length;
 
         // hiredis upload
@@ -144,7 +144,7 @@ chunks_t *upload_inode(char *root, char *path, char *filename) {
     return chunks;
 }
 
-backend_data_t *download_block(char *id, char *cipher) {
+backend_data_t *download_block(uint8_t *id, uint8_t *cipher) {
     redisReply *reply;
     backend_data_t *data;    // internal data
     chunk_t input, *output;  // input chunk, output decrypted chunk

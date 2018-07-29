@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <lib0stor.h>
 #include "flister.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
@@ -33,8 +34,14 @@ int flist_blocks(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
-                printf("  hash: %.*s\n", block.hash.p.len, block.hash.p.data);
-                printf("  key : %.*s\n", block.key.p.len, block.key.p.data);
+                char *hashstr = hashhex((uint8_t *) block.hash.p.data);
+                char *keystr = hashhex((uint8_t *) block.key.p.data);
+
+                printf("  hash: %s\n", hashstr);
+                printf("  key : %s\n", keystr);
+
+                free(hashstr);
+                free(keystr);
             }
         }
 
