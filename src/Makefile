@@ -12,7 +12,7 @@ release: LDFLAGS = -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrock
 release: $(EXEC)
 
 static: CFLAGS = -std=c99 -W -Wall -O2
-static: LDFLAGS = -static -pthread -ltar -lrt -lrocksdb -lgflags -lz -lbz2 -llz4 -lzstd -lb2 -lcapnp_c -ljemalloc -ljansson -l0stor -lcrypto -lsnappy -lhiredis -fopenmp
+static: LDFLAGS = -static -pthread -ltar -lrt -lrocksdb -lgflags -lz -lbz2 -llz4 -lb2 -lcapnp_c -ljemalloc -ljansson -l0stor -lcrypto -lsnappy -lhiredis -fopenmp
 static: $(EXEC)
 
 $(EXEC): $(OBJ)
