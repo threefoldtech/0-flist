@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+#include "database.h"
 
 #ifdef DATABASE_BACKEND_ROCKSDB
 #include <rocksdb/c.h>
-#include "database.h"
 #include "flister.h"
 
 #define KEYLENGTH 32
