@@ -51,8 +51,13 @@ void upload_flush(backend_t *context) {
     for(int i = 0; i < context->pwrite; i++) {
         redisGetReply(context->redis, (void **) &reply);
 
-        if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
-            fprintf(stderr, "[-] redis error\n");
+        if(reply->type == REDIS_REPLY_ERROR) {
+            fprintf(stderr, "[-] redis error: %s\n", reply->str);
+        }
+
+        if(reply->len == 0) {
+            // if 0-db behind
+            // it's a duplicated key
         }
 
         freeReplyObject(reply);
@@ -63,6 +68,7 @@ void upload_flush(backend_t *context) {
 }
 
 static int chunk_upload(backend_t *context, chunk_t *chunk) {
+#if 1
     // insert new key
     redisAppendCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
     context->pwrite += 1;
@@ -71,6 +77,21 @@ static int chunk_upload(backend_t *context, chunk_t *chunk) {
     // flush 32 MB
     if(context->buflen > 32 * 1024 * 1024)
         upload_flush(context);
+#endif
+
+#if 0
+    redisReply *reply;
+    reply = redisCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
+
+    if(!reply)
+        diep("redis command");
+
+    if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
+        fprintf(stderr, "[-] redis error\n");
+    }
+
+    freeReplyObject(reply);
+#endif
 
     return 0;
 }

@@ -113,6 +113,7 @@ static int flister_list(char *workspace) {
         return 1;
     }
 
+
     debug("[+] loading rocksdb database\n");
     database_t *database = database_open(workspace);
 

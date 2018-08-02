@@ -1,25 +1,24 @@
-#ifndef DATABASE_H
-    #define DATABASE_H
+#ifndef DATABASE_SQLITE_H
+    #define DATABASE_SQLITE_H
 
-    // #define DATABASE_BACKEND_ROCKSDB
-    #define DATABASE_BACKEND_SQLITE
+    #ifdef DATABASE_BACKEND_SQLITE
 
-    #ifdef DATABASE_BACKEND_ROCKSDB
-
-    #include <rocksdb/c.h>
+    #include <sqlite3.h>
 
     typedef struct database_t {
         char *root;
-        rocksdb_t *db;
-        rocksdb_options_t *options;
-        rocksdb_readoptions_t *readoptions;
-        rocksdb_writeoptions_t *writeoptions;
+        char *filename;
+        sqlite3 *db;
+        int updated;
+        sqlite3_stmt *select;
+        sqlite3_stmt *insert;
 
     } database_t;
 
     typedef struct value_t {
         char *data;
         size_t length;
+        sqlite3_stmt *stmt;
 
     } value_t;
 
@@ -33,7 +32,5 @@
 
     value_t *database_value_free(value_t *value);
 
-    #else
-        #include "database_sqlite.h"
     #endif
 #endif

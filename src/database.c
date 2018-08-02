@@ -7,6 +7,8 @@
 #include "database.h"
 #include "flister.h"
 
+#ifdef DATABASE_BACKEND_ROCKSDB
+
 #define KEYLENGTH 32
 
 static void warndb(char *str) {
@@ -114,3 +116,5 @@ int database_exists(database_t *database, const char *key) {
     database_value_free(value);
     return retval;
 }
+
+#endif
