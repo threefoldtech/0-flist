@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <rocksdb/c.h>
 #include "flister.h"
+#include "database.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_walker.h"

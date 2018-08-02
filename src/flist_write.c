@@ -8,7 +8,6 @@
 #include <time.h>
 #include <ftw.h>
 #include <unistd.h>
-#include <rocksdb/c.h>
 #include <blake2.h>
 #include <linux/limits.h>
 #include <sys/types.h>
@@ -19,6 +18,7 @@
 #include <regex.h>
 #include <jansson.h>
 #include "flister.h"
+#include "database.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "flist_backend.h"
