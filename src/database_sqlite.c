@@ -81,7 +81,6 @@ database_t *database_create(char *root) {
 void database_close(database_t *database) {
     if(database->updated) {
         sqlite3_exec(database->db, "END TRANSACTION;", NULL, NULL, NULL);
-        sqlite3_exec(database->db, "CREATE INDEX entries_index ON entries (key);", NULL, NULL, NULL);
         sqlite3_exec(database->db, "VACUUM;", NULL, NULL, NULL);
     }
 
