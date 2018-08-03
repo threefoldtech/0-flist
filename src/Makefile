@@ -5,7 +5,7 @@ OBJ=$(SRC:.c=.o)
 
 all: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG
 # all: LDFLAGS = -g -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto -ljansson -l0stor -lhiredis -fopenmp
-all: LDFLAGS = -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -lcrypto -ljansson -l0stor -lhiredis -fopenmp -lsqlite3
+all: LDFLAGS = -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -l0stor -lhiredis -fopenmp -lsqlite3
 all: $(EXEC)
 
 release: CFLAGS = -std=c99 -W -Wall -O2

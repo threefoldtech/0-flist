@@ -14,7 +14,6 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/sysmacros.h>
-#include <openssl/md5.h>
 #include <regex.h>
 #include <jansson.h>
 #include "flister.h"
@@ -59,7 +58,7 @@ int excluders_matches(const char *input) {
     return 0;
 }
 
-#define KEYLENGTH 32
+#define KEYLENGTH 16
 
 typedef struct acl_t {
     char *uname;     // username (user id if not found)
@@ -135,24 +134,7 @@ typedef struct dirnode_t {
 
 } dirnode_t;
 
-//
-// md5 helper
-//
 static char __hex[] = "0123456789abcdef";
-
-static unsigned char *md5(const char *buffer, size_t length) {
-    unsigned char *hash;
-    MD5_CTX md5;
-
-    if(!(hash = calloc(MD5_DIGEST_LENGTH, 1)))
-        diep("calloc");
-
-    MD5_Init(&md5);
-    MD5_Update(&md5, buffer, length);
-    MD5_Final(hash, &md5);
-
-    return hash;
-}
 
 static char *hashhex(unsigned char *hash, int dlength) {
     char *buffer = calloc((dlength * 2) + 1, sizeof(char));
@@ -182,10 +164,13 @@ char *inode_acl_key(acl_t *acl) {
         diep("asprintf");
 
     // hashing payload
-    unsigned char *hash = md5(key, strlen(key));
-    char *hashkey = hashhex(hash, MD5_DIGEST_LENGTH);
+    unsigned char hash[KEYLENGTH];
+
+    if(blake2b(hash, key, "", KEYLENGTH, strlen(key), 0) < 0)
+        dies("blake2 acl error");
+
+    char *hashkey = hashhex(hash, KEYLENGTH);
     free(key);
-    free(hash);
 
     return hashkey;
 }

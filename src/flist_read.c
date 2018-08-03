@@ -18,7 +18,7 @@
 // - the root directory is the blake2 hash of empty string
 //
 
-#define KEYLENGTH 32
+#define KEYLENGTH 16
 
 //
 // directory object reader

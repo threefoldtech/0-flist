@@ -9,7 +9,7 @@
 #include <rocksdb/c.h>
 #include "flister.h"
 
-#define KEYLENGTH 32
+#define KEYLENGTH 16
 
 static void warndb(char *str) {
     fprintf(stderr, "[-] database: %s\n", str);

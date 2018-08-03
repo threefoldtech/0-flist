@@ -11,7 +11,7 @@
 
 #ifdef DATABASE_BACKEND_SQLITE
 
-#define KEYLENGTH 32
+#define KEYLENGTH 16
 
 static void warndb(char *source, const char *str) {
     fprintf(stderr, "[-] database: %s: %s\n", source, str);
@@ -95,11 +95,6 @@ value_t *database_get(database_t *database, const char *key) {
     if(!(value = calloc(1, sizeof(value_t))))
         diep("malloc");
 
-    /*
-    if(sqlite3_prepare_v2(database->db, query, -1, &value->stmt, 0) != SQLITE_OK)
-        diedb("get: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
-    */
-
     sqlite3_reset(database->select);
     sqlite3_bind_text(database->select, 1, key, -1, SQLITE_STATIC);
 
@@ -113,7 +108,6 @@ value_t *database_get(database_t *database, const char *key) {
         value->length = sqlite3_column_bytes(database->select, 0);
         return value;
     }
-
 
     diedb("get: sqlite3_step", sqlite3_errmsg(database->db));
     return value;
@@ -131,11 +125,6 @@ int database_set(database_t *database, const char *key, const unsigned char *pay
 
     if(!(value = calloc(1, sizeof(value_t))))
         diep("malloc");
-
-    /*
-    if(sqlite3_prepare_v2(database->db, query, -1, &value->stmt, 0) != SQLITE_OK)
-        diedb("set: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
-    */
 
     sqlite3_reset(database->insert);
     sqlite3_bind_text(database->insert, 1, key, -1, SQLITE_STATIC);
