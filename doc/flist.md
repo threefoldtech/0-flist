@@ -18,15 +18,16 @@ At the end of this document you'll find some explanation about choice of technol
 1. [Package](#package)
 2. [Database](#database)
 3. [Filesystem](#filesystem)
-4. [File chunks](#file-chunks)
+4. [Permissions](#permissions)
+5. [File chunks](#file-chunks)
 
 ## Package
 A `flist` file is a `tar` archive which contains one single `sqlite3` database called `flistdb.sqlite3`.
-This tar archive can, of course, be compressed (gzip, bz2, xz, ...).
+This tar archive can, of course, be compressed (`gzip`, `bz2`, `xz`, ...).
 You should at least support `gzip` compression.
 
 ## Database
-The `sqlite3` database uses a reallu simple and small schema:
+The `sqlite3` database uses a really simple and small schema:
 ```sql
 CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);
 CREATE INDEX entries_index ON entries (key);
@@ -43,14 +44,14 @@ Each object are stored on the database and the key is a `blake2` hash (16 bytes)
 One directory is stored on the `Dir` capnp object, and contains:
 - `name`: the name of the directory
 - `location`: full path of this directory
-- `contents`: a list of Inode object
+- `contents`: a list of **Inode** object
 - `parent`: the hash of the parent directory
 - `size`: not used (usualy, hardcoded to 4096)
 - `aclkey`: the hash of the acl attached
 - `modificationTime`: unix timestamp of last modification
 - `creationTime`: unix timestamp of creation time
 
-For each file in this directory, if will be converted in `Inode` capnp object, and added on the `contents` list:
+For each file in this directory, it will be converted in `Inode` capnp object, and added on the `contents` list:
 - `name`: the filename
 - `size`: file size in bytes
 - `aclkey`: the key hash of permission attached
@@ -78,10 +79,31 @@ Theses attributes are all specified by custom struct:
   - `type`: enum, which can be: `socket`, `block`, `chardev`, `fifopipe`, `unknown`
   - `data`: optional field, used for example on block device to store `major,minor` id
 
-**Note:** a flist will always contains at least one directory, the root directory, which is a blake2 hash of
+**Note:** a flist will always contains at least one directory, the root directory, which is a blake2b hash of
 empty string. All directory names never have any slash (`/`) and everything uses relative path.
 
 A minimal flist is basicly 2 keys: one for the root directory, one for the acl of that directory.
+
+## Permissions
+To avoid duplication of acl object for each file, we save them on a database entry.
+Since a lot of file uses always the same permissions (eg: root:root 777), we can avoid duplication.
+
+First approch is, for each unique permission, adding an entry on the db, and saving the checksum
+of this permission. We store it as 8 bytes blake2b hash.
+
+Let's take a file, with mode 755 and with owner 'root:nobody', the hash is made with:
+```
+user:root
+group:nobody
+mode:0775
+```
+
+And save the capnp object `ACI` which contains fields:
+- `uname`: user name
+- `gname`: group name
+- `mode`: file (full) mode
+
+The schema use extra fields, not used (for now).
 
 ## File chunks
 Since the payload of the files are not stored, we only keep metadata, we need a way to be able to
