@@ -59,6 +59,7 @@ int excluders_matches(const char *input) {
 }
 
 #define KEYLENGTH 16
+#define ACLLENGTH 8
 
 typedef struct acl_t {
     char *uname;     // username (user id if not found)
@@ -164,12 +165,12 @@ char *inode_acl_key(acl_t *acl) {
         diep("asprintf");
 
     // hashing payload
-    unsigned char hash[KEYLENGTH];
+    unsigned char hash[ACLLENGTH];
 
-    if(blake2b(hash, key, "", KEYLENGTH, strlen(key), 0) < 0)
+    if(blake2b(hash, key, "", ACLLENGTH, strlen(key), 0) < 0)
         dies("blake2 acl error");
 
-    char *hashkey = hashhex(hash, KEYLENGTH);
+    char *hashkey = hashhex(hash, ACLLENGTH);
     free(key);
 
     return hashkey;
