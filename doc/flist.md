@@ -15,6 +15,11 @@ At the end of this document you'll find some explanation about choice of technol
 
 # Specification
 
+1. [Package](#package)
+2. [Database](#database)
+3. [Filesystem](#filesystem)
+4. [File chunks](#file-chunks)
+
 ## Package
 A `flist` file is a `tar` archive which contains one single `sqlite3` database called `flistdb.sqlite3`.
 This tar archive can, of course, be compressed (gzip, bz2, xz, ...).
