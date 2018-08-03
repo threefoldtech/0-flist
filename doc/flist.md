@@ -86,12 +86,12 @@ A minimal flist is basicly 2 keys: one for the root directory, one for the acl o
 
 ## Permissions
 To avoid duplication of acl object for each file, we save them on a database entry.
-Since a lot of file uses always the same permissions (eg: root:root 777), we can avoid duplication.
+Since a lot of file uses always the same permissions (eg: `root:root, rwxrw-rw-`), we can avoid duplication.
 
 First approch is, for each unique permission, adding an entry on the db, and saving the checksum
-of this permission. We store it as 8 bytes blake2b hash.
+of this permission. We store it as **8 bytes blake2b hash**.
 
-Let's take a file, with mode 755 and with owner 'root:nobody', the hash is made with:
+Let's take a file, with mode 755 and with owner `root:nobody`, the hash is made with:
 ```
 user:root
 group:nobody
