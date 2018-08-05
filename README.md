@@ -1,39 +1,35 @@
-# flister
-Command line tool to list or create `flist` archives.
+# 0-flist
+Shared library and standaline flist implementation. For more information about `flist`, please check [flist documentation](doc/flist.md).
 
 # Compilation
-There are two target:
+There are three target:
  - Developpment: by running `make` you will produce a dynamic debuggable executable (use shared library)
  - Production: by running `make release` you will produce a full stripped static binary, avoiding lot of dependencies
 
 # Dependencies
-In order to compile correctly `flister`, you'll need:
+In order to compile correctly `0-flist`, you'll need:
 - `libtar`
 - `libsnappy`
-- `rocksdb`
 - `c-capnp`
 - `libb2` (blake2)
 - `zlib`
-- `liblz4`
-- `libbz2`
-- `jemalloc`
-- `gflags`
 - `jansson`
-- `libcrypto` (openssl)
+- `python` (for binding)
+
+# Warning: staging Makefile, information below are not up-to-date
 
 ## Ubuntu
 - Packages dependencies
 ```
 libsnappy-dev libbz2-dev liblz4-dev libz-dev libtar-dev libb2-dev libjemalloc-dev libgflags-dev libjemalloc-dev
 ```
-You will need to compile `c-capnp` and `rocksdb` yourself.
+You will need to compile `c-capnp` yourself.
 
 ## Gentoo
 - Packages available on portage (using `static-libs` USE flags to produce production executable):
 ```
 libtar dev-cpp/gflags app-arch/bzip2 jemalloc snappy zlib lz4 jansson
 ```
-You will need to compile `rocksdb` yourself.
 
 # Usage
 ```
