@@ -5,12 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <lib0stor.h>
 #include <hiredis/hiredis.h>
 #include "flister.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "flist_backend.h"
+#include "zero_chunk.h"
 
 // FIXME: don't use global variable
 typedef struct backend_t {
