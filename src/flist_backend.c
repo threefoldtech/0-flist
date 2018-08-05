@@ -165,7 +165,7 @@ chunks_t *upload_inode(char *root, char *path, char *filename) {
     return chunks;
 }
 
-backend_data_t *download_block(uint8_t *id, uint8_t *cipher) {
+backend_data_t *download_block(uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
     redisReply *reply;
     backend_data_t *data;    // internal data
     chunk_t input, *output;  // input chunk, output decrypted chunk
@@ -173,7 +173,8 @@ backend_data_t *download_block(uint8_t *id, uint8_t *cipher) {
     if(bcontext.redis == NULL)
         backend_connect(&bcontext, settings.backendhost, settings.backendport);
 
-    reply = redisCommand(bcontext.redis, "GET %s", id);
+    printf("idlen: %d\n", idlen);
+    reply = redisCommand(bcontext.redis, "GET %b", id, idlen);
     if(!reply->str)
         return NULL;
 

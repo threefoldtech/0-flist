@@ -26,7 +26,7 @@
     chunks_t *upload_inode(char *root, char *path, char *filename);
     void upload_inode_flush();
 
-    backend_data_t *download_block(uint8_t *id, uint8_t *cipher);
+    backend_data_t *download_block(uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen);
     void download_free(backend_data_t *data);
 
     void chunks_free(chunks_t *chunks);

@@ -52,10 +52,14 @@ int flist_check(walker_t *walker, directory_t *root) {
                 read_FileBlock(&block, blockp);
 
                 uint8_t *hash = bufdup(block.hash.p.data, block.hash.p.len);
+                size_t hashlen = block.hash.p.len;
+
                 uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
+                size_t keylen = block.key.p.len;
+
                 backend_data_t *data;
 
-                if(!(data = download_block(hash, key))) {
+                if(!(data = download_block(hash, hashlen, key, keylen))) {
                     checker->status = 1;
                     return 1;
                 }

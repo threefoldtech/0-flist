@@ -521,6 +521,14 @@ static capn_ptr capn_datatext(struct capn_segment *cs, char *payload) {
     return data.p;
 }
 
+static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t length) {
+    capn_list8 data = capn_new_list8(cs, length);
+    capn_setv8(data, 0, (uint8_t *) payload, length);
+
+    return data.p;
+}
+
+
 flist_json_t jsonresponse = {0};
 
 void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent) {
@@ -614,8 +622,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
                 for(size_t i = 0; i < chunks->length; i++) {
                     struct FileBlock block;
 
-                    block.hash.p = capn_datatext(cs, chunks->chunks[i].id);
-                    block.key.p = capn_datatext(cs, chunks->chunks[i].cipher);
+                    block.hash.p = capn_databinary(cs, chunks->chunks[i].id, KEYLENGTH);
+                    block.key.p = capn_databinary(cs, chunks->chunks[i].cipher, KEYLENGTH);
 
                     set_FileBlock(&block, f.blocks, i);
                 }
