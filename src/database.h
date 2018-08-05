@@ -1,39 +1,35 @@
 #ifndef DATABASE_H
     #define DATABASE_H
 
-    // #define DATABASE_BACKEND_ROCKSDB
-    #define DATABASE_BACKEND_SQLITE
-
-    #ifdef DATABASE_BACKEND_ROCKSDB
-
-    #include <rocksdb/c.h>
-
-    typedef struct database_t {
-        char *root;
-        rocksdb_t *db;
-        rocksdb_options_t *options;
-        rocksdb_readoptions_t *readoptions;
-        rocksdb_writeoptions_t *writeoptions;
-
-    } database_t;
-
     typedef struct value_t {
+        void *handler;
+
         char *data;
         size_t length;
 
     } value_t;
 
-    database_t *database_open(char *root);
-    database_t *database_create(char *root);
-    void database_close(database_t *database);
+    typedef struct database_t {
+        void *handler;
+        char *type;
 
-    value_t *database_get(database_t *database, const char *key);
-    int database_set(database_t *database, const char *key, const unsigned char *payload, size_t length);
-    int database_exists(database_t *database, const char *key);
+        struct database_t* (*open)(struct database_t *db, char *root);
+        struct database_t* (*create)(struct database_t *db, char *root);
+        void (*close)(struct database_t *db);
 
-    value_t *database_value_free(value_t *value);
+        value_t* (*get)(struct database_t *db, char *key);
+        int (*set)(struct database_t *db, char *key, uint8_t *data, size_t datalen);
+        int (*exists)(struct database_t *db, char *key);
 
-    #else
-        #include "database_sqlite.h"
-    #endif
+        void (*clean)(value_t *value);
+
+    } database_t;
+
+    typedef enum database_type_t {
+        SQLITE3,
+        REDIS,
+
+    } database_type_t;
+
+    database_t *database_init(database_type_t type);
 #endif

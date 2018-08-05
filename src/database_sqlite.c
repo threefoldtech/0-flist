@@ -2,150 +2,190 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sqlite3.h>
 #include "database.h"
 #include "database_sqlite.h"
 #include "flister.h"
 
-#ifdef DATABASE_BACKEND_SQLITE
-
-#define KEYLENGTH 16
-
-static void warndb(char *source, const char *str) {
-    fprintf(stderr, "[-] database: %s: %s\n", source, str);
-}
-
-static void diedb(char *source, const char *str) {
-    warndb(source, str);
-    exit(EXIT_FAILURE);
-}
-
-int database_build(database_t *database) {
+static int database_sqlite_build(database_sqlite_t *db) {
     char *query = "CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);";
     value_t value;
 
-    if(sqlite3_prepare_v2(database->db, query, -1, &value.stmt, NULL) != SQLITE_OK)
-        diedb("build: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
+    if(sqlite3_prepare_v2(db->db, query, -1, &value.handler, NULL) != SQLITE_OK) {
+        diedb("build: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        return 1;
+    }
 
-    if(sqlite3_step(value.stmt) != SQLITE_DONE)
-        diedb("build: sqlite3_step", sqlite3_errmsg(database->db));
+    if(sqlite3_step(value.handler) != SQLITE_DONE) {
+        diedb("build: sqlite3_step", sqlite3_errmsg(db->db));
+        return 1;
+    }
 
-    sqlite3_finalize(value.stmt);
+    sqlite3_finalize(value.handler);
 
-    sqlite3_exec(database->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+    sqlite3_exec(db->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
 
     return 0;
 }
 
-static database_t *database_init(char *root, int create) {
-    database_t *database;
+static database_sqlite_t *database_sqlite_root_init(char *root, int create) {
+    database_sqlite_t *db;
 
-    if(!(database = malloc(sizeof(database_t))))
+    if(!(db = malloc(sizeof(database_sqlite_t))))
         diep("malloc");
 
-    database->updated = 0;
-    database->root = root;
+    db->updated = 0;
+    db->root = root;
 
-    if(asprintf(&database->filename, "%s/flistdb.sqlite3", root) < 0)
+    if(asprintf(&db->filename, "%s/flistdb.sqlite3", root) < 0) {
         diep("asprintf");
+        free(db);
+        return NULL;
+    }
 
-    if(sqlite3_open(database->filename, &database->db))
-        diedb("sqlite3_open", sqlite3_errmsg(database->db));
+    if(sqlite3_open(db->filename, &db->db)) {
+        diedb("sqlite3_open", sqlite3_errmsg(db->db));
+        free(db);
+        return NULL;
+    }
 
-    if(create)
-        database_build(database);
+    if(create) {
+        if(database_sqlite_build(db)) {
+            free(db);
+            return NULL;
+        }
+    }
 
     // pre-compute query
     char *select_query = "SELECT value FROM entries WHERE key = ?1";
     char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
 
-    if(sqlite3_prepare_v2(database->db, select_query, -1, &database->select, 0) != SQLITE_OK)
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
+    if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
+        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        return NULL;
+    }
 
-    if(sqlite3_prepare_v2(database->db, insert_query, -1, &database->insert, 0) != SQLITE_OK)
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
+    if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
+        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        return NULL;
+    }
 
+    return db;
+}
+
+static database_t *database_sqlite_open(database_t *database, char *root) {
+    database->handler = database_sqlite_root_init(root, 0);
     return database;
 }
 
-database_t *database_open(char *root) {
-    return database_init(root, 0);
+static database_t *database_sqlite_create(database_t *database, char *root) {
+    database->handler = database_sqlite_root_init(root, 1);
+    return database;
 }
 
-database_t *database_create(char *root) {
-    return database_init(root, 1);
-}
+static void database_sqlite_close(database_t *database) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
-void database_close(database_t *database) {
-    if(database->updated) {
-        sqlite3_exec(database->db, "END TRANSACTION;", NULL, NULL, NULL);
-        sqlite3_exec(database->db, "VACUUM;", NULL, NULL, NULL);
+    if(db->updated) {
+        sqlite3_exec(db->db, "END TRANSACTION;", NULL, NULL, NULL);
+        sqlite3_exec(db->db, "VACUUM;", NULL, NULL, NULL);
     }
 
-    sqlite3_close(database->db);
-    free(database);
+    sqlite3_close(db->db);
+    free(db);
 }
 
-value_t *database_get(database_t *database, const char *key) {
+static value_t *database_sqlite_get(database_t *database, char *key) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
     value_t *value;
 
-    if(!(value = calloc(1, sizeof(value_t))))
+    if(!(value = calloc(1, sizeof(value_t)))) {
         diep("malloc");
+        return NULL;
+    }
 
-    sqlite3_reset(database->select);
-    sqlite3_bind_text(database->select, 1, key, -1, SQLITE_STATIC);
+    sqlite3_reset(db->select);
+    sqlite3_bind_text(db->select, 1, key, -1, SQLITE_STATIC);
 
-    int data = sqlite3_step(database->select);
+    int data = sqlite3_step(db->select);
 
     if(data == SQLITE_DONE)
         return value;
 
     if(data == SQLITE_ROW) {
-        value->data = (void *) sqlite3_column_blob(database->select, 0);
-        value->length = sqlite3_column_bytes(database->select, 0);
+        value->data = (void *) sqlite3_column_blob(db->select, 0);
+        value->length = sqlite3_column_bytes(db->select, 0);
         return value;
     }
 
-    diedb("get: sqlite3_step", sqlite3_errmsg(database->db));
+    diedb("get: sqlite3_step", sqlite3_errmsg(db->db));
     return value;
 }
 
-value_t *database_value_free(value_t *value) {
+static void database_sqlite_clean(value_t *value) {
+    // database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
     // sqlite3_finalize(value->stmt);
     free(value);
-
-    return NULL;
 }
 
-int database_set(database_t *database, const char *key, const unsigned char *payload, size_t length) {
+static int database_sqlite_set(database_t *database, char *key, uint8_t *payload, size_t length) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
     value_t *value;
 
     if(!(value = calloc(1, sizeof(value_t))))
         diep("malloc");
 
-    sqlite3_reset(database->insert);
-    sqlite3_bind_text(database->insert, 1, key, -1, SQLITE_STATIC);
-    sqlite3_bind_blob(database->insert, 2, payload, length, SQLITE_STATIC);
+    sqlite3_reset(db->insert);
+    sqlite3_bind_text(db->insert, 1, key, -1, SQLITE_STATIC);
+    sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
-    if(sqlite3_step(database->insert) != SQLITE_DONE)
-        diedb("set: sqlite3_step", sqlite3_errmsg(database->db));
+    if(sqlite3_step(db->insert) != SQLITE_DONE)
+        diedb("set: sqlite3_step", sqlite3_errmsg(db->db));
 
-    database->updated = 1;
+    db->updated = 1;
 
     return 0;
 }
 
 // poor implementation of exists
-int database_exists(database_t *database, const char *key) {
+static int database_sqlite_exists(database_t *database, char *key) {
     int retval = 0;
 
-    value_t *value = database_get(database, (char *) key);
+    value_t *value = database_sqlite_get(database, key);
     if(value->data)
         retval = 1;
 
-    database_value_free(value);
+    database_sqlite_clean(value);
     return retval;
 }
-#endif
+
+// public sqlite function initializer
+database_t *database_sqlite_init() {
+    database_t *db;
+
+    // allocate generic database object
+    if(!(db = malloc(sizeof(database_t))))
+        return NULL;
+
+    // set our custom sqlite database handler
+    if(!(db->handler = malloc(sizeof(database_sqlite_t)))) {
+        free(db);
+        return NULL;
+    }
+
+    db->type = "SQLITE3";
+
+    // fillin handlers
+    db->open = database_sqlite_open;
+    db->create = database_sqlite_create;
+    db->close = database_sqlite_close;
+    db->get = database_sqlite_get;
+    db->set = database_sqlite_set;
+    db->exists = database_sqlite_exists;
+    db->clean = database_sqlite_clean;
+
+    return db;
+}

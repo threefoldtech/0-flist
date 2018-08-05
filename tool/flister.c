@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <errno.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -86,14 +87,15 @@ int usage(char *basename) {
 }
 
 static int flister_create(char *workspace) {
-    database_t *database = database_create(workspace);
+    database_t *database = database_init(SQLITE3);
+    database->create(database, workspace);
 
     // building database
     flist_create(database, settings.create);
 
     // closing database before archiving
     debug("[+] closing database\n");
-    database_close(database);
+    database->close(database);
 
     // removing possible already existing db
     unlink(settings.archive);
@@ -114,27 +116,29 @@ static int flister_list(char *workspace) {
     }
 
 
-    debug("[+] loading rocksdb database\n");
-    database_t *database = database_open(workspace);
+    debug("[+] loading database\n");
+    database_t *database = database_init(SQLITE3);
+    database->open(database, workspace);
 
     debug("[+] walking over database\n");
     flist_listing(database);
 
     debug("[+] closing database\n");
-    database_close(database);
+    database->close(database);
 
     return 0;
 }
 
 static int flister_merge(char *workspace) {
-    database_t *database = database_create(workspace);
+    database_t *database = database_init(SQLITE3);
+    database->create(database, workspace);
 
     // building database
     flist_merger(database, &settings.merge);
 
     // closing database before archiving
     debug("[+] closing database\n");
-    database_close(database);
+    database->close(database);
 
     // removing possible already existing db
     unlink(settings.archive);
@@ -164,7 +168,7 @@ static int flister() {
     // creating
     //
     if(settings.create) {
-        debug("[+] creating rocksdb database\n");
+        debug("[+] creating database\n");
         flister_create(workspace);
     }
 

@@ -173,7 +173,6 @@ backend_data_t *download_block(uint8_t *id, size_t idlen, uint8_t *cipher, size_
     if(bcontext.redis == NULL)
         backend_connect(&bcontext, settings.backendhost, settings.backendport);
 
-    printf("idlen: %d\n", idlen);
     reply = redisCommand(bcontext.redis, "GET %b", id, idlen);
     if(!reply->str)
         return NULL;

@@ -74,8 +74,6 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
                 size_t keylen = block.key.p.len;
 
-                printf("hash %d, key %d\n", hashlen, keylen);
-
                 backend_data_t *data;
 
                 if(!(data = download_block(hash, hashlen, key, keylen))) {

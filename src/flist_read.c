@@ -23,14 +23,14 @@
 //
 // directory object reader
 //
-directory_t *flist_directory_get(database_t *database, const char *key) {
+directory_t *flist_directory_get(database_t *database, char *key) {
     directory_t *dir;
 
     if(!(dir = malloc(sizeof(directory_t))))
         diep("directory: malloc");
 
     // reading capnp message from database
-    dir->value = database_get(database, key);
+    dir->value = database->get(database, key);
 
     if(!dir->value->data) {
         fprintf(stderr, "[-] directory: key [%s] not found\n", key);
@@ -40,7 +40,7 @@ directory_t *flist_directory_get(database_t *database, const char *key) {
     // build capn context
     if(capn_init_mem(&dir->ctx, (unsigned char *) dir->value->data, dir->value->length, 0)) {
         fprintf(stderr, "[-] directory: capnp: init error\n");
-        database_value_free(dir->value);
+        database->clean(dir->value);
         return NULL;
     }
 
@@ -53,8 +53,8 @@ directory_t *flist_directory_get(database_t *database, const char *key) {
     return dir;
 }
 
-void flist_directory_close(directory_t *dir) {
-    database_value_free(dir->value);
+void flist_directory_close(database_t *database, directory_t *dir) {
+    database->clean(dir->value);
     capn_free(&dir->ctx);
     free(dir);
 }
@@ -62,7 +62,7 @@ void flist_directory_close(directory_t *dir) {
 //
 // helpers
 //
-const char *flist_pathkey(char *path) {
+char *flist_pathkey(char *path) {
     uint8_t hash[KEYLENGTH];
     char *hexhash;
 
@@ -77,7 +77,7 @@ const char *flist_pathkey(char *path) {
     for(int i = 0; i < KEYLENGTH; i++)
         sprintf(hexhash + (i * 2), "%02x", hash[i]);
 
-    return (const char *) hexhash;
+    return hexhash;
 }
 
 //

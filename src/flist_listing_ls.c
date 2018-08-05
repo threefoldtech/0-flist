@@ -39,21 +39,28 @@ int flist_ls(walker_t *walker, directory_t *root) {
             // find it's acl (directory acl are defined on
             // the object itself)
             directory_t *subdir;
-            if(!(subdir = flist_directory_get(walker->database, sub.key.str)))
+            char *keystr = (char *) sub.key.str;
+
+            if(!(subdir = flist_directory_get(walker->database, keystr)))
                 return 0;
 
             // reading directory permissions
-            perms = database_get(walker->database, subdir->dir.aclkey.str);
+            keystr = (char *) subdir->dir.aclkey.str;
+            perms = walker->database->get(walker->database, keystr);
             if(!perms->data)
                 dies("directory entry: cannot get acl from database");
 
-            flist_directory_close(subdir);
+            flist_directory_close(walker->database, subdir);
 
         } else {
+            char *keystr = (char *) inode.aclkey.str;
+
             // reading file permissions
-            perms = database_get(walker->database, inode.aclkey.str);
-            if(!perms->data)
+            perms = walker->database->get(walker->database, keystr);
+            if(!perms->data) {
+                printf("%d, %s\n", inode.aclkey.len, inode.aclkey.str);
                 dies("inode entry: cannot get acl from database");
+            }
         }
 
         ACI_ptr acip;

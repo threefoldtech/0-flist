@@ -480,7 +480,7 @@ static capn_text chars_to_text(const char *chars) {
 }
 
 void inode_acl_persist(database_t *database, acl_t *acl) {
-    if(database_exists(database, acl->key))
+    if(database->exists(database, acl->key))
         return;
 
     // create a capnp aci object
@@ -508,7 +508,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     capn_free(&c);
 
     debug("[+] writing acl into db: %s\n", acl->key);
-    if(database_set(database, acl->key, buffer, sz))
+    if(database->set(database, acl->key, buffer, sz))
         dies("acl database error");
 }
 
@@ -657,7 +657,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
     // commit this object into the database
     debug("[+] writing into db: %s\n", root->hashkey);
-    if(database_set(database, root->hashkey, buffer, sz))
+    if(database->set(database, root->hashkey, buffer, sz))
         dies("database error");
 
     free(buffer);
@@ -757,7 +757,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // this mean when processing files or directory on the virtual root, the relative
     // path will be an empty string
     if(length > 0 && ftwbuf->level > 1) {
-         relpath = strndup(fpath + settings.rootlen, ftwbuf->base - settings.rootlen - 1);
+        relpath = strndup(fpath + settings.rootlen, ftwbuf->base - settings.rootlen - 1);
 
     } else relpath = strdup("");
 
@@ -863,10 +863,10 @@ int flist_create(database_t *database, const char *root) {
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
-    #ifdef FLIST_WRITE_FULLDUMP
+#ifdef FLIST_WRITE_FULLDUMP
     printf("===================================\n");
     dirnode_dumps(rootdir);
-    #endif
+#endif
 
     debug("[+] =========================================\n");
     debug("[+] building capnp from memory tree\n");
