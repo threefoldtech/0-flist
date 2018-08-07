@@ -13,13 +13,13 @@ static int database_sqlite_build(database_sqlite_t *db) {
     char *query = "CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);";
     value_t value;
 
-    if(sqlite3_prepare_v2(db->db, query, -1, &value.handler, NULL) != SQLITE_OK) {
-        diedb("build: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+    if(sqlite3_prepare_v2(db->db, query, -1, (sqlite3_stmt **) &value.handler, NULL) != SQLITE_OK) {
+        warndb("build: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
         return 1;
     }
 
     if(sqlite3_step(value.handler) != SQLITE_DONE) {
-        diedb("build: sqlite3_step", sqlite3_errmsg(db->db));
+        warndb("build: sqlite3_step", sqlite3_errmsg(db->db));
         return 1;
     }
 
@@ -30,32 +30,12 @@ static int database_sqlite_build(database_sqlite_t *db) {
     return 0;
 }
 
-static database_sqlite_t *database_sqlite_root_init(char *root, int create) {
-    database_sqlite_t *db;
-
-    if(!(db = malloc(sizeof(database_sqlite_t))))
-        diep("malloc");
-
-    db->updated = 0;
-    db->root = root;
-
-    if(asprintf(&db->filename, "%s/flistdb.sqlite3", root) < 0) {
-        diep("asprintf");
-        free(db);
-        return NULL;
-    }
+static database_sqlite_t *database_sqlite_root_init(database_t *database) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     if(sqlite3_open(db->filename, &db->db)) {
-        diedb("sqlite3_open", sqlite3_errmsg(db->db));
-        free(db);
+        warndb("sqlite3_open", sqlite3_errmsg(db->db));
         return NULL;
-    }
-
-    if(create) {
-        if(database_sqlite_build(db)) {
-            free(db);
-            return NULL;
-        }
     }
 
     // pre-compute query
@@ -63,25 +43,29 @@ static database_sqlite_t *database_sqlite_root_init(char *root, int create) {
     char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
 
     if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
         return NULL;
     }
 
     if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
         return NULL;
     }
 
     return db;
 }
 
-static database_t *database_sqlite_open(database_t *database, char *root) {
-    database->handler = database_sqlite_root_init(root, 0);
+static database_t *database_sqlite_open(database_t *database) {
+    database->handler = database_sqlite_root_init(database);
     return database;
 }
 
-static database_t *database_sqlite_create(database_t *database, char *root) {
-    database->handler = database_sqlite_root_init(root, 1);
+static database_t *database_sqlite_create(database_t *database) {
+    database->handler = database_sqlite_root_init(database);
+
+    if(database_sqlite_build(database->handler))
+        return NULL;
+
     return database;
 }
 
@@ -120,7 +104,7 @@ static value_t *database_sqlite_get(database_t *database, char *key) {
         return value;
     }
 
-    diedb("get: sqlite3_step", sqlite3_errmsg(db->db));
+    warndb("get: sqlite3_step", sqlite3_errmsg(db->db));
     return value;
 }
 
@@ -133,17 +117,13 @@ static void database_sqlite_clean(value_t *value) {
 
 static int database_sqlite_set(database_t *database, char *key, uint8_t *payload, size_t length) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
-    value_t *value;
-
-    if(!(value = calloc(1, sizeof(value_t))))
-        diep("malloc");
 
     sqlite3_reset(db->insert);
     sqlite3_bind_text(db->insert, 1, key, -1, SQLITE_STATIC);
     sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
     if(sqlite3_step(db->insert) != SQLITE_DONE)
-        diedb("set: sqlite3_step", sqlite3_errmsg(db->db));
+        warndb("set: sqlite3_step", sqlite3_errmsg(db->db));
 
     db->updated = 1;
 
@@ -163,7 +143,7 @@ static int database_sqlite_exists(database_t *database, char *key) {
 }
 
 // public sqlite function initializer
-database_t *database_sqlite_init() {
+database_t *database_sqlite_init(char *rootpath) {
     database_t *db;
 
     // allocate generic database object
@@ -176,6 +156,20 @@ database_t *database_sqlite_init() {
         return NULL;
     }
 
+    database_sqlite_t *handler = (database_sqlite_t *) db->handler;
+
+    // setting the sqlite handler
+    handler->root = rootpath;
+    handler->updated = 0;
+
+    if(asprintf(&handler->filename, "%s/flistdb.sqlite3", rootpath) < 0) {
+        diep("asprintf");
+        free(db->handler);
+        free(db);
+        return NULL;
+    }
+
+    // setting global db
     db->type = "SQLITE3";
 
     // fillin handlers

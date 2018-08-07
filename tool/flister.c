@@ -11,6 +11,8 @@
 #include "archive.h"
 #include "workspace.h"
 #include "database.h"
+#include "database_sqlite.h"
+#include "database_redis.h"
 #include "flist_listing.h"
 #include "flist_merger.h"
 #include "flist_write.h"
@@ -117,8 +119,8 @@ static int flister_list(char *workspace) {
 
 
     debug("[+] loading database\n");
-    database_t *database = database_init(SQLITE3);
-    database->open(database, workspace);
+    database_t *database = database_sqlite_init(workspace);
+    database->open(database);
 
     debug("[+] walking over database\n");
     flist_listing(database);
@@ -130,8 +132,8 @@ static int flister_list(char *workspace) {
 }
 
 static int flister_merge(char *workspace) {
-    database_t *database = database_init(SQLITE3);
-    database->create(database, workspace);
+    database_t *database = database_sqlite_init(workspace);
+    database->create(database);
 
     // building database
     flist_merger(database, &settings.merge);

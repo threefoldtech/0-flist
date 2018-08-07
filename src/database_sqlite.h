@@ -14,5 +14,6 @@
 
     } database_sqlite_t;
 
-    database_t *database_sqlite_init();
+    // initializers
+    database_t *database_sqlite_init(char *rootpath);
 #endif

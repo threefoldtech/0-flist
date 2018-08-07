@@ -13,8 +13,8 @@
         void *handler;
         char *type;
 
-        struct database_t* (*open)(struct database_t *db, char *root);
-        struct database_t* (*create)(struct database_t *db, char *root);
+        struct database_t* (*open)(struct database_t *db);
+        struct database_t* (*create)(struct database_t *db);
         void (*close)(struct database_t *db);
 
         value_t* (*get)(struct database_t *db, char *key);
@@ -31,5 +31,5 @@
 
     } database_type_t;
 
-    database_t *database_init(database_type_t type);
+    void warndb(char *source, const char *str);
 #endif
