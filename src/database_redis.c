@@ -4,146 +4,239 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
-
-#if 0
-#include <sqlite3.h>
+#include <hiredis/hiredis.h>
 #include "database.h"
-#include "database_sqlite.h"
+#include "database_redis.h"
 #include "flister.h"
 
-static void warndb(char *source, const char *str) {
-    fprintf(stderr, "[-] database: %s: %s\n", source, str);
-}
+static void database_redis_close(database_t *database) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    redisFree(db->redis);
 
-static void diedb(char *source, const char *str) {
-    warndb(source, str);
-    exit(EXIT_FAILURE);
-}
-
-int database_build(database_t *database) {
-    char *query = "CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);";
-    value_t value;
-
-    if(sqlite3_prepare_v2(database->db, query, -1, &value.stmt, NULL) != SQLITE_OK)
-        diedb("build: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
-
-    if(sqlite3_step(value.stmt) != SQLITE_DONE)
-        diedb("build: sqlite3_step", sqlite3_errmsg(database->db));
-
-    sqlite3_finalize(value.stmt);
-
-    sqlite3_exec(database->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
-
-    return 0;
-}
-
-static database_t *database_init(char *root, int create) {
-    database_t *database;
-
-    if(!(database = malloc(sizeof(database_t))))
-        diep("malloc");
-
-    database->updated = 0;
-    database->root = root;
-
-    if(asprintf(&database->filename, "%s/flistdb.sqlite3", root) < 0)
-        diep("asprintf");
-
-    if(sqlite3_open(database->filename, &database->db))
-        diedb("sqlite3_open", sqlite3_errmsg(database->db));
-
-    if(create)
-        database_build(database);
-
-    // pre-compute query
-    char *select_query = "SELECT value FROM entries WHERE key = ?1";
-    char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
-
-    if(sqlite3_prepare_v2(database->db, select_query, -1, &database->select, 0) != SQLITE_OK)
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
-
-    if(sqlite3_prepare_v2(database->db, insert_query, -1, &database->insert, 0) != SQLITE_OK)
-        diedb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(database->db));
-
-    return database;
-}
-
-database_t *database_open(char *root) {
-    return database_init(root, 0);
-}
-
-database_t *database_create(char *root) {
-    return database_init(root, 1);
-}
-
-void database_close(database_t *database) {
-    if(database->updated) {
-        sqlite3_exec(database->db, "END TRANSACTION;", NULL, NULL, NULL);
-        sqlite3_exec(database->db, "VACUUM;", NULL, NULL, NULL);
-    }
-
-    sqlite3_close(database->db);
+    free(database->handler);
     free(database);
 }
 
-value_t *database_get(database_t *database, const char *key) {
-    value_t *value;
+static database_t *database_redis_dummy(database_t *database) {
+    (void) database;
+    return 0;
+}
 
-    if(!(value = calloc(1, sizeof(value_t))))
+//
+// GET
+//
+static redisReply *database_redis_get_real(database_t *database, char *key) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    return redisCommand(db->redis, "HGET %s %s", db->namespace, key);
+}
+
+static redisReply *database_redis_get_zdb(database_t *database, char *key) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    return redisCommand(db->redis, "GET %s", key);
+}
+
+static value_t *database_redis_get(database_t *database, char *key) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    redisReply *reply;
+    value_t *value = NULL;
+
+    if(!(value = calloc(1, sizeof(value_t)))) {
         diep("malloc");
-
-    sqlite3_reset(database->select);
-    sqlite3_bind_text(database->select, 1, key, -1, SQLITE_STATIC);
-
-    int data = sqlite3_step(database->select);
-
-    if(data == SQLITE_DONE)
-        return value;
-
-    if(data == SQLITE_ROW) {
-        value->data = (void *) sqlite3_column_blob(database->select, 0);
-        value->length = sqlite3_column_bytes(database->select, 0);
-        return value;
+        return NULL;
     }
 
-    diedb("get: sqlite3_step", sqlite3_errmsg(database->db));
+    if(!(reply = db->internal_get(database, key))) {
+       free(value);
+       return NULL;
+    }
+
+    if(reply->type != REDIS_REPLY_STRING) {
+        freeReplyObject(reply);
+        return NULL;
+    }
+
+    value->data = reply->str;
+    value->length = reply->len;
+    value->handler = reply;
+
     return value;
 }
 
-value_t *database_value_free(value_t *value) {
-    // sqlite3_finalize(value->stmt);
-    free(value);
+//
+// SET
+//
+static redisReply *database_redis_set_real(database_t *database, char *key, uint8_t *payload, size_t length) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    redisReply *reply;
 
-    return NULL;
+    // we are on a real redis backend
+    if(!(reply = redisCommand(db->redis, "HSET %s %s %b", db->namespace, key, payload, length)))
+        return NULL;
+
+    if(strcmp(reply->str, "OK"))
+        warndb("set", reply->str);
+
+    return reply;
 }
 
-int database_set(database_t *database, const char *key, const unsigned char *payload, size_t length) {
-    value_t *value;
+static redisReply *database_redis_set_zdb(database_t *database, char *key, uint8_t *payload, size_t length) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    redisReply *reply;
 
-    if(!(value = calloc(1, sizeof(value_t))))
-        diep("malloc");
+    // we are on zero-db
+    if(!(reply = redisCommand(db->redis, "SET %s %b", key, payload, length)))
+        return NULL;
 
-    sqlite3_reset(database->insert);
-    sqlite3_bind_text(database->insert, 1, key, -1, SQLITE_STATIC);
-    sqlite3_bind_blob(database->insert, 2, payload, length, SQLITE_STATIC);
+    if(reply->len == 0)
+        return reply;
 
-    if(sqlite3_step(database->insert) != SQLITE_DONE)
-        diedb("set: sqlite3_step", sqlite3_errmsg(database->db));
+    if(strcmp(reply->str, key)) {
+        warndb("set", reply->str);
+    }
 
-    database->updated = 1;
+    return reply;
+}
+
+static int database_redis_set(database_t *database, char *key, uint8_t *payload, size_t length) {
+    database_redis_t *db = (database_redis_t *) database->handler;
+    redisReply *reply;
+
+    if(!(reply = db->internal_set(database, key, payload, length)))
+        return 1;
+
+    freeReplyObject(reply);
 
     return 0;
 }
 
+static void database_redis_clean(value_t *value) {
+    freeReplyObject(value->handler);
+    free(value);
+}
+
+
 // poor implementation of exists
-int database_exists(database_t *database, const char *key) {
+static int database_redis_exists(database_t *database, char *key) {
     int retval = 0;
 
-    value_t *value = database_get(database, (char *) key);
-    if(value->data)
+    value_t *value = database_redis_get(database, key);
+    if(value && value->data)
         retval = 1;
 
-    database_value_free(value);
+    database_redis_clean(value);
     return retval;
 }
-#endif
+
+database_t *database_redis_init_global(database_t *db) {
+    // setting global db
+    db->type = "REDIS";
+
+    // fillin handlers
+    db->open = database_redis_dummy;
+    db->create = database_redis_dummy;
+    db->close = database_redis_close;
+    db->get = database_redis_get;
+    db->set = database_redis_set;
+    db->exists = database_redis_exists;
+    db->clean = database_redis_clean;
+
+    return db;
+}
+
+// public sqlite function initializer
+static database_t *database_redis_init() {
+    database_t *db;
+
+    // allocate generic database object
+    if(!(db = malloc(sizeof(database_t))))
+        return NULL;
+
+    // set our custom redis database handler
+    if(!(db->handler = malloc(sizeof(database_redis_t)))) {
+        free(db);
+        return NULL;
+    }
+
+    return database_redis_init_global(db);
+}
+
+static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
+    redisReply *reply;
+
+    if(!(reply = redisCommand(db->redis, "INFO")))
+        return 1;
+
+    if(reply->len == 0)
+        return 1;
+
+    if(strncmp(reply->str, "0-db server", 11) == 0) {
+        // this is a zero-db server
+        freeReplyObject(reply);
+
+        printf("[+] database: zero-db detected, selecting namespace\n");
+        if(!(reply = redisCommand(db->redis, "SELECT %s", namespace)))
+            return 1;
+
+        if(strcmp(reply->str, "OK")) {
+            warndb(namespace, reply->str);
+            return 1;
+        }
+
+        // linking to zdb settings
+        db->namespace = NULL;
+        db->internal_get = database_redis_get_zdb;
+        db->internal_set = database_redis_set_zdb;
+
+    } else {
+        // this is a redis-compatible server
+        printf("[+] database: redis compatible detected\n");
+
+        // linking to redis settings
+        db->namespace = namespace;
+        db->internal_get = database_redis_get_real;
+        db->internal_set = database_redis_set_real;
+    }
+
+    freeReplyObject(reply);
+    return 0;
+
+}
+
+database_t *database_redis_init_tcp(char *host, int port, char *namespace) {
+    database_t *db = database_redis_init();
+    database_redis_t *handler = db->handler;
+
+    if(!(handler->redis = redisConnect(host, port))) {
+        warndb("redisConnect", "cannot allocate memory");
+        return NULL;
+    }
+
+    if(handler->redis->err) {
+        warndb("redisConnect", handler->redis->errstr);
+        return NULL;
+    }
+
+    database_redis_set_namespace(handler, namespace);
+
+    return db;
+}
+
+database_t *database_redis_init_unix(char *socket, char *namespace) {
+    database_t *db = database_redis_init();
+    database_redis_t *handler = db->handler;
+
+    if(!(handler->redis = redisConnectUnix(socket))) {
+        warndb("redisConnectUnix", "cannot allocate memory");
+        return NULL;
+    }
+
+    if(handler->redis->err) {
+        warndb("redisConnectUnix", handler->redis->errstr);
+        return NULL;
+    }
+
+    database_redis_set_namespace(handler, namespace);
+
+    return db;
+
+}
