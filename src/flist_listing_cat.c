@@ -14,12 +14,13 @@
 typedef struct flist_cat_t {
     char *filename;
     int status;
+    backend_t *backend;
 
 } flist_cat_t;
 
-void *flist_cat_init() {
+void *flist_cat_init(settings_t *settings) {
     flist_cat_t *cat;
-    char *target = settings.targetfile;
+    char *target = settings->targetfile;
 
     if(!(cat = malloc(sizeof(flist_cat_t))))
         diep("cat malloc");
@@ -30,6 +31,12 @@ void *flist_cat_init() {
 
     cat->filename = strdup(target);
     cat->status = 0;
+
+    if(!(cat->backend = backend_init_zdb(settings->backendhost, settings->backendport, "default", "/"))) {
+        fprintf(stderr, "[-] cat: cannot connect backend\n");
+        free(cat);
+        return NULL;
+    }
 
     debug("[+] cat: looking for: %s\n", cat->filename);
 
@@ -78,9 +85,9 @@ int flist_cat(walker_t *walker, directory_t *root) {
 
                 backend_data_t *data;
 
-                if(!(data = download_block(hash, hashlen, key, keylen))) {
+                if(!(data = download_block(cat->backend, hash, hashlen, key, keylen))) {
                     fprintf(stderr, "[-] could not download file\n");
-                    cat->status = 1;
+                    cat->status = 2;
                     return 1;
                 }
 
@@ -92,6 +99,8 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 download_free(data);
                 free(hash);
                 free(key);
+
+                cat->status = 1;
 
                 // we are done
                 return 1;
@@ -113,6 +122,9 @@ int flist_cat(walker_t *walker, directory_t *root) {
 
 void flist_cat_done(walker_t *walker) {
     flist_cat_t *cat = (flist_cat_t *) walker->userptr;
+
+    if(cat->status == 1)
+        debug("[+] file found !\n");
 
     free(cat->filename);
     free(cat);

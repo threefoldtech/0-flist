@@ -98,14 +98,14 @@ static int flister_create(char *workspace) {
 
     if(settings.backendhost) {
         // initizlizing backend as requested
-        if(!(backend = backend_init_zdb(settings.backendhost, settings.backendport, "default"))) {
+        if(!(backend = backend_init_zdb(settings.backendhost, settings.backendport, "default", settings.create))) {
             fprintf(stderr, "[-] cannot initialize backend\n");
             return 1;
         }
     }
 
     // building database
-    flist_create(database, settings.create, backend);
+    flist_create(database, settings.create, backend, &settings);
 
     // closing database before archiving
     debug("[+] closing database\n");
@@ -135,7 +135,7 @@ static int flister_list(char *workspace) {
     database->open(database);
 
     debug("[+] walking over database\n");
-    flist_listing(database);
+    flist_listing(database, &settings);
 
     debug("[+] closing database\n");
     database->close(database);

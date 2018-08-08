@@ -3,5 +3,5 @@
 
     #include "database.h"
 
-    int flist_create(database_t *database, const char *root, backend_t *backend);
+    int flist_create(database_t *database, const char *root, backend_t *backend, settings_t *settings);
 #endif

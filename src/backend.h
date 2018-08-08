@@ -25,20 +25,25 @@
 
     typedef struct backend_t {
         database_t *database;
+        char *rootpath;
 
     } backend_t;
 
     // initialize a backend
-    backend_t *backend_init_zdb(char *host, int port, char *namespace);
+    backend_t *backend_init_zdb(char *host, int port, char *namespace, char *rootpath);
 
     // write a file into the backend
-    chunks_t *upload_inode(backend_t *backend, char *root, char *path, char *filename);
+    chunks_t *upload_inode(backend_t *backend, char *path, char *filename);
+
+    // download stuff
+    backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen);
 
     // clean (and close) a backend object
     void backend_free(backend_t *backend);
 
-    // clean internal chunks
+    // internal cleaners
     void chunks_free(chunks_t *chunks);
+    void download_free(backend_data_t *data);
 
 #if 0
 

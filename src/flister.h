@@ -48,5 +48,5 @@
 
     } settings_t;
 
-    extern settings_t settings;
+    // extern settings_t settings;
 #endif

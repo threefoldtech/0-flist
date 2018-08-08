@@ -15,7 +15,7 @@
 #include "database_sqlite.h"
 #include "zero_chunk.h"
 
-backend_t *backend_init_zdb(char *host, int port, char *namespace) {
+backend_t *backend_init_zdb(char *host, int port, char *namespace, char *rootpath) {
     backend_t *backend;
 
     if(!(backend = malloc(sizeof(backend_t))))
@@ -25,6 +25,8 @@ backend_t *backend_init_zdb(char *host, int port, char *namespace) {
         free(backend);
         return NULL;
     }
+
+    backend->rootpath = rootpath;
 
     return backend;
 }
@@ -178,7 +180,7 @@ void chunks_free(chunks_t *chunks) {
     free(chunks);
 }
 
-chunks_t *upload_inode(backend_t *backend, char *root, char *path, char *filename) {
+chunks_t *upload_inode(backend_t *backend, char *path, char *filename) {
     char *physical = NULL;
 
     /*
@@ -186,7 +188,7 @@ chunks_t *upload_inode(backend_t *backend, char *root, char *path, char *filenam
         backend_connect(&bcontext, settings.backendhost, settings.backendport);
     */
 
-    if(asprintf(&physical, "%s/%s/%s", root, path, filename) < 0)
+    if(asprintf(&physical, "%s/%s/%s", backend->rootpath, path, filename) < 0)
         diep("asprintf");
 
     chunks_t *chunks = upload_file(backend, physical);

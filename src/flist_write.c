@@ -145,6 +145,7 @@ typedef struct flist_write_global_t {
     backend_t *backend;
     dirnode_t *rootdir;
     dirnode_t *currentdir;
+    settings_t *settings;
 
 } flist_write_global_t;
 
@@ -169,6 +170,7 @@ static flist_write_global_t globaldata = {
     .backend = NULL,
     .rootdir = NULL,
     .currentdir = NULL,
+    .settings = NULL,
 };
 
 //
@@ -651,7 +653,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent,
             if(inode->size && backend) {
                 chunks_t *chunks;
 
-                if(!(chunks = upload_inode(backend, settings.create, root->fullpath, inode->name)))
+                if(!(chunks = upload_inode(backend, root->fullpath, inode->name)))
                     dies("upload failed: unexpected error");
 
                 f.blocks = new_FileBlock_list(cs, chunks->length);
@@ -776,7 +778,8 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
 }
 
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    ssize_t length = ftwbuf->base - settings.rootlen - 1;
+    settings_t *settings = globaldata.settings;
+    ssize_t length = ftwbuf->base - settings->rootlen - 1;
     char *relpath;
 
     // checking if entry is rejected by exclude filter
@@ -794,7 +797,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // this mean when processing files or directory on the virtual root, the relative
     // path will be an empty string
     if(length > 0 && ftwbuf->level > 1) {
-        relpath = strndup(fpath + settings.rootlen, ftwbuf->base - settings.rootlen - 1);
+        relpath = strndup(fpath + settings->rootlen, ftwbuf->base - settings->rootlen - 1);
 
     } else relpath = strdup("");
 
@@ -807,7 +810,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we sets everything for underlaying directories but nothing for the directory
     // itself (like it's acl, etc.) let set this now here
     if(typeflag == FTW_DP) {
-        const char *virtual = fpath + settings.rootlen + 1;
+        const char *virtual = fpath + settings->rootlen + 1;
         debug("[+] all subdirectories done for: %s\n", virtual);
 
         dirnode_t *myself = dirnode_lookup(globaldata.rootdir, virtual);
@@ -887,7 +890,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     return 0;
 }
 
-int flist_create(database_t *database, const char *root, backend_t *backend) {
+int flist_create(database_t *database, const char *root, backend_t *backend, settings_t *settings) {
     debug("[+] preparing flist for: %s\n", root);
 
     // initialize excluders
@@ -901,6 +904,7 @@ int flist_create(database_t *database, const char *root, backend_t *backend) {
     globaldata.root = root;
     globaldata.database = database;
     globaldata.backend = backend;
+    globaldata.settings = settings;
 
     debug("[+] building database\n");
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
@@ -921,7 +925,7 @@ int flist_create(database_t *database, const char *root, backend_t *backend) {
     dirnode_tree_free(globaldata.rootdir);
     upload_inode_flush();
 
-    if(settings.json)
+    if(settings->json)
         dirnode_json(&jsonresponse);
 
     if(backend)

@@ -90,8 +90,8 @@ static redisReply *database_redis_set_zdb(database_t *database, char *key, size_
     if(reply->len == 0)
         return reply;
 
-    if(strcmp(reply->str, key)) {
-        warndb("set", reply->str);
+    if(memcmp(reply->str, key, keylen)) {
+        warndb("set: invalid response", reply->str);
     }
 
     return reply;

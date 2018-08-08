@@ -12,17 +12,24 @@
 #include "flist_walker.h"
 
 typedef struct flist_check_t {
+    backend_t *backend;
     size_t files;
     size_t size;
     int status;
 
 } flist_check_t;
 
-void *flist_check_init() {
+void *flist_check_init(settings_t *settings) {
     flist_check_t *checker;
 
     if(!(checker = calloc(sizeof(flist_check_t), 1)))
         diep("checker malloc");
+
+    if(!(checker->backend = backend_init_zdb(settings->backendhost, settings->backendport, "default", "/"))) {
+        fprintf(stderr, "[-] cat: cannot connect backend\n");
+        free(checker);
+        return NULL;
+    }
 
     return checker;
 }
@@ -61,7 +68,7 @@ int flist_check(walker_t *walker, directory_t *root) {
 
                 backend_data_t *data;
 
-                if(!(data = download_block(hash, hashlen, key, keylen))) {
+                if(!(data = download_block(checker->backend, hash, hashlen, key, keylen))) {
                     checker->status = 1;
                     return 1;
                 }
