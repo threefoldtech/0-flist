@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h>
 #include <time.h>
 #include <ftw.h>
 #include <unistd.h>
@@ -17,10 +18,10 @@
 #include <regex.h>
 #include <jansson.h>
 #include "flister.h"
+#include "flist_backend.h"
 #include "database.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
-#include "flist_backend.h"
 #include "flist_listing.h"
 
 // #define FLIST_WRITE_FULLDUMP
@@ -135,6 +136,44 @@ typedef struct dirnode_t {
 
 } dirnode_t;
 
+//
+//
+
+typedef struct flist_write_global_t {
+    char *root;
+    database_t *database;
+    backend_t *backend;
+    dirnode_t *rootdir;
+    dirnode_t *currentdir;
+
+} flist_write_global_t;
+
+// WARNING:
+//   we use nftw to walk over the filesystem
+//   this method doesn't allow to pass custom variable
+//   to the callback, we __need__ to use a global variable
+//   to reach data from the callback
+//
+//   this global variable (only accessible from this file) is
+//   there for that purpose **only**
+//
+//   THIS MAKE ANY CALL TO FLIST __CREATION__
+//   NOT THREADS SAFE
+//
+//   maybe for a next release, some lock will be added
+//   to ensure threads are not breaking but for now
+//   just assume all of this are NOT THREADS SAFE.
+static flist_write_global_t globaldata = {
+    .root = NULL,
+    .database = NULL,
+    .backend = NULL,
+    .rootdir = NULL,
+    .currentdir = NULL,
+};
+
+//
+//
+
 static char __hex[] = "0123456789abcdef";
 
 static char *hashhex(unsigned char *hash, int dlength) {
@@ -236,8 +275,6 @@ static char *path_key(const char *path) {
 }
 
 
-static dirnode_t *rootdir = NULL;
-static dirnode_t *currentdir = NULL;
 
 static dirnode_t *dirnode_create(char *fullpath, char *name) {
     dirnode_t *directory;
@@ -480,7 +517,7 @@ static capn_text chars_to_text(const char *chars) {
 }
 
 void inode_acl_persist(database_t *database, acl_t *acl) {
-    if(database->exists(database, acl->key))
+    if(database->exists(database, acl->key, strlen(acl->key)))
         return;
 
     // create a capnp aci object
@@ -508,7 +545,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     capn_free(&c);
 
     debug("[+] writing acl into db: %s\n", acl->key);
-    if(database->set(database, acl->key, buffer, sz))
+    if(database->set(database, acl->key, strlen(acl->key), buffer, sz))
         dies("acl database error");
 }
 
@@ -531,7 +568,7 @@ static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t l
 
 flist_json_t jsonresponse = {0};
 
-void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent) {
+void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent, backend_t *backend) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -611,10 +648,10 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
             };
 
             // upload non-empty files
-            if(inode->size && settings.backendhost) {
+            if(inode->size && backend) {
                 chunks_t *chunks;
 
-                if(!(chunks = upload_inode(settings.create, root->fullpath, inode->name)))
+                if(!(chunks = upload_inode(backend, settings.create, root->fullpath, inode->name)))
                     dies("upload failed: unexpected error");
 
                 f.blocks = new_FileBlock_list(cs, chunks->length);
@@ -657,14 +694,14 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent)
 
     // commit this object into the database
     debug("[+] writing into db: %s\n", root->hashkey);
-    if(database->set(database, root->hashkey, buffer, sz))
+    if(database->set(database, root->hashkey, strlen(root->hashkey), buffer, sz))
         dies("database error");
 
     free(buffer);
 
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        dirnode_tree_capn(subdir, database, root);
+        dirnode_tree_capn(subdir, database, root, backend);
 }
 
 //
@@ -773,12 +810,12 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         const char *virtual = fpath + settings.rootlen + 1;
         debug("[+] all subdirectories done for: %s\n", virtual);
 
-        dirnode_t *myself = dirnode_lookup(rootdir, virtual);
+        dirnode_t *myself = dirnode_lookup(globaldata.rootdir, virtual);
         flist_dirnode_metadata(myself, sb);
 
         // clear global currentdir
         // will be reset later with right options
-        currentdir = NULL;
+        globaldata.currentdir = NULL;
     }
 
     // if we reach level 0, we are processing the root directory
@@ -788,7 +825,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         debug("[+] ======== ROOT PATH, WE ARE DONE ========\n");
         free(relpath);
 
-        return flist_dirnode_metadata(rootdir, sb);
+        return flist_dirnode_metadata(globaldata.rootdir, sb);
     }
 
     // if the global current directory is not set
@@ -799,12 +836,12 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     //
     // FIX: force to reset currentdir each time
     //      there are some bug when trusting this safe
-    if(!(currentdir = dirnode_lookup(rootdir, relpath)))
+    if(!(globaldata.currentdir = dirnode_lookup(globaldata.rootdir, relpath)))
         return 1;
 
     // } else printf("current dir set\n");
 
-    debug("[+] current directory: %s (%s)\n", currentdir->name, currentdir->fullpath);
+    debug("[+] current directory: %s (%s)\n", globaldata.currentdir->name, globaldata.currentdir->fullpath);
 
     // processing the real entry
     // this can be a file, a directory, anything
@@ -820,14 +857,14 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     const char *itemname = fpath + ftwbuf->base;
     debug("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
-    inode_t *inode = flist_process_file(itemname, sb, fpath, currentdir);
-    dirnode_appends_inode(currentdir, inode);
+    inode_t *inode = flist_process_file(itemname, sb, fpath, globaldata.currentdir);
+    dirnode_appends_inode(globaldata.currentdir, inode);
 
     // this is maybe an empty directory, we don't know
     // in doubt, let's call lookup in order to create
     // entry if it doesn't exists
     if(inode->type == INODE_DIRECTORY) {
-        dirnode_t *check = dirnode_lookup(rootdir, inode->fullpath);
+        dirnode_t *check = dirnode_lookup(globaldata.rootdir, inode->fullpath);
 
         // if the directory is never reached anyway
         // metadata won't be set anywhere else
@@ -842,7 +879,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // as deep as possible on each call
     if(strlen(relpath) == 0) {
         debug("[+] touching virtual root directory, reseting current directory\n");
-        currentdir = NULL;
+        globaldata.currentdir = NULL;
     }
 
     free(relpath);
@@ -850,36 +887,45 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     return 0;
 }
 
-int flist_create(database_t *database, const char *root) {
+int flist_create(database_t *database, const char *root, backend_t *backend) {
     debug("[+] preparing flist for: %s\n", root);
 
     // initialize excluders
     excluders_init();
 
-    if(!(rootdir = dirnode_create("", "")))
+    if(!(globaldata.rootdir = dirnode_create("", "")))
         return 1;
+
+    // FIXME: thread safe ? add one global lock ?
+
+    globaldata.root = root;
+    globaldata.database = database;
+    globaldata.backend = backend;
 
     debug("[+] building database\n");
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
         diep("nftw");
 
+    // FIXME: release the global lock ?
+
 #ifdef FLIST_WRITE_FULLDUMP
     printf("===================================\n");
-    dirnode_dumps(rootdir);
+    dirnode_dumps(globaldata.rootdir);
 #endif
 
     debug("[+] =========================================\n");
     debug("[+] building capnp from memory tree\n");
-    dirnode_tree_capn(rootdir, database, rootdir);
+    dirnode_tree_capn(globaldata.rootdir, database, globaldata.rootdir, backend);
 
     debug("[+] recursivly freeing directory tree\n");
-    dirnode_tree_free(rootdir);
+    dirnode_tree_free(globaldata.rootdir);
     upload_inode_flush();
 
     if(settings.json)
         dirnode_json(&jsonresponse);
 
-    upload_free();
+    if(backend)
+        backend_free(backend);
 
     return 0;
 }

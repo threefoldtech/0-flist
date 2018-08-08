@@ -30,6 +30,26 @@ static int database_sqlite_build(database_sqlite_t *db) {
     return 0;
 }
 
+static int database_sqlite_optimize(database_t *database) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
+    // pre-compute query
+    char *select_query = "SELECT value FROM entries WHERE key = ?1";
+    char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
+
+    if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
+        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
+    if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
+        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
+    return 0;
+}
+
 static database_sqlite_t *database_sqlite_root_init(database_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
@@ -38,33 +58,28 @@ static database_sqlite_t *database_sqlite_root_init(database_t *database) {
         return NULL;
     }
 
-    // pre-compute query
-    char *select_query = "SELECT value FROM entries WHERE key = ?1";
-    char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
-
-    if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
-        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
-        return NULL;
-    }
-
-    if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
-        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
-        return NULL;
-    }
-
     return db;
 }
 
 static database_t *database_sqlite_open(database_t *database) {
     database->handler = database_sqlite_root_init(database);
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
+    if(db->select == NULL)
+        database_sqlite_optimize(database);
+
     return database;
 }
 
 static database_t *database_sqlite_create(database_t *database) {
     database->handler = database_sqlite_root_init(database);
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
-    if(database_sqlite_build(database->handler))
+    if(database_sqlite_build(db))
         return NULL;
+
+    if(db->select == NULL)
+        database_sqlite_optimize(database);
 
     return database;
 }
@@ -81,7 +96,7 @@ static void database_sqlite_close(database_t *database) {
     free(db);
 }
 
-static value_t *database_sqlite_get(database_t *database, char *key) {
+static value_t *database_sqlite_get(database_t *database, char *key, size_t keylen) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
     value_t *value;
 
@@ -91,7 +106,7 @@ static value_t *database_sqlite_get(database_t *database, char *key) {
     }
 
     sqlite3_reset(db->select);
-    sqlite3_bind_text(db->select, 1, key, -1, SQLITE_STATIC);
+    sqlite3_bind_text(db->select, 1, key, keylen, SQLITE_STATIC);
 
     int data = sqlite3_step(db->select);
 
@@ -115,11 +130,11 @@ static void database_sqlite_clean(value_t *value) {
     free(value);
 }
 
-static int database_sqlite_set(database_t *database, char *key, uint8_t *payload, size_t length) {
+static int database_sqlite_set(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     sqlite3_reset(db->insert);
-    sqlite3_bind_text(db->insert, 1, key, -1, SQLITE_STATIC);
+    sqlite3_bind_text(db->insert, 1, key, keylen, SQLITE_STATIC);
     sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
     if(sqlite3_step(db->insert) != SQLITE_DONE)
@@ -131,10 +146,10 @@ static int database_sqlite_set(database_t *database, char *key, uint8_t *payload
 }
 
 // poor implementation of exists
-static int database_sqlite_exists(database_t *database, char *key) {
+static int database_sqlite_exists(database_t *database, char *key, size_t keylen) {
     int retval = 0;
 
-    value_t *value = database_sqlite_get(database, key);
+    value_t *value = database_sqlite_get(database, key, keylen);
     if(value->data)
         retval = 1;
 
@@ -161,6 +176,10 @@ database_t *database_sqlite_init(char *rootpath) {
     // setting the sqlite handler
     handler->root = rootpath;
     handler->updated = 0;
+
+    // database not optimized yet
+    handler->insert = NULL;
+    handler->select = NULL;
 
     if(asprintf(&handler->filename, "%s/flistdb.sqlite3", rootpath) < 0) {
         diep("asprintf");

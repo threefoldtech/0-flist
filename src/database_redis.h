@@ -7,8 +7,8 @@
         redisContext *redis;
         char *namespace;
 
-        redisReply* (*internal_get)(database_t *database, char *key);
-        redisReply* (*internal_set)(database_t *database, char *key, uint8_t *payload, size_t length);
+        redisReply* (*internal_get)(database_t *database, char *key, size_t keylen);
+        redisReply* (*internal_set)(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length);
 
     } database_redis_t;
 

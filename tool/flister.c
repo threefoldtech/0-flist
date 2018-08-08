@@ -10,6 +10,7 @@
 #include "flister.h"
 #include "archive.h"
 #include "workspace.h"
+#include "flist_backend.h"
 #include "database.h"
 #include "database_sqlite.h"
 #include "database_redis.h"
@@ -89,11 +90,22 @@ int usage(char *basename) {
 }
 
 static int flister_create(char *workspace) {
-    database_t *database = database_init(SQLITE3);
-    database->create(database, workspace);
+    // no backend by default
+    backend_t *backend = NULL;
+
+    database_t *database = database_sqlite_init(workspace);
+    database->create(database);
+
+    if(settings.backendhost) {
+        // initizlizing backend as requested
+        if(!(backend = backend_init_zdb(settings.backendhost, settings.backendport, "default"))) {
+            fprintf(stderr, "[-] cannot initialize backend\n");
+            return 1;
+        }
+    }
 
     // building database
-    flist_create(database, settings.create);
+    flist_create(database, settings.create, backend);
 
     // closing database before archiving
     debug("[+] closing database\n");

@@ -46,7 +46,7 @@ int flist_ls(walker_t *walker, directory_t *root) {
 
             // reading directory permissions
             keystr = (char *) subdir->dir.aclkey.str;
-            perms = walker->database->get(walker->database, keystr);
+            perms = walker->database->get(walker->database, keystr, strlen(keystr));
             if(!perms->data)
                 dies("directory entry: cannot get acl from database");
 
@@ -56,7 +56,7 @@ int flist_ls(walker_t *walker, directory_t *root) {
             char *keystr = (char *) inode.aclkey.str;
 
             // reading file permissions
-            perms = walker->database->get(walker->database, keystr);
+            perms = walker->database->get(walker->database, keystr, strlen(keystr));
             if(!perms->data) {
                 printf("%d, %s\n", inode.aclkey.len, inode.aclkey.str);
                 dies("inode entry: cannot get acl from database");

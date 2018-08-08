@@ -25,17 +25,17 @@ static database_t *database_redis_dummy(database_t *database) {
 //
 // GET
 //
-static redisReply *database_redis_get_real(database_t *database, char *key) {
+static redisReply *database_redis_get_real(database_t *database, char *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
-    return redisCommand(db->redis, "HGET %s %s", db->namespace, key);
+    return redisCommand(db->redis, "HGET %s %b", db->namespace, key, keylen);
 }
 
-static redisReply *database_redis_get_zdb(database_t *database, char *key) {
+static redisReply *database_redis_get_zdb(database_t *database, char *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
-    return redisCommand(db->redis, "GET %s", key);
+    return redisCommand(db->redis, "GET %b", key, keylen);
 }
 
-static value_t *database_redis_get(database_t *database, char *key) {
+static value_t *database_redis_get(database_t *database, char *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
     value_t *value = NULL;
@@ -45,7 +45,7 @@ static value_t *database_redis_get(database_t *database, char *key) {
         return NULL;
     }
 
-    if(!(reply = db->internal_get(database, key))) {
+    if(!(reply = db->internal_get(database, key, keylen))) {
        free(value);
        return NULL;
     }
@@ -65,12 +65,12 @@ static value_t *database_redis_get(database_t *database, char *key) {
 //
 // SET
 //
-static redisReply *database_redis_set_real(database_t *database, char *key, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_real(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
     // we are on a real redis backend
-    if(!(reply = redisCommand(db->redis, "HSET %s %s %b", db->namespace, key, payload, length)))
+    if(!(reply = redisCommand(db->redis, "HSET %s %b %b", db->namespace, key, keylen, payload, length)))
         return NULL;
 
     if(strcmp(reply->str, "OK"))
@@ -79,12 +79,12 @@ static redisReply *database_redis_set_real(database_t *database, char *key, uint
     return reply;
 }
 
-static redisReply *database_redis_set_zdb(database_t *database, char *key, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_zdb(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
     // we are on zero-db
-    if(!(reply = redisCommand(db->redis, "SET %s %b", key, payload, length)))
+    if(!(reply = redisCommand(db->redis, "SET %b %b", key, keylen, payload, length)))
         return NULL;
 
     if(reply->len == 0)
@@ -97,11 +97,11 @@ static redisReply *database_redis_set_zdb(database_t *database, char *key, uint8
     return reply;
 }
 
-static int database_redis_set(database_t *database, char *key, uint8_t *payload, size_t length) {
+static int database_redis_set(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
-    if(!(reply = db->internal_set(database, key, payload, length)))
+    if(!(reply = db->internal_set(database, key, keylen, payload, length)))
         return 1;
 
     freeReplyObject(reply);
@@ -116,10 +116,10 @@ static void database_redis_clean(value_t *value) {
 
 
 // poor implementation of exists
-static int database_redis_exists(database_t *database, char *key) {
+static int database_redis_exists(database_t *database, char *key, size_t keylen) {
     int retval = 0;
 
-    value_t *value = database_redis_get(database, key);
+    value_t *value = database_redis_get(database, key, keylen);
     if(value && value->data)
         retval = 1;
 

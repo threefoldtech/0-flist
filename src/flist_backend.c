@@ -5,13 +5,33 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <hiredis/hiredis.h>
+#include <stdint.h>
 #include "flister.h"
+#include "flist_backend.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
-#include "flist_backend.h"
+#include "database.h"
+#include "database_redis.h"
+#include "database_sqlite.h"
 #include "zero_chunk.h"
 
+backend_t *backend_init_zdb(char *host, int port, char *namespace) {
+    backend_t *backend;
+
+    if(!(backend = malloc(sizeof(backend_t))))
+        return NULL;
+
+    if(!(backend->database = database_redis_init_tcp(host, port, namespace))) {
+        free(backend);
+        return NULL;
+    }
+
+    return backend;
+}
+
+// TODO: sqlite backend
+
+#if 0
 // FIXME: don't use global variable
 typedef struct backend_t {
     redisContext *redis;  // redis context
@@ -25,7 +45,9 @@ backend_t bcontext = {
     .pwrite = 0,
     .buflen = 0,
 };
+#endif
 
+#if 0
 static redisContext *backend_connect(backend_t *context, char *hostname, int port) {
     debug("[+] backend: connecting (%s, %d)\n", hostname, port);
 
@@ -42,8 +64,10 @@ void upload_free() {
     if(bcontext.redis)
         redisFree(bcontext.redis);
 }
+#endif
 
 void upload_flush(backend_t *context) {
+#if 0
     redisReply *reply;
 
     debug("[+] upload: flushing: %d items (%.2f KB)\n", context->pwrite, context->buflen / 1024.0);
@@ -65,10 +89,11 @@ void upload_flush(backend_t *context) {
 
     context->pwrite = 0;
     context->buflen = 0;
+#endif
 }
 
 static int chunk_upload(backend_t *context, chunk_t *chunk) {
-#if 1
+#if 0
     // insert new key
     redisAppendCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
     context->pwrite += 1;
@@ -92,6 +117,9 @@ static int chunk_upload(backend_t *context, chunk_t *chunk) {
 
     freeReplyObject(reply);
 #endif
+    database_t *db = context->database;
+    if(db->set(db, chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length))
+        return 1;
 
     return 0;
 }
@@ -150,38 +178,48 @@ void chunks_free(chunks_t *chunks) {
     free(chunks);
 }
 
-chunks_t *upload_inode(char *root, char *path, char *filename) {
+chunks_t *upload_inode(backend_t *backend, char *root, char *path, char *filename) {
     char *physical = NULL;
 
+    /*
     if(bcontext.redis == NULL)
         backend_connect(&bcontext, settings.backendhost, settings.backendport);
+    */
 
     if(asprintf(&physical, "%s/%s/%s", root, path, filename) < 0)
         diep("asprintf");
 
-    chunks_t *chunks = upload_file(&bcontext, physical);
+    chunks_t *chunks = upload_file(backend, physical);
     free(physical);
 
     return chunks;
 }
 
-backend_data_t *download_block(uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
+backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
     redisReply *reply;
     backend_data_t *data;    // internal data
     chunk_t input, *output;  // input chunk, output decrypted chunk
 
+    /*
     if(bcontext.redis == NULL)
         backend_connect(&bcontext, settings.backendhost, settings.backendport);
 
     reply = redisCommand(bcontext.redis, "GET %b", id, idlen);
     if(!reply->str)
         return NULL;
+    */
+
+    database_t *db = backend->database;
+    value_t *value = db->get(db, id, idlen);
+
+    if(value == NULL)
+        return NULL;
 
     // fill-in input struct
     input.id = id;
     input.cipher = cipher;
-    input.data = (unsigned char *) reply->str;
-    input.length = reply->len;
+    input.data = (unsigned char *) value->data;
+    input.length = value->length;
 
     if(!(output = decrypt_chunk(&input)))
         return NULL;
@@ -194,7 +232,7 @@ backend_data_t *download_block(uint8_t *id, size_t idlen, uint8_t *cipher, size_
     data->payload = output->data;
     data->length = output->length;
 
-    freeReplyObject(reply);
+    db->clean(value);
 
     return data;
 }
@@ -205,5 +243,10 @@ void download_free(backend_data_t *data) {
 }
 
 void upload_inode_flush() {
-    upload_flush(&bcontext);
+    // upload_flush(&bcontext);
+}
+
+void backend_free(backend_t *backend) {
+    backend->database->close(backend->database);
+    free(backend);
 }

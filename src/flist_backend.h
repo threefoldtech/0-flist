@@ -23,6 +23,25 @@
 
     } backend_data_t;
 
+    typedef struct backend_t {
+        database_t *database;
+
+    } backend_t;
+
+    // initialize a backend
+    backend_t *backend_init_zdb(char *host, int port, char *namespace);
+
+    // write a file into the backend
+    chunks_t *upload_inode(backend_t *backend, char *root, char *path, char *filename);
+
+    // clean (and close) a backend object
+    void backend_free(backend_t *backend);
+
+    // clean internal chunks
+    void chunks_free(chunks_t *chunks);
+
+#if 0
+
     chunks_t *upload_inode(char *root, char *path, char *filename);
     void upload_inode_flush();
 
@@ -33,4 +52,6 @@
 
     // FIXME
     void upload_free();
+#endif
+
 #endif

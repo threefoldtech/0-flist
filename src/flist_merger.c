@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include "flister.h"
 #include "flist.capnp.h"
+#include "database.h"
+#include "flist_backend.h"
 #include "flist_read.h"
 #include "flist_write.h"
 
