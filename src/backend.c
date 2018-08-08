@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "flister.h"
-#include "flist_backend.h"
+#include "backend.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "database.h"

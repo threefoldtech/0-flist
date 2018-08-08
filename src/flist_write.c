@@ -18,8 +18,8 @@
 #include <regex.h>
 #include <jansson.h>
 #include "flister.h"
-#include "flist_backend.h"
 #include "database.h"
+#include "backend.h"
 #include "flist_write.h"
 #include "flist.capnp.h"
 #include "flist_listing.h"

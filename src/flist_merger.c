@@ -3,10 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include "flister.h"
-#include "flist.capnp.h"
 #include "database.h"
-#include "flist_backend.h"
+#include "backend.h"
+#include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_write.h"
 

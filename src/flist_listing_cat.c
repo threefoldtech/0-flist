@@ -3,11 +3,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include "flister.h"
+#include "database.h"
+#include "backend.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_walker.h"
-#include "flist_backend.h"
 
 typedef struct flist_cat_t {
     char *filename;

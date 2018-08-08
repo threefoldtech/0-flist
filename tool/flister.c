@@ -10,7 +10,7 @@
 #include "flister.h"
 #include "archive.h"
 #include "workspace.h"
-#include "flist_backend.h"
+#include "backend.h"
 #include "database.h"
 #include "database_sqlite.h"
 #include "database_redis.h"
