@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <lib0stor.h>
 #include "flister.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
