@@ -8,9 +8,9 @@ all: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../src
 all: LDFLAGS = -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 -L../src -lflist
 all: $(EXEC)
 
-embeded: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../src
-embeded: LDFLAGS = -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 ../src/libflist.a
-embeded: $(EXEC)
+embedded: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../src
+embedded: LDFLAGS = -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 ../src/libflist.a
+embedded: $(EXEC)
 
 release: CFLAGS = -std=c99 -W -Wall -O2 -I../src
 # release: LDFLAGS = -pthread -ltar -lrt -lgflags -ljemalloc -lb2 -lcapnp_c -lrocksdb -llz4 -lbz2 -lz -lsnappy -lcrypto -ljansson -l0stor -lhiredis -fopenmp
