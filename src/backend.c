@@ -15,23 +15,17 @@
 #include "database_sqlite.h"
 #include "zero_chunk.h"
 
-backend_t *backend_init_zdb(char *host, int port, char *namespace, char *rootpath) {
+backend_t *backend_init(database_t *database, char *rootpath) {
     backend_t *backend;
 
     if(!(backend = malloc(sizeof(backend_t))))
         return NULL;
 
-    if(!(backend->database = database_redis_init_tcp(host, port, namespace))) {
-        free(backend);
-        return NULL;
-    }
-
+    backend->database = database;
     backend->rootpath = rootpath;
 
     return backend;
 }
-
-// TODO: sqlite backend
 
 #if 0
 // FIXME: don't use global variable

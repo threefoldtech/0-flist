@@ -30,7 +30,7 @@
     } backend_t;
 
     // initialize a backend
-    backend_t *backend_init_zdb(char *host, int port, char *namespace, char *rootpath);
+    backend_t *backend_init(database_t *database, char *rootpath);
 
     // write a file into the backend
     chunks_t *upload_inode(backend_t *backend, char *path, char *filename);

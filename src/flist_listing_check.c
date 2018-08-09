@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "flister.h"
 #include "database.h"
+#include "database_redis.h"
 #include "backend.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
@@ -25,9 +26,16 @@ void *flist_check_init(settings_t *settings) {
     if(!(checker = calloc(sizeof(flist_check_t), 1)))
         diep("checker malloc");
 
-    if(!(checker->backend = backend_init_zdb(settings->backendhost, settings->backendport, "default", "/"))) {
-        fprintf(stderr, "[-] cat: cannot connect backend\n");
-        free(checker);
+    // FIXME: should not be here at all
+    database_t *backdb;
+
+    if(!(backdb = database_redis_init_tcp(settings->backendhost, settings->backendport, "default"))) {
+        fprintf(stderr, "[-] cannot initialize backend\n");
+        return NULL;
+    }
+
+    // initizlizing backend as requested
+    if(!(checker->backend = backend_init(backdb, "/"))) {
         return NULL;
     }
 

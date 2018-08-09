@@ -97,9 +97,15 @@ static int flister_create(char *workspace) {
     database->create(database);
 
     if(settings.backendhost) {
-        // initizlizing backend as requested
-        if(!(backend = backend_init_zdb(settings.backendhost, settings.backendport, "default", settings.create))) {
+        database_t *backdb;
+
+        if(!(backdb = database_redis_init_tcp(settings.backendhost, settings.backendport, "default"))) {
             fprintf(stderr, "[-] cannot initialize backend\n");
+            return 1;
+        }
+
+        // initizlizing backend as requested
+        if(!(backend = backend_init(backdb, settings.create))) {
             return 1;
         }
     }
