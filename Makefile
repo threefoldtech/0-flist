@@ -1,17 +1,21 @@
 default: all
 
 release:
-	cd src && $(MAKE) $@
-	cp src/flister .
-	strip -s flister
+	cd libflist && $(MAKE) $@
+	cd zflist && $(MAKE) embedded
+	cp zflist/zflist zflist-embedded
+	strip -s zflist-embedded
 
 all:
-	cd src && $(MAKE) $@
-	cp src/flister .
+	cd libflist && $(MAKE) $@
+	cd zflist && $(MAKE) embedded
+	cp zflist/zflist zflist-embedded
+	strip -s zflist-embedded
 
 mrproper:
-	cd src && $(MAKE) $@
-	rm -f flister
+	cd libflist && $(MAKE) $@
+	cd zflist && $(MAKE) $@
+	rm -f zflist-embedded
 
 .DEFAULT:
-	cd src && $(MAKE) $@
+	cd libflist && $(MAKE) $@

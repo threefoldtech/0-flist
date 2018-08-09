@@ -126,21 +126,57 @@ static PyObject *g8storclient_decrypt(PyObject *self, PyObject *args) {
     return PyLong_FromLong(finalsize);
 }
 
-static PyMethodDef g8storclient_cm[] = {
+static PyObject *db_open(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *db_close(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *backend_open(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *backend_close(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *open(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *create(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyObject *getfile(PyObject *self, PyObject *args) {
+    //
+}
+
+static PyMethodDef pyflister_cm[] = {
     // {"connect",  g8storclient_connect,  METH_VARARGS, "Initialize client"},
-    {"encrypt", g8storclient_encrypt, METH_VARARGS, "Encrypt a file"},
-    {"decrypt", g8storclient_decrypt, METH_VARARGS, "Decrypt a file"},
+    {"db_open", db_open, METH_VARARGS, "Open a database handler"},
+    {"db_close", db_close, METH_VARARGS, "Close and free a database handler"},
+
+    {"backend_open", backend_open, METH_VARARGS, "Create a backend object from a database"},
+    {"backend_close", backend_close, METH_VARARGS, "Close and free a backend objecy"},
+
+    {"open", open, METH_VARARGS, "Open an existing flist"},
+    {"create", create, METH_VARARGS, "Create a new empty flist"},
+    {"getfile", getfile, METH_VARARGS, "Read a file from the backend"}
+
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef g8storclientmodule = {
+static struct PyModuleDef pyflister = {
     PyModuleDef_HEAD_INIT,
-    "g8storclient", // name of module
+    "flist",        // name of module
     NULL,           // module documentation, may be NULL
     -1,             // -1 if the module keeps state in global variables.
-    g8storclient_cm
+    pyflister_cm
 };
 
-PyMODINIT_FUNC PyInit_g8storclient(void) {
-    return PyModule_Create(&g8storclientmodule);
+PyMODINIT_FUNC pyflister(void) {
+    return PyModule_Create(&pyflister);
 }

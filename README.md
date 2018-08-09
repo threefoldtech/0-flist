@@ -1,41 +1,59 @@
 # 0-flist
-Shared library and standaline flist implementation. For more information about `flist`, please check [flist documentation](doc/flist.md).
+Shared library and standalone flist implementation.
 
-# Compilation
-There are three target:
- - Developpment: by running `make` you will produce a dynamic debuggable executable (use shared library)
- - Production: by running `make release` you will produce a full stripped static binary, avoiding lot of dependencies
+For more information about `flist`, please check [flist documentation](doc/flist.md).
+
+# Components
+This projects contains multiple components:
+- libflist: the official flist management library
+- zflist: a command-line program to manipulate flists (uses the libflist)
+- pyflist: python flist binding native extension
+
+## libflist
+You can build the library in debug mode by taping `make` on the `libflist` directory. This build will
+contains lot of verbosity and debug symbols.
+
+In order to produce a production library, type `make release` which will strip debug message.
+
+Any build will produce a static version of the library `libflist.a` and a dynamic version `libstatic.so`
+
+Please note this library is in a early stage and was a fully static binary in a first step. Strip is not
+complete right now.
+
+# zflist
+Command line utility which use `libflist` to list, create and query a flist file.
+
+You can easily ship a (mostly) static version of `zflist` by compiling it using `make embedded`. This build
+will static link `libflist` and it's dependencies, but not produce a fully static binary. It will still
+be linked to `glibc` in order to use any resolution and users functions correctly.
+
+# pyflist
+Python binding of the library. Work in progress.
 
 # Dependencies
 In order to compile correctly `0-flist`, you'll need:
+- `sqlite3` (library)
+- `hiredis`
 - `libtar`
 - `libsnappy`
 - `c-capnp`
 - `libb2` (blake2)
 - `zlib`
 - `jansson`
-- `python` (for binding)
-
-# Warning: staging Makefile, information below are not up-to-date
+- `python3` (for binding)
 
 ## Ubuntu
 - Packages dependencies
 ```
-libsnappy-dev libbz2-dev liblz4-dev libz-dev libtar-dev libb2-dev libjemalloc-dev libgflags-dev libjemalloc-dev
+build-essential libsnappy-dev libz-dev libtar-dev libb2-dev libjansson-dev libhiredis-dev libsqlite3-dev 
 ```
 You will need to compile `c-capnp` yourself.
 
-## Gentoo
-- Packages available on portage (using `static-libs` USE flags to produce production executable):
-```
-libtar dev-cpp/gflags app-arch/bzip2 jemalloc snappy zlib lz4 jansson
-```
-
 # Usage
 ```
-Usage: ./flister [options] --verbose
-       ./flister --archive <filename> --list [--output tree]
-       ./flister --archive <filename> --create <root-path>
+Usage: ./zflist [options]
+       ./zflist --archive <filename> --list [--output tree]
+       ./zflist --archive <filename> --create <root-path>
 
 Command line options:
   -a --archive <flist>     archive (flist) filename
@@ -43,18 +61,21 @@ Command line options:
 
   -c --create <root>       create an archive from <root> directory
 
-  -u --upload <host:port>  upload files from creating archive, to the backend
+  -b --backend <host:port> upload/download files from archive, on this backend
 
   -l --list       list archive content
-  -o --output     list output format, possible values:
+  --action        action to do while listing archive:
                     ls      show kind of 'ls -al' contents (default)
                     tree    show contents in a tree view
                     dump    debug dump of contents
-                    json    file list summary in json format
+                    json    file list summary in json format (same as --json)
 
                     blocks  dump files backend blocks (hash, key)
+                    check   proceed to backend integrity check
+                    cat     request file download (with --file option)
 
+  -j --json       provide (exclusively) json output status
+  -f --file       specific inside file to target
   -r --ramdisk    extract archive to tmpfs
-  -v --verbose    enable verbose messages
   -h --help       shows this help message
 ```

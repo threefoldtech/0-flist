@@ -64,6 +64,7 @@ int usage(char *basename) {
     fprintf(stderr, "Usage: %s [options]\n", basename);
     fprintf(stderr, "       %s --archive <filename> --list [--output tree]\n", basename);
     fprintf(stderr, "       %s --archive <filename> --create <root-path>\n", basename);
+    fprintf(stderr, "       %s --archive <filename> [options] --backend <host:port>\n", basename);
     fprintf(stderr, "\n");
     fprintf(stderr, "Command line options:\n");
     fprintf(stderr, "  -a --archive <flist>     archive (flist) filename\n");
