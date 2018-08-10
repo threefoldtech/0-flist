@@ -777,10 +777,17 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
     return 0;
 }
 
+// FIX TODO:
+//  - always lookup relative directory from fpath
+//  - when FTW_DP && fpath == / -> we are done
+//  - recursive create directories when lookup
+
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     settings_t *settings = globaldata.settings;
     ssize_t length = ftwbuf->base - settings->rootlen - 1;
     char *relpath;
+
+    printf(">> %s\n", fpath);
 
     // checking if entry is rejected by exclude filter
     // if exclude matches, we don't parse this entry at all
@@ -810,6 +817,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // we sets everything for underlaying directories but nothing for the directory
     // itself (like it's acl, etc.) let set this now here
     if(typeflag == FTW_DP) {
+        printf("DP\n");
         const char *virtual = fpath + settings->rootlen + 1;
         debug("[+] all subdirectories done for: %s\n", virtual);
 
