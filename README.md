@@ -5,9 +5,9 @@ For more information about `flist`, please check [flist documentation](doc/flist
 
 # Components
 This projects contains multiple components:
-- libflist: the official flist management library
-- zflist: a command-line program to manipulate flists (uses the libflist)
-- pyflist: python flist binding native extension
+- `libflist`: the official flist management library
+- `zflist`: a command-line program to manipulate flists (uses the libflist)
+- `pyflist`: python flist binding native extension
 
 ## libflist
 You can build the library in debug mode by taping `make` on the `libflist` directory. This build will
@@ -54,16 +54,17 @@ You will need to compile `c-capnp` yourself.
 Usage: ./zflist [options]
        ./zflist --archive <filename> --list [--output tree]
        ./zflist --archive <filename> --create <root-path>
+       ./zflist --archive <filename> [options] --backend <host:port>
 
 Command line options:
-  -a --archive <flist>     archive (flist) filename
-                           (this option is always required)
+  --archive <flist>     archive (flist) filename
+                        (this option is always required)
 
-  -c --create <root>       create an archive from <root> directory
+  --create <root>       create an archive from <root> directory
 
-  -b --backend <host:port> upload/download files from archive, on this backend
+  --backend <host:port> upload/download files from archive, on this backend
 
-  -l --list       list archive content
+  --list       list archive content
   --action        action to do while listing archive:
                     ls      show kind of 'ls -al' contents (default)
                     tree    show contents in a tree view
@@ -74,8 +75,8 @@ Command line options:
                     check   proceed to backend integrity check
                     cat     request file download (with --file option)
 
-  -j --json       provide (exclusively) json output status
-  -f --file       specific inside file to target
-  -r --ramdisk    extract archive to tmpfs
-  -h --help       shows this help message
+  --json       provide (exclusively) json output status
+  --file       specific inside file to target
+  --ramdisk    extract archive to tmpfs
+  --help       shows this help message
 ```

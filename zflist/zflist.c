@@ -67,13 +67,13 @@ int usage(char *basename) {
     fprintf(stderr, "       %s --archive <filename> [options] --backend <host:port>\n", basename);
     fprintf(stderr, "\n");
     fprintf(stderr, "Command line options:\n");
-    fprintf(stderr, "  -a --archive <flist>     archive (flist) filename\n");
-    fprintf(stderr, "                           (this option is always required)\n\n");
+    fprintf(stderr, "  --archive <flist>     archive (flist) filename\n");
+    fprintf(stderr, "                        (this option is always required)\n\n");
 
-    fprintf(stderr, "  -c --create <root>       create an archive from <root> directory\n\n");
-    fprintf(stderr, "  -b --backend <host:port> upload/download files from archive, on this backend\n\n");
+    fprintf(stderr, "  --create <root>       create an archive from <root> directory\n\n");
+    fprintf(stderr, "  --backend <host:port> upload/download files from archive, on this backend\n\n");
 
-    fprintf(stderr, "  -l --list       list archive content\n");
+    fprintf(stderr, "  --list       list archive content\n");
     fprintf(stderr, "  --action        action to do while listing archive:\n");
     fprintf(stderr, "                    ls      show kind of 'ls -al' contents (default)\n");
     fprintf(stderr, "                    tree    show contents in a tree view\n");
@@ -83,10 +83,10 @@ int usage(char *basename) {
     fprintf(stderr, "                    check   proceed to backend integrity check\n");
     fprintf(stderr, "                    cat     request file download (with --file option)\n\n");
 
-    fprintf(stderr, "  -j --json       provide (exclusively) json output status\n");
-    fprintf(stderr, "  -f --file       specific inside file to target\n");
-    fprintf(stderr, "  -r --ramdisk    extract archive to tmpfs\n");
-    fprintf(stderr, "  -h --help       shows this help message\n");
+    fprintf(stderr, "  --json       provide (exclusively) json output status\n");
+    fprintf(stderr, "  --file       specific inside file to target\n");
+    fprintf(stderr, "  --ramdisk    extract archive to tmpfs\n");
+    fprintf(stderr, "  --help       shows this help message\n");
     exit(EXIT_FAILURE);
 }
 
