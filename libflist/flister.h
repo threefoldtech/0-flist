@@ -43,6 +43,7 @@
 
         int json;            // json output flag
         char *targetfile;    // specific target file (see cat action)
+        char *outputfile;    // specific output file (see cat action)
         list_mode_t list;    // list view mode
         merge_list_t merge;  // list of merging flists
 

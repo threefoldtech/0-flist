@@ -30,6 +30,7 @@ static struct option long_options[] = {
     {"ramdisk", no_argument,       0, 'r'},
     {"json",    no_argument,       0, 'j'},
     {"file",    required_argument, 0, 'f'},
+    {"output",  required_argument, 0, 'O'},
     {"root",    required_argument, 0, 'p'},
     {"help",    no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -240,7 +241,7 @@ int main(int argc, char *argv[]) {
     settings.backendport = 16379;
 
     while(1) {
-        i = getopt_long(argc, argv, "lcta:vrp:h", long_options, &option_index);
+        i = getopt_long(argc, argv, "", long_options, &option_index);
 
         if(i == -1)
             break;
@@ -343,7 +344,12 @@ int main(int argc, char *argv[]) {
             case 'f': {
                 settings.targetfile = optarg;
                 break;
-           }
+            }
+
+            case 'O': {
+                settings.outputfile = optarg;
+                break;
+            }
 
             case '?':
             case 'h':

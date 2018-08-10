@@ -14,6 +14,7 @@
 
 typedef struct flist_cat_t {
     char *filename;
+    char *output;
     int status;
     backend_t *backend;
 
@@ -31,6 +32,7 @@ void *flist_cat_init(settings_t *settings) {
         target += 1;
 
     cat->filename = strdup(target);
+    cat->output = settings->outputfile;
     cat->status = 0;
 
     // FIXME: should not be here at all
@@ -75,13 +77,17 @@ int flist_cat(walker_t *walker, directory_t *root) {
         // debug("[+] parsing: %s\n", fullpath);
 
         if(inode.attributes_which == Inode_attributes_file && strcmp(fullpath, cat->filename) == 0) {
+            FILE *fp = NULL;
             struct File file;
             read_File(&file, inode.attributes.file);
 
             FileBlock_ptr blockp;
             struct FileBlock block;
 
-            // FILE *fp = fopen("/tmp/test.dump", "w");
+            if(cat->output) {
+                if(!(fp = fopen(cat->output, "w")))
+                    diep(cat->output);
+            }
 
             for(int i = 0; i < capn_len(file.blocks); i++) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
@@ -102,11 +108,18 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 }
 
                 debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks) + 1);
-                debug("[+] =======================================================\n");
-                printf("%.*s\n", (int) data->length, data->payload);
-                debug("[+] =======================================================\n");
 
-                // fwrite(data->payload, data->length, 1, fp);
+                if(!cat->output) {
+                    debug("[+] =======================================================\n");
+                    printf("%.*s\n", (int) data->length, data->payload);
+                    debug("[+] =======================================================\n");
+                }
+
+                if(cat->output) {
+                    if(fwrite(data->payload, data->length, 1, fp) != 1) {
+                        diep("fwrite");
+                    }
+                }
 
                 download_free(data);
                 free(hash);
@@ -115,7 +128,8 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 cat->status = 1;
             }
 
-            // fclose(fp);
+            if(cat->output)
+                fclose(fp);
 
             return 1;
         }
