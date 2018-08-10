@@ -107,7 +107,7 @@ int flist_cat(walker_t *walker, directory_t *root) {
                     return 1;
                 }
 
-                debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks) + 1);
+                debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks));
 
                 if(!cat->output) {
                     debug("[+] =======================================================\n");

@@ -81,6 +81,8 @@ int flist_check(walker_t *walker, directory_t *root) {
                     return 1;
                 }
 
+
+
                 checker->files += 1;
                 checker->size += data->length;
 
