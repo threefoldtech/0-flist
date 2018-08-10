@@ -260,3 +260,17 @@ void * xxtea_decrypt(const void * data, size_t len, const void * key, size_t * o
     FIXED_KEY
     return xxtea_ubyte_decrypt((const uint8_t *)data, len, fixed_key, out_len);
 }
+
+void * xxtea_encrypt_bkey(const void * data, size_t len, const void * key, size_t key_len, size_t * out_len) {
+    if(key_len < 16)
+        return NULL;
+
+    return xxtea_ubyte_encrypt((const uint8_t *)data, len, key, out_len);
+}
+
+void * xxtea_decrypt_bkey(const void * data, size_t len, const void * key, size_t key_len, size_t * out_len) {
+    if(key_len < 16)
+        return NULL;
+
+    return xxtea_ubyte_encrypt((const uint8_t *)data, len, key, out_len);
+}

@@ -29,9 +29,8 @@
 
     } chunk_t;
 
-    // remote manager
-    remote_t *remote_connect(const char *host, int port);
-    void remote_free(remote_t *remote);
+    // hashing
+    uint8_t *zchunk_hash(const void *buffer, size_t length);
 
     // file buffer
     buffer_t *bufferize(char *filename);
@@ -47,15 +46,4 @@
     // encryption
     chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize);
     chunk_t *decrypt_chunk(chunk_t *chunk);
-
-    // networking
-    chunk_t *upload_chunk(remote_t *remote, chunk_t *chunk);
-    chunk_t *download_chunk(remote_t *remote, chunk_t *chunk);
-
-    // deprecated
-    chunk_t *upload(remote_t *remote, buffer_t *buffer);
-    size_t download(remote_t *remote, chunk_t *chunk, buffer_t *buffer);
-
-    // debug
-    void lib0stor_enable_debug();
 #endif

@@ -13,7 +13,7 @@
 #define CHUNK_SIZE    1024 * 512    // 512 KB
 #define HASH_LENGTH   LIB0STOR_HASH_LENGTH
 
-static int libdebug = 0;
+static int libdebug = 1;
 
 void lib0stor_enable_debug() {
     libdebug = 1;
@@ -141,7 +141,7 @@ char *hashhex(void *_hash, size_t length) {
     return buffer;
 }
 
-static uint8_t *hashbuf(const void *buffer, size_t length) {
+uint8_t *zchunk_hash(const void *buffer, size_t length) {
     uint8_t *hash;
 
     if(!(hash = malloc(HASH_LENGTH))) {
@@ -192,7 +192,7 @@ void chunk_free(chunk_t *chunk) {
 // returns a chunk with key, cipher, data and it's length
 chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     // hashing this chunk
-    unsigned char *hashkey = hashbuf(chunk, chunksize);
+    unsigned char *hashkey = zchunk_hash(chunk, chunksize);
 
     if(libdebug) {
         char *inhash = hashhex(hashkey, LIB0STOR_HASH_LENGTH);
@@ -216,9 +216,9 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     // encrypt
     //
     size_t encrypt_length;
-    unsigned char *encrypt_data = xxtea_encrypt(compressed, output_length, hashkey, &encrypt_length);
+    unsigned char *encrypt_data = xxtea_encrypt_bkey(compressed, output_length, hashkey, HASH_LENGTH, &encrypt_length);
 
-    unsigned char *hashcrypt = hashbuf(encrypt_data, encrypt_length);
+    unsigned char *hashcrypt = zchunk_hash(encrypt_data, encrypt_length);
 
     if(libdebug) {
         char *inhash = hashhex(hashcrypt, LIB0STOR_HASH_LENGTH);
@@ -244,7 +244,7 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
     //
     size_t plainlength;
     // printf("[+] cipher: %s\n", chunk->cipher);
-    if(!(plaindata = xxtea_decrypt(chunk->data, chunk->length, chunk->cipher, &plainlength))) {
+    if(!(plaindata = xxtea_decrypt_bkey(chunk->data, chunk->length, chunk->cipher, HASH_LENGTH, &plainlength))) {
         verbose("[-] cannot decrypt data, invalid key or payload\n");
         return NULL;
     }
@@ -267,7 +267,7 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
     //
     // testing integrity
     //
-    unsigned char *integrity = hashbuf((unsigned char *) uncompress, uncompressed_length);
+    unsigned char *integrity = zchunk_hash((unsigned char *) uncompress, uncompressed_length);
     // printf("[+] integrity: %s\n", integrity);
 
 

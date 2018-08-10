@@ -37,6 +37,8 @@ extern "C" {
  */
 void * xxtea_encrypt(const void * data, size_t len, const void * key, size_t * out_len);
 
+void * xxtea_encrypt_bkey(const void * data, size_t len, const void * key, size_t key_len, size_t * out_len);
+
 /**
  * Function: xxtea_decrypt
  * @data:    Data to be decrypted
@@ -48,6 +50,8 @@ void * xxtea_encrypt(const void * data, size_t len, const void * key, size_t * o
  * Caller is responsible for freeing the returned buffer.
  */
 void * xxtea_decrypt(const void * data, size_t len, const void * key, size_t * out_len);
+
+void * xxtea_decrypt_bkey(const void * data, size_t len, const void * key, size_t key_len, size_t * out_len);
 
 #ifdef __cplusplus
 }
