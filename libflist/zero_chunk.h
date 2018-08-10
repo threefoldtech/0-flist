@@ -42,7 +42,7 @@
     // chunk
     chunk_t *chunk_new(uint8_t *hash, uint8_t *key, void *data, size_t length);
     void chunk_free(chunk_t *chunk);
-    char *hashhex(uint8_t *hash);
+    char *hashhex(void *hash, size_t length);
 
     // encryption
     chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize);

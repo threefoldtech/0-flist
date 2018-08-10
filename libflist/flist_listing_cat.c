@@ -81,6 +81,8 @@ int flist_cat(walker_t *walker, directory_t *root) {
             FileBlock_ptr blockp;
             struct FileBlock block;
 
+            // FILE *fp = fopen("/tmp/test.dump", "w");
+
             for(int i = 0; i < capn_len(file.blocks); i++) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
@@ -99,20 +101,23 @@ int flist_cat(walker_t *walker, directory_t *root) {
                     return 1;
                 }
 
-                debug("[+] cat: data found\n");
+                debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks) + 1);
                 debug("[+] =======================================================\n");
                 printf("%.*s\n", (int) data->length, data->payload);
                 debug("[+] =======================================================\n");
+
+                // fwrite(data->payload, data->length, 1, fp);
 
                 download_free(data);
                 free(hash);
                 free(key);
 
                 cat->status = 1;
-
-                // we are done
-                return 1;
             }
+
+            // fclose(fp);
+
+            return 1;
         }
 
         // walking over internal directories

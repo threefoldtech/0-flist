@@ -7,6 +7,7 @@
 #include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_walker.h"
+#include "zero_chunk.h"
 
 int flist_blocks(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;
@@ -33,8 +34,8 @@ int flist_blocks(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
-                char *hashstr = hashhex((uint8_t *) block.hash.p.data);
-                char *keystr = hashhex((uint8_t *) block.key.p.data);
+                char *hashstr = hashhex(block.hash.p.data, block.hash.p.len);
+                char *keystr = hashhex(block.key.p.data, block.hash.p.len);
 
                 printf("  hash: %s\n", hashstr);
                 printf("  key : %s\n", keystr);

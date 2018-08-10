@@ -128,11 +128,12 @@ void buffer_free(buffer_t *buffer) {
 //
 static char __hex[] = "0123456789abcdef";
 
-char *hashhex(uint8_t *hash) {
-    char *buffer = calloc((HASH_LENGTH * 2) + 1, sizeof(char));
+char *hashhex(void *_hash, size_t length) {
+    uint8_t *hash = (uint8_t *) _hash;
+    char *buffer = calloc((length * 2) + 1, sizeof(char));
     char *writer = buffer;
 
-    for(int i = 0, j = 0; i < HASH_LENGTH; i++, j += 2) {
+    for(size_t i = 0, j = 0; i < length; i++, j += 2) {
         *writer++ = __hex[(hash[i] & 0xF0) >> 4];
         *writer++ = __hex[hash[i] & 0x0F];
     }
@@ -194,7 +195,7 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     unsigned char *hashkey = hashbuf(chunk, chunksize);
 
     if(libdebug) {
-        char *inhash = hashhex(hashkey);
+        char *inhash = hashhex(hashkey, LIB0STOR_HASH_LENGTH);
         printf("[+] chunk hash: %s\n", inhash);
         free(inhash);
     }
@@ -220,7 +221,7 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     unsigned char *hashcrypt = hashbuf(encrypt_data, encrypt_length);
 
     if(libdebug) {
-        char *inhash = hashhex(hashcrypt);
+        char *inhash = hashhex(hashcrypt, LIB0STOR_HASH_LENGTH);
         printf("[+] encrypted hash: %s\n", inhash);
         free(inhash);
     }
@@ -271,8 +272,8 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
 
 
     if(memcmp(integrity, chunk->cipher, HASH_LENGTH)) {
-        char *inhash = hashhex(integrity);
-        char *outhash = hashhex(chunk->cipher);
+        char *inhash = hashhex(integrity, LIB0STOR_HASH_LENGTH);
+        char *outhash = hashhex(chunk->cipher, LIB0STOR_HASH_LENGTH);
 
         verbose("[-] integrity check failed: hash mismatch\n");
         verbose("[-] %s <> %s\n", inhash, outhash);
