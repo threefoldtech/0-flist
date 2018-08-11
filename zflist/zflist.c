@@ -333,7 +333,8 @@ int main(int argc, char *argv[]) {
                 settings.create = strdup(optarg);
                 settings.rootlen = strlen(settings.create);
 
-                if(settings.create[settings.rootlen - 1] == '/') {
+                // forcing rootpath to not have trailing slash
+                while(settings.create[settings.rootlen - 1] == '/') {
                     settings.create[settings.rootlen - 1] = '\0';
                     settings.rootlen -= 1;
                 }
