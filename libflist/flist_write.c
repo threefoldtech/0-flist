@@ -25,7 +25,7 @@
 #include "flist.capnp.h"
 #include "flist_listing.h"
 
-// #define FLIST_WRITE_FULLDUMP
+#define FLIST_WRITE_FULLDUMP
 
 // hardcoded version of the 0-hub
 const char *excluderstr[] = {
@@ -409,7 +409,7 @@ static dirnode_t *dirnode_lookup_step(dirnode_t *root, char *token, char *incrpa
         dirnode_appends_dirnode(root, subdir);
     }
 
-    // looking for newt token
+    // looking for new token
     if(!(token = strtok(NULL, "/")))
         return subdir;
 
@@ -450,22 +450,22 @@ static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
 
 #ifdef FLIST_WRITE_FULLDUMP
 static void dirnode_dumps(dirnode_t *root) {
-    printf("[+] directory: %s [%s]\n", root->name, root->fullpath);
-    printf("[+] contents: subdirectories: %lu\n", root->dir_length);
-    printf("[+] contents: inodes: %lu\n", root->inode_length);
+    printf("[+] directory: <%s> [fullpath: /%s]\n", root->name, root->fullpath);
+    printf("[+]   subdirectories: %lu\n", root->dir_length);
+    printf("[+]   inodes: %lu\n", root->inode_length);
 
     for(dirnode_t *source = root->dir_list; source; source = source->next) {
         dirnode_dumps(source);
 
         if(source->acl.key == NULL)
-            dies("directory aclkey not set");
+            warns("directory aclkey not set");
     }
 
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         inode_dumps(inode, root);
 
         if(inode->acl.key == NULL)
-            dies("inode aclkey not set");
+            warns("inode aclkey not set");
     }
 }
 #endif
@@ -547,7 +547,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     int sz = capn_write_mem(&c, buffer, 4096, 0);
     capn_free(&c);
 
-    debug("[+] writing acl into db: %s\n", acl->key);
+    debug("[+]   writing acl into db: %s\n", acl->key);
     if(database->sset(database, acl->key, buffer, sz))
         dies("acl database error");
 }
@@ -577,7 +577,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent,
     capn_ptr cr = capn_root(&c);
     struct capn_segment *cs = cr.seg;
 
-    debug("[+] populating directory: %s\n", root->fullpath);
+    debug("[+] populating directory: </%s>\n", root->fullpath);
 
     // creating this directory entry
     struct Dir dir = {
@@ -597,6 +597,8 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent,
     int index = 0;
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         struct Inode target;
+
+        printf("[+]   populate inode: <%s>\n", inode->name);
 
         target.name = chars_to_text(inode->name);
         target.size = inode->size;
@@ -782,13 +784,62 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
 //  - always lookup relative directory from fpath
 //  - when FTW_DP && fpath == / -> we are done
 //  - recursive create directories when lookup
+static char *relative_path(const char *fpath, int typeflag, settings_t *settings) {
+    // building general relative path
+    //
+    //      real: /realroot/somewhere/target/hello/world   # current path
+    //    create: ++++++++++++++++++++++++++^              # create root path provided
+    //  relative: ........................../hello/world   # relative path
+    //
+    const char *relative = fpath + settings->rootlen;
+
+    // we are on the root, nothing more to check
+    if(strlen(relative) == 0)
+        return strdup("");
+
+    // removing leading slash
+    relative += 1;
+
+    // flag FTW_D and FTW_DP are set when fpath is a directory
+    // or a directory and moreover, everthing below was proceed
+    if(typeflag == FTW_D || typeflag == FTW_DP) {
+        // since it's already a directory, we can return it as it
+        return strdup(relative);
+    }
+
+    // if we are here, we are handling a file, let's finding it's
+    // root directory
+    size_t length = strlen(relative);
+
+    while(*(relative + length - 1) != '/' && length)
+        length -= 1;
+
+    // this should not happens, anyway let's ensure this
+    if(length == 0)
+        return strdup("");
+
+    // removing trailing slash
+    return strndup(relative, length - 1);
+}
+
+// returns the parent directory dirnode of a relative path
+static char *relative_path_parent(char *relative) {
+    size_t length = strlen(relative);
+
+    while(relative[length - 1] != '/' && length)
+        length -= 1;
+
+    if(length == 0)
+        return strdup("");
+
+    // we have the parent directory
+    return strndup(relative, length - 1);
+}
 
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     settings_t *settings = globaldata.settings;
-    ssize_t length = ftwbuf->base - settings->rootlen - 1;
-    char *relpath;
-
-    printf(">> %s\n", fpath);
+    char *relpath = NULL;
+    char *parent = NULL;
 
     // checking if entry is rejected by exclude filter
     // if exclude matches, we don't parse this entry at all
@@ -797,49 +848,61 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         return 0;
     }
 
-    // building current path (called 'relative path')
-    // this relative path is relative to the root filesystem tree
-    // but is kind of absolute for our virtual root we are building
-    //
-    // this relative path won't start with a slash, to simplify some process
-    // this mean when processing files or directory on the virtual root, the relative
-    // path will be an empty string
-    if(length > 0 && ftwbuf->level > 1) {
-        relpath = strndup(fpath + settings->rootlen, ftwbuf->base - settings->rootlen - 1);
+    // building relative directory, which is the directory
+    // where the file (or the directory itself if target is a directory)
+    // is located
+    if(!(relpath = relative_path(fpath, typeflag, settings)))
+        goto something_wrong;
 
-    } else relpath = strdup("");
+    debug("[+] relative directory: </%s>\n", relpath);
 
-    // flag FTW_DP is set when all subdirectories was
-    // parsed, now we know the remaining contents of this directory
-    // are only files, let reset currentdir, this will be looked up again
-    // later, we can't ensure the currentdir is still the relevant directory
-    // since it can be one level up
-    //
-    // we sets everything for underlaying directories but nothing for the directory
-    // itself (like it's acl, etc.) let set this now here
+    // setting the global current directory pointer to this directory
+    if(!(globaldata.currentdir = dirnode_lookup(globaldata.rootdir, relpath)))
+        goto something_wrong;
+
+    // if the relative path is empty, we are on the root directory
+    // and if the FTW_DP flag is set, we know all subdirectories and file
+    // in that directory are proceed, that simply mean we are done, everything
+    // was proceed
+    if(strlen(relpath) == 0 && typeflag == FTW_DP) {
+        debug("[+] the complete rootpath has been proceed, mapping done\n");
+
+        // setting up permissions etc. on the root directory
+        // and we are done
+        flist_dirnode_metadata(globaldata.currentdir, sb);
+
+        // goto next file, even if there are nothing more
+        // we know it's the end of the walk
+        goto next_file;
+    }
+
+    // we hit a directory, let's set it's metadata and ensure we add it
+    // this will be done for each directories, except root one (we just did it
+    // right before)
     if(typeflag == FTW_DP) {
-        printf("DP\n");
-        const char *virtual = fpath + settings->rootlen + 1;
-        debug("[+] all subdirectories done for: %s\n", virtual);
+        debug("[+] processing directory\n");
 
-        dirnode_t *myself = dirnode_lookup(globaldata.rootdir, virtual);
-        flist_dirnode_metadata(myself, sb);
+        dirnode_t *parentnode;
+        if(!(parent = relative_path_parent(relpath)))
+            goto something_wrong;
 
-        // clear global currentdir
-        // will be reset later with right options
-        globaldata.currentdir = NULL;
+        // append this inode to the root directory
+        if(!(parentnode = dirnode_lookup(globaldata.rootdir, parent)))
+            goto something_wrong;
+
+        // building the inode of this directory
+        const char *itemname = fpath + ftwbuf->base;
+        inode_t *inode = flist_process_file(itemname, sb, fpath, parentnode);
+        dirnode_appends_inode(parentnode, inode);
+
+        // setting metadata of that directory
+        flist_dirnode_metadata(globaldata.currentdir, sb);
+
+        // nothing more to do on this directory
+        goto next_file;
     }
 
-    // if we reach level 0, we are processing the root directory
-    // this directory should not be proceed since we have a virtual root
-    // if we are here, we are all done with the walking process
-    if(ftwbuf->level == 0) {
-        debug("[+] ======== ROOT PATH, WE ARE DONE ========\n");
-        free(relpath);
-
-        return flist_dirnode_metadata(globaldata.rootdir, sb);
-    }
-
+    /*
     // if the global current directory is not set
     // we can be in the first call or in a call relative to a subdirectory
     // change, let's lookup (again) this relative directory to set the global
@@ -852,17 +915,12 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         return 1;
 
     // } else printf("current dir set\n");
+    */
 
     debug("[+] current directory: %s (%s)\n", globaldata.currentdir->name, globaldata.currentdir->fullpath);
 
     // processing the real entry
-    // this can be a file, a directory, anything
-    //
-    // at this point we don't know what this is, we will use the stat struct
-    // provided by nftw to parse this entry
-    //
-    // since directory tree is already ensured by previous call (the currentdir
-    // lookup, basicly) we don't need to care about directories existance, etc.
+    // this can be everything, except a directory
     //
     // we can just parse the stat struct, fill-in our inode object and add it to the
     // currentdir object
@@ -872,6 +930,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     inode_t *inode = flist_process_file(itemname, sb, fpath, globaldata.currentdir);
     dirnode_appends_inode(globaldata.currentdir, inode);
 
+    /*
     // this is maybe an empty directory, we don't know
     // in doubt, let's call lookup in order to create
     // entry if it doesn't exists
@@ -882,7 +941,9 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         // metadata won't be set anywhere else
         flist_dirnode_metadata(check, sb);
     }
+    */
 
+    /*
     // if relpath is empty, we are doing some stuff
     // on the virtual root, let's reset the currentdir
     // since next call can be a deep directory somewhere else
@@ -893,10 +954,17 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
         debug("[+] touching virtual root directory, reseting current directory\n");
         globaldata.currentdir = NULL;
     }
+    */
 
+next_file:
     free(relpath);
-
+    free(parent);
     return 0;
+
+something_wrong:
+    free(relpath);
+    free(parent);
+    return 1;
 }
 
 int flist_create(database_t *database, const char *root, backend_t *backend, settings_t *settings) {

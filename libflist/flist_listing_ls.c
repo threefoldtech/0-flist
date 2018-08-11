@@ -42,7 +42,7 @@ int flist_ls(walker_t *walker, directory_t *root) {
             directory_t *subdir;
             char *keystr = (char *) sub.key.str;
 
-            if(!(subdir = flist_directory_get(walker->database, keystr)))
+            if(!(subdir = flist_directory_get(walker->database, keystr, inode.name.str)))
                 return 0;
 
             // reading directory permissions
@@ -132,7 +132,7 @@ int flist_ls(walker_t *walker, directory_t *root) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // we don't need userptr
-            flist_walk_directory(walker, sub.key.str);
+            flist_walk_directory(walker, sub.key.str, inode.name.str);
         }
     }
 

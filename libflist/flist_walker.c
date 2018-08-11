@@ -10,11 +10,12 @@
 #include "flist_read.h"
 #include "flist_walker.h"
 
-int flist_walk_directory(walker_t *walker, const char *_key) {
+int flist_walk_directory(walker_t *walker, const char *_key, const char *_fullpath) {
     char *key = (char *) _key;
+    char *fullpath = (char *) _fullpath;
     directory_t *dir;
 
-    if(!(dir = flist_directory_get(walker->database, key)))
+    if(!(dir = flist_directory_get(walker->database, key, fullpath)))
         return 1;
 
     // walking over this directory

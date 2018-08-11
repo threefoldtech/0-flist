@@ -11,7 +11,7 @@
 
     } directory_t;
 
-    directory_t *flist_directory_get(database_t *database, char *key);
+    directory_t *flist_directory_get(database_t *database, char *key, char *fullpath);
     void flist_directory_close(database_t *database, directory_t *dir);
 
     char *flist_fullpath(directory_t *root, struct Inode *inode);

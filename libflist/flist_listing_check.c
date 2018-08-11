@@ -99,7 +99,7 @@ int flist_check(walker_t *walker, directory_t *root) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // recursive list contents
-            flist_walk_directory(walker, sub.key.str);
+            flist_walk_directory(walker, sub.key.str, inode.name.str);
         }
     }
 

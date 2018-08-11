@@ -24,7 +24,7 @@
 //
 // directory object reader
 //
-directory_t *flist_directory_get(database_t *database, char *key) {
+directory_t *flist_directory_get(database_t *database, char *key, char *fullpath) {
     directory_t *dir;
 
     if(!(dir = malloc(sizeof(directory_t))))
@@ -34,7 +34,7 @@ directory_t *flist_directory_get(database_t *database, char *key) {
     dir->value = database->sget(database, key);
 
     if(!dir->value->data) {
-        fprintf(stderr, "[-] directory: key [%s] not found\n", key);
+        fprintf(stderr, "[-] directory: key [%s, %s] not found\n", key, fullpath);
         return NULL;
     }
 

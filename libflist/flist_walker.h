@@ -9,5 +9,5 @@
 
     } walker_t;
 
-    int flist_walk_directory(walker_t *walker, const char *key);
+    int flist_walk_directory(walker_t *walker, const char *key, const char *fullpath);
 #endif

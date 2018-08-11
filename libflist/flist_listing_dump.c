@@ -51,7 +51,7 @@ int flist_blocks(walker_t *walker, directory_t *root) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // recursive list contents
-            flist_walk_directory(walker, sub.key.str);
+            flist_walk_directory(walker, sub.key.str, inode.name.str);
         }
     }
 
@@ -80,7 +80,7 @@ int flist_dump(walker_t *walker, directory_t *root) {
             read_SubDir(&sub, inode.attributes.dir);
 
             // recursive list contents
-            flist_walk_directory(walker, sub.key.str);
+            flist_walk_directory(walker, sub.key.str, inode.name.str);
         }
     }
 

@@ -74,7 +74,7 @@ int flist_listing(database_t *database, settings_t *settings) {
     const char *key = flist_pathkey("");
 
     // walking starting from the root
-    flist_walk_directory(&walker, key);
+    flist_walk_directory(&walker, key, "/");
 
     if(walker.postproc)
         walker.postproc(&walker);

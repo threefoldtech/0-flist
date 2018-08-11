@@ -51,7 +51,7 @@ int flist_tree(walker_t *walker, directory_t *root) {
                 printf("+-- %s\n", inode.name.str);
 
                 obj->level += 1;
-                flist_walk_directory(walker, sub.key.str);
+                flist_walk_directory(walker, sub.key.str, inode.name.str);
                 obj->level -= 1;
 
                 break;

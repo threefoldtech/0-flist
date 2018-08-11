@@ -61,7 +61,7 @@ int flist_json(walker_t *walker, directory_t *root) {
             // recursive walking
             struct SubDir sub;
             read_SubDir(&sub, inode.attributes.dir);
-            flist_walk_directory(walker, sub.key.str);
+            flist_walk_directory(walker, sub.key.str, inode.name.str);
 
             json->directory += 1;
         }
