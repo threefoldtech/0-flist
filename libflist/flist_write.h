@@ -1,5 +1,5 @@
-#ifndef FLIST_WRITE_H
-    #define FLIST_WRITE_H
+#ifndef LIBFLIST_WRITE_H
+    #define LIBFLIST_WRITE_H
 
     #include "database.h"
 

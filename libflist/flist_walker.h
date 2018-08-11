@@ -1,5 +1,5 @@
-#ifndef FLISTER_WALKER
-    #define FLISTER_WALKER
+#ifndef LIBFLIST_WALKER
+    #define LIBFLIST_WALKER
 
     typedef struct walker_t {
         database_t *database;

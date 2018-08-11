@@ -1,5 +1,5 @@
-#ifndef FLISTER_LIST_CHECK
-    #define FLISTER_LIST_CHECK
+#ifndef LIBFLIST_LIST_CHECK
+    #define LIBFLIST_LIST_CHECK
 
     void *flist_check_init(settings_t *settings);
     int flist_check(walker_t *walker, directory_t *root);

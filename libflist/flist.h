@@ -1,5 +1,5 @@
-#ifndef FLIST_H
-    #define FLIST_H
+#ifndef LIBFLIST_FLIST_H
+    #define LIBFLIST_FLIST_H
 
     #include "database.h"
 

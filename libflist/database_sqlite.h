@@ -1,5 +1,5 @@
-#ifndef DATABASE_SQLITE_H
-    #define DATABASE_SQLITE_H
+#ifndef LIBFLIST_DATABASE_SQLITE_H
+    #define LIBFLIST_DATABASE_SQLITE_H
 
     #include <sqlite3.h>
 

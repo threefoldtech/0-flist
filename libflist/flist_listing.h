@@ -1,5 +1,5 @@
-#ifndef FLIST_LISTING
-    #define FLIST_LISTING
+#ifndef LIBFLIST_LISTING
+    #define LIBFLIST_LISTING
 
     typedef struct flist_json_t {
         json_t *root;

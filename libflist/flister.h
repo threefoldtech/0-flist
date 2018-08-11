@@ -1,5 +1,5 @@
-#ifndef FLISTER_H
-    #define FLISTER_H
+#ifndef LIBFLIST_H
+    #define LIBFLIST_H
 
     void *bufdup(void *source, size_t length);
 
@@ -44,6 +44,4 @@
         merge_list_t merge;  // list of merging flists
 
     } settings_t;
-
-    // extern settings_t settings;
 #endif

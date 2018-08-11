@@ -1,5 +1,5 @@
-#ifndef DATABASE_H
-    #define DATABASE_H
+#ifndef LIBFLIST_DATABASE_H
+    #define LIBFLIST_DATABASE_H
 
     typedef struct value_t {
         void *handler;

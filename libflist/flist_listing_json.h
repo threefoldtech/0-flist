@@ -1,5 +1,5 @@
-#ifndef FLISTER_LIST_JSON
-    #define FLISTER_LIST_JSON
+#ifndef LIBFLIST_LIST_JSON
+    #define LIBFLIST_LIST_JSON
 
     int flist_json(walker_t *walker, directory_t *root);
     void flist_json_dump(walker_t *walker);

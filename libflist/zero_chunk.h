@@ -1,5 +1,5 @@
-#ifndef LIBG8STOR_H
-    #define LIBG8STOR_H
+#ifndef LIBFLIST_ZERO_CHUNK_H
+    #define LIBFLIST_ZERO_CHUNK_H
 
     #include <stdint.h>
 

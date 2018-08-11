@@ -1,5 +1,5 @@
-#ifndef DATABASE_REDIS_H
-    #define DATABASE_REDIS_H
+#ifndef LIBFLIST_DATABASE_REDIS_H
+    #define LIBFLIST_DATABASE_REDIS_H
 
     #include <hiredis/hiredis.h>
 

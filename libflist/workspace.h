@@ -1,5 +1,5 @@
-#ifndef WORKSPACE_H
-    #define WORKSPACE_H
+#ifndef LIBFLIST_WORKSPACE_H
+    #define LIBFLIST_WORKSPACE_H
 
     char *workspace_create();
     char *workspace_destroy(char *mountpoint);

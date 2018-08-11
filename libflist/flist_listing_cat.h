@@ -1,5 +1,5 @@
-#ifndef FLISTER_LIST_CAT
-    #define FLISTER_LIST_CAT
+#ifndef LIBFLIST_LIST_CAT
+    #define LIBFLIST_LIST_CAT
 
     void *flist_cat_init();
     int flist_cat(walker_t *walker, directory_t *root);
