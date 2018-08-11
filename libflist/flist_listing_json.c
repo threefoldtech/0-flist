@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <jansson.h>
 #include "flister.h"
+#include "debug.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
 #include "flist_walker.h"

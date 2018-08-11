@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <blake2.h>
 #include "flister.h"
+#include "debug.h"
 #include "flist.capnp.h"
 #include "flist_read.h"
 

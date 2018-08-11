@@ -11,6 +11,7 @@
 #include <zlib.h>
 #include <libgen.h>
 #include "archive.h"
+#include "debug.h"
 #include "flister.h"
 
 //

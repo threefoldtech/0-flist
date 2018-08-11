@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "flister.h"
+#include "debug.h"
 #include "database.h"
 #include "database_redis.h"
 #include "backend.h"

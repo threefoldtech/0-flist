@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "flister.h"
+#include "debug.h"
 #include "backend.h"
 #include "flist_write.h"
 #include "flist.capnp.h"

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <hiredis/hiredis.h>
+#include "debug.h"
 #include "database.h"
 #include "database_redis.h"
 #include "flister.h"

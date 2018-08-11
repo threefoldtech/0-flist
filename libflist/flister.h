@@ -1,10 +1,6 @@
 #ifndef FLISTER_H
     #define FLISTER_H
 
-    void diep(const char *str);
-    void dies(const char *str);
-    void warnp(const char *str);
-
     void *bufdup(void *source, size_t length);
 
     #ifdef FLIST_DEBUG

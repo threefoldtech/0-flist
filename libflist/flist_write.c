@@ -18,6 +18,7 @@
 #include <regex.h>
 #include <jansson.h>
 #include "flister.h"
+#include "debug.h"
 #include "database.h"
 #include "backend.h"
 #include "flist_write.h"

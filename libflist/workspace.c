@@ -6,6 +6,7 @@
 #include <ftw.h>
 #include <unistd.h>
 #include <sys/mount.h>
+#include "debug.h"
 #include "workspace.h"
 #include "flister.h"
 

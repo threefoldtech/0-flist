@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sqlite3.h>
+#include "debug.h"
 #include "database.h"
 #include "database_sqlite.h"
 #include "flister.h"
