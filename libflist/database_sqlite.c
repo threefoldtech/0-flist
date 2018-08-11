@@ -139,7 +139,7 @@ static int database_sqlite_set(database_t *database, uint8_t *key, size_t keylen
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     sqlite3_reset(db->insert);
-    sqlite3_bind_blob(db->insert, 1, key, keylen, SQLITE_STATIC);
+    sqlite3_bind_text(db->insert, 1, (char *) key, keylen, SQLITE_STATIC);
     sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
     if(sqlite3_step(db->insert) != SQLITE_DONE)
