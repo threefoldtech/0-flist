@@ -64,6 +64,7 @@ void upload_free() {
 #endif
 
 void upload_flush(backend_t *context) {
+    (void) context;
 #if 0
     redisReply *reply;
 
@@ -193,7 +194,8 @@ chunks_t *upload_inode(backend_t *backend, char *path, char *filename) {
 }
 
 backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
-    redisReply *reply;
+    // redisReply *reply;
+    (void) cipherlen;
     backend_data_t *data;    // internal data
     chunk_t input, *output;  // input chunk, output decrypted chunk
 

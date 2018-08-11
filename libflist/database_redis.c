@@ -26,17 +26,17 @@ static database_t *database_redis_dummy(database_t *database) {
 //
 // GET
 //
-static redisReply *database_redis_get_real(database_t *database, char *key, size_t keylen) {
+static redisReply *database_redis_get_real(database_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     return redisCommand(db->redis, "HGET %s %b", db->namespace, key, keylen);
 }
 
-static redisReply *database_redis_get_zdb(database_t *database, char *key, size_t keylen) {
+static redisReply *database_redis_get_zdb(database_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     return redisCommand(db->redis, "GET %b", key, keylen);
 }
 
-static value_t *database_redis_get(database_t *database, char *key, size_t keylen) {
+static value_t *database_redis_get(database_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
     value_t *value = NULL;
@@ -63,10 +63,14 @@ static value_t *database_redis_get(database_t *database, char *key, size_t keyle
     return value;
 }
 
+static value_t *database_redis_sget(database_t *database, char *key) {
+    return database_redis_get(database, (uint8_t *) key, strlen(key));
+}
+
 //
 // SET
 //
-static redisReply *database_redis_set_real(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_real(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -80,7 +84,7 @@ static redisReply *database_redis_set_real(database_t *database, char *key, size
     return reply;
 }
 
-static redisReply *database_redis_set_zdb(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_zdb(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -98,7 +102,7 @@ static redisReply *database_redis_set_zdb(database_t *database, char *key, size_
     return reply;
 }
 
-static int database_redis_set(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
+static int database_redis_set(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -110,6 +114,10 @@ static int database_redis_set(database_t *database, char *key, size_t keylen, ui
     return 0;
 }
 
+static int database_redis_sset(database_t *database, char *key, uint8_t *payload, size_t length) {
+    return database_redis_set(database, (uint8_t *) key, strlen(key), payload, length);
+}
+
 static void database_redis_clean(value_t *value) {
     freeReplyObject(value->handler);
     free(value);
@@ -117,7 +125,7 @@ static void database_redis_clean(value_t *value) {
 
 
 // poor implementation of exists
-static int database_redis_exists(database_t *database, char *key, size_t keylen) {
+static int database_redis_exists(database_t *database, uint8_t *key, size_t keylen) {
     int retval = 0;
 
     value_t *value = database_redis_get(database, key, keylen);
@@ -126,6 +134,10 @@ static int database_redis_exists(database_t *database, char *key, size_t keylen)
 
     database_redis_clean(value);
     return retval;
+}
+
+static int database_redis_sexists(database_t *database, char *key) {
+    return database_redis_exists(database, (uint8_t *) key, strlen(key));
 }
 
 database_t *database_redis_init_global(database_t *db) {
@@ -140,6 +152,9 @@ database_t *database_redis_init_global(database_t *db) {
     db->set = database_redis_set;
     db->exists = database_redis_exists;
     db->clean = database_redis_clean;
+    db->sget = database_redis_sget;
+    db->sset = database_redis_sset;
+    db->sexists = database_redis_sexists;
 
     return db;
 }

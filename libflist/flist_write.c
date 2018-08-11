@@ -520,7 +520,7 @@ static capn_text chars_to_text(const char *chars) {
 }
 
 void inode_acl_persist(database_t *database, acl_t *acl) {
-    if(database->exists(database, acl->key, strlen(acl->key)))
+    if(database->sexists(database, acl->key))
         return;
 
     // create a capnp aci object
@@ -548,7 +548,7 @@ void inode_acl_persist(database_t *database, acl_t *acl) {
     capn_free(&c);
 
     debug("[+] writing acl into db: %s\n", acl->key);
-    if(database->set(database, acl->key, strlen(acl->key), buffer, sz))
+    if(database->sset(database, acl->key, buffer, sz))
         dies("acl database error");
 }
 
@@ -697,7 +697,7 @@ void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent,
 
     // commit this object into the database
     debug("[+] writing into db: %s\n", root->hashkey);
-    if(database->set(database, root->hashkey, strlen(root->hashkey), buffer, sz))
+    if(database->sset(database, root->hashkey, buffer, sz))
         dies("database error");
 
     free(buffer);

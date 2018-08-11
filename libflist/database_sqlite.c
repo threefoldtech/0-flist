@@ -97,7 +97,7 @@ static void database_sqlite_close(database_t *database) {
     free(db);
 }
 
-static value_t *database_sqlite_get(database_t *database, char *key, size_t keylen) {
+static value_t *database_sqlite_get(database_t *database, uint8_t *key, size_t keylen) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
     value_t *value;
 
@@ -107,7 +107,7 @@ static value_t *database_sqlite_get(database_t *database, char *key, size_t keyl
     }
 
     sqlite3_reset(db->select);
-    sqlite3_bind_text(db->select, 1, key, keylen, SQLITE_STATIC);
+    sqlite3_bind_text(db->select, 1, (char *) key, keylen, SQLITE_STATIC);
 
     int data = sqlite3_step(db->select);
 
@@ -124,6 +124,10 @@ static value_t *database_sqlite_get(database_t *database, char *key, size_t keyl
     return value;
 }
 
+static value_t *database_sqlite_sget(database_t *database, char *key) {
+    return database_sqlite_get(database, (uint8_t *) key, strlen(key));
+}
+
 static void database_sqlite_clean(value_t *value) {
     // database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
@@ -131,11 +135,11 @@ static void database_sqlite_clean(value_t *value) {
     free(value);
 }
 
-static int database_sqlite_set(database_t *database, char *key, size_t keylen, uint8_t *payload, size_t length) {
+static int database_sqlite_set(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     sqlite3_reset(db->insert);
-    sqlite3_bind_text(db->insert, 1, key, keylen, SQLITE_STATIC);
+    sqlite3_bind_blob(db->insert, 1, key, keylen, SQLITE_STATIC);
     sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
     if(sqlite3_step(db->insert) != SQLITE_DONE)
@@ -146,8 +150,12 @@ static int database_sqlite_set(database_t *database, char *key, size_t keylen, u
     return 0;
 }
 
+static int database_sqlite_sset(database_t *database, char *key, uint8_t *payload, size_t length) {
+    return database_sqlite_set(database, (uint8_t *) key, strlen(key), payload, length);
+}
+
 // poor implementation of exists
-static int database_sqlite_exists(database_t *database, char *key, size_t keylen) {
+static int database_sqlite_exists(database_t *database, uint8_t *key, size_t keylen) {
     int retval = 0;
 
     value_t *value = database_sqlite_get(database, key, keylen);
@@ -156,6 +164,10 @@ static int database_sqlite_exists(database_t *database, char *key, size_t keylen
 
     database_sqlite_clean(value);
     return retval;
+}
+
+static int database_sqlite_sexists(database_t *database, char *key) {
+    return database_sqlite_exists(database, (uint8_t *) key, strlen(key));
 }
 
 // public sqlite function initializer
@@ -200,6 +212,9 @@ database_t *database_sqlite_init(char *rootpath) {
     db->set = database_sqlite_set;
     db->exists = database_sqlite_exists;
     db->clean = database_sqlite_clean;
+    db->sset = database_sqlite_sset;
+    db->sget = database_sqlite_sget;
+    db->sexists = database_sqlite_sexists;
 
     return db;
 }

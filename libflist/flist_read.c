@@ -31,7 +31,7 @@ directory_t *flist_directory_get(database_t *database, char *key) {
         diep("directory: malloc");
 
     // reading capnp message from database
-    dir->value = database->get(database, key, strlen(key));
+    dir->value = database->sget(database, key);
 
     if(!dir->value->data) {
         fprintf(stderr, "[-] directory: key [%s] not found\n", key);
