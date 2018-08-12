@@ -1,16 +1,7 @@
 #include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "flister.h"
-#include "archive.h"
-#include "workspace.h"
-#include "backend.h"
-#include "database.h"
-#include "database_sqlite.h"
-#include "database_redis.h"
-#include "flist_merger.h"
-#include "flist_write.h"
-
+#include "libflist.h"
 
 #if 0
 remote_t *remotes = NULL;
@@ -152,29 +143,29 @@ static PyObject *backend_close(PyObject *self, PyObject *args) {
     return NULL;
 }
 
-typedef struct flist_pyobj_t {
-    database_t *database;
-    backend_t *backend;
+typedef struct pyflist_obj_t {
+    flist_db_t *database;
+    flist_backend_t *backend;
     const char *filename;
     char *workspace;
 
-} flist_pyobj_t;
+} pyflist_obj_t;
 
 static PyObject *pyflist_open(PyObject *self, PyObject *args) {
     (void) self;
-    flist_pyobj_t *root;
+    pyflist_obj_t *root;
     const char *filename;
 
     if(!PyArg_ParseTuple(args, "s", &filename))
         return NULL;
 
-    if(!(root = (flist_pyobj_t *) PyMem_Malloc(sizeof(flist_pyobj_t))))
+    if(!(root = (pyflist_obj_t *) PyMem_Malloc(sizeof(pyflist_obj_t))))
         return NULL;
 
     root->filename = strdup(filename);
 
     debug("[+] initializing workspace\n");
-    if(!(root->workspace = workspace_create())) {
+    if(!(root->workspace = libflist_workspace_create())) {
         fprintf(stderr, "workspace_create");
         // TODO: free
         return NULL;
@@ -182,13 +173,13 @@ static PyObject *pyflist_open(PyObject *self, PyObject *args) {
 
     debug("[+] workspace: %s\n", workspace);
 
-    if(!archive_extract(root->filename, root->workspace)) {
-        fprintf(stderr, "archive_extract");
+    if(!libflist_archive_extract((char *) root->filename, root->workspace)) {
+        fprintf(stderr, "libflist_archive_extract");
         return NULL; // FIXME
     }
 
     debug("[+] loading database\n");
-    root->database = database_sqlite_init(root->workspace);
+    root->database = libflist_db_sqlite_init(root->workspace);
     root->database->open(root->database);
 
     // flist_listing(root->database, &settings);
@@ -204,15 +195,15 @@ static PyObject *pyflist_close(PyObject *self, PyObject *args) {
     if(!PyArg_ParseTuple(args, "O", &pycaps))
         return NULL;
 
-    flist_pyobj_t *root;
-    if(!(root = (flist_pyobj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
+    pyflist_obj_t *root;
+    if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
         return NULL;
 
     debug("[+] closing database\n");
     root->database->close(root->database);
 
     debug("[+] cleaning workspace\n");
-    if(!workspace_destroy(root->workspace)) {
+    if(!libflist_workspace_destroy(root->workspace)) {
         fprintf(stderr, "workspace_destroy\n");
         return NULL;
     }
@@ -232,7 +223,20 @@ static PyObject *pyflist_getfile(PyObject *self, PyObject *args) {
 }
 
 static PyObject *pyflist_getdirectory(PyObject *self, PyObject *args) {
-    return NULL;
+    PyObject *pycaps = NULL;
+    const char *directory;
+
+    if(!PyArg_ParseTuple(args, "Os", &pycaps, &directory))
+        return NULL;
+
+    pyflist_obj_t *root;
+    if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
+        return NULL;
+
+    char *key = libflist_path_key((char *) directory);
+    printf("Query %s\n", key);
+
+
 }
 
 

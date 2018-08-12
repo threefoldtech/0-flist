@@ -140,7 +140,7 @@ static int database_redis_sexists(flist_db_t *database, char *key) {
     return database_redis_exists(database, (uint8_t *) key, strlen(key));
 }
 
-flist_db_t *database_redis_init_global(flist_db_t *db) {
+static flist_db_t *database_redis_init_global(flist_db_t *db) {
     // setting global db
     db->type = "REDIS";
 
@@ -218,7 +218,7 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
 
 }
 
-flist_db_t *database_redis_init_tcp(char *host, int port, char *namespace) {
+flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -237,7 +237,7 @@ flist_db_t *database_redis_init_tcp(char *host, int port, char *namespace) {
     return db;
 }
 
-flist_db_t *database_redis_init_unix(char *socket, char *namespace) {
+flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -254,5 +254,4 @@ flist_db_t *database_redis_init_unix(char *socket, char *namespace) {
     database_redis_set_namespace(handler, namespace);
 
     return db;
-
 }

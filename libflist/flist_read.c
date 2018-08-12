@@ -62,7 +62,7 @@ void flist_directory_close(flist_db_t *database, directory_t *dir) {
 //
 // helpers
 //
-char *flist_pathkey(char *path) {
+char *libflist_path_key(char *path) {
     uint8_t hash[KEYLENGTH];
     char *hexhash;
 

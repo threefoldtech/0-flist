@@ -171,7 +171,7 @@ static int database_sqlite_sexists(flist_db_t *database, char *key) {
 }
 
 // public sqlite function initializer
-flist_db_t *database_sqlite_init(char *rootpath) {
+flist_db_t *libflist_db_sqlite_init(char *rootpath) {
     flist_db_t *db;
 
     // allocate generic database object

@@ -69,7 +69,7 @@ int flist_listing(flist_db_t *database, zflist_settings_t *settings) {
     }
 
     // root directory is an empty key
-    const char *key = flist_pathkey("");
+    const char *key = libflist_path_key("");
 
     // walking starting from the root
     flist_walk_directory(&walker, key, "/");

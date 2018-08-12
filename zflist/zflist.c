@@ -87,13 +87,13 @@ static int flister_create(char *workspace) {
     // no backend by default
     flist_backend_t *backend = NULL;
 
-    flist_db_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = libflist_db_sqlite_init(workspace);
     database->create(database);
 
     if(settings.backendhost) {
         flist_db_t *backdb;
 
-        if(!(backdb = database_redis_init_tcp(settings.backendhost, settings.backendport, "default"))) {
+        if(!(backdb = libflist_db_redis_init_tcp(settings.backendhost, settings.backendport, "default"))) {
             fprintf(stderr, "[-] cannot initialize backend\n");
             return 1;
         }
@@ -131,7 +131,7 @@ static int flister_list(char *workspace) {
 
 
     debug("[+] loading database\n");
-    flist_db_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = libflist_db_sqlite_init(workspace);
     database->open(database);
 
     debug("[+] walking over database\n");
@@ -144,7 +144,7 @@ static int flister_list(char *workspace) {
 }
 
 static int flister_merge(char *workspace) {
-    flist_db_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = libflist_db_sqlite_init(workspace);
     database->create(database);
 
     // building database

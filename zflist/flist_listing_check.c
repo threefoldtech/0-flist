@@ -25,7 +25,7 @@ void *flist_check_init(zflist_settings_t *settings) {
     // FIXME: should not be here at all
     flist_db_t *backdb;
 
-    if(!(backdb = database_redis_init_tcp(settings->backendhost, settings->backendport, "default"))) {
+    if(!(backdb = libflist_db_redis_init_tcp(settings->backendhost, settings->backendport, "default"))) {
         fprintf(stderr, "[-] cannot initialize backend\n");
         return NULL;
     }

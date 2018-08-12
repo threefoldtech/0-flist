@@ -196,11 +196,11 @@
 
 
     // initializers
-    flist_db_t *database_redis_init_tcp(char *host, int port, char *hset);
-    flist_db_t *database_redis_init_unix(char *socket, char *namespace);
+    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset);
+    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace);
 
     // initializers
-    flist_db_t *database_sqlite_init(char *rootpath);
+    flist_db_t *libflist_db_sqlite_init(char *rootpath);
 
     // hashing
     uint8_t *zchunk_hash(const void *buffer, size_t length);
@@ -220,7 +220,7 @@
 
     char *flist_fullpath(directory_t *root, struct Inode *inode);
     char *flist_read_permstr(unsigned int mode, char *modestr, size_t slen);
-    char *flist_pathkey(char *path);
+    char *libflist_path_key(char *path);
 
     int flist_walk(flist_db_t *database);
 
