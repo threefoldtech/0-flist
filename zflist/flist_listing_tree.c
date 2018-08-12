@@ -3,11 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "flister.h"
-#include "debug.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
 #include "flist_walker.h"
+#include "zflist.h"
 
 typedef struct tree_obj_t {
     int level;

@@ -3,11 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "flister.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
 #include "flist_walker.h"
-#include "zero_chunk.h"
+#include "zflist.h"
 
 int flist_blocks(walker_t *walker, directory_t *root) {
     Inode_ptr inodep;

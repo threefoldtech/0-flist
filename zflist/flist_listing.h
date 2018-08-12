@@ -12,5 +12,5 @@
 
     } flist_json_t;
 
-    int flist_listing(database_t *database, settings_t *settings);
+    int flist_listing(flist_db_t *database, zflist_settings_t *settings);
 #endif

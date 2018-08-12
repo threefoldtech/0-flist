@@ -5,10 +5,10 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sqlite3.h>
+#include "libflist.h"
 #include "debug.h"
 #include "database.h"
 #include "database_sqlite.h"
-#include "flister.h"
 
 static int database_sqlite_build(database_sqlite_t *db) {
     char *query = "CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);";
@@ -31,7 +31,7 @@ static int database_sqlite_build(database_sqlite_t *db) {
     return 0;
 }
 
-static int database_sqlite_optimize(database_t *database) {
+static int database_sqlite_optimize(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     // pre-compute query
@@ -51,7 +51,7 @@ static int database_sqlite_optimize(database_t *database) {
     return 0;
 }
 
-static database_sqlite_t *database_sqlite_root_init(database_t *database) {
+static database_sqlite_t *database_sqlite_root_init(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     if(sqlite3_open(db->filename, &db->db)) {
@@ -62,7 +62,7 @@ static database_sqlite_t *database_sqlite_root_init(database_t *database) {
     return db;
 }
 
-static database_t *database_sqlite_open(database_t *database) {
+static flist_db_t *database_sqlite_open(flist_db_t *database) {
     database->handler = database_sqlite_root_init(database);
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
@@ -72,7 +72,7 @@ static database_t *database_sqlite_open(database_t *database) {
     return database;
 }
 
-static database_t *database_sqlite_create(database_t *database) {
+static flist_db_t *database_sqlite_create(flist_db_t *database) {
     database->handler = database_sqlite_root_init(database);
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
@@ -85,7 +85,7 @@ static database_t *database_sqlite_create(database_t *database) {
     return database;
 }
 
-static void database_sqlite_close(database_t *database) {
+static void database_sqlite_close(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     if(db->updated) {
@@ -97,7 +97,7 @@ static void database_sqlite_close(database_t *database) {
     free(db);
 }
 
-static value_t *database_sqlite_get(database_t *database, uint8_t *key, size_t keylen) {
+static value_t *database_sqlite_get(flist_db_t *database, uint8_t *key, size_t keylen) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
     value_t *value;
 
@@ -124,7 +124,7 @@ static value_t *database_sqlite_get(database_t *database, uint8_t *key, size_t k
     return value;
 }
 
-static value_t *database_sqlite_sget(database_t *database, char *key) {
+static value_t *database_sqlite_sget(flist_db_t *database, char *key) {
     return database_sqlite_get(database, (uint8_t *) key, strlen(key));
 }
 
@@ -135,7 +135,7 @@ static void database_sqlite_clean(value_t *value) {
     free(value);
 }
 
-static int database_sqlite_set(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
+static int database_sqlite_set(flist_db_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     sqlite3_reset(db->insert);
@@ -150,12 +150,12 @@ static int database_sqlite_set(database_t *database, uint8_t *key, size_t keylen
     return 0;
 }
 
-static int database_sqlite_sset(database_t *database, char *key, uint8_t *payload, size_t length) {
+static int database_sqlite_sset(flist_db_t *database, char *key, uint8_t *payload, size_t length) {
     return database_sqlite_set(database, (uint8_t *) key, strlen(key), payload, length);
 }
 
 // poor implementation of exists
-static int database_sqlite_exists(database_t *database, uint8_t *key, size_t keylen) {
+static int database_sqlite_exists(flist_db_t *database, uint8_t *key, size_t keylen) {
     int retval = 0;
 
     value_t *value = database_sqlite_get(database, key, keylen);
@@ -166,16 +166,16 @@ static int database_sqlite_exists(database_t *database, uint8_t *key, size_t key
     return retval;
 }
 
-static int database_sqlite_sexists(database_t *database, char *key) {
+static int database_sqlite_sexists(flist_db_t *database, char *key) {
     return database_sqlite_exists(database, (uint8_t *) key, strlen(key));
 }
 
 // public sqlite function initializer
-database_t *database_sqlite_init(char *rootpath) {
-    database_t *db;
+flist_db_t *database_sqlite_init(char *rootpath) {
+    flist_db_t *db;
 
     // allocate generic database object
-    if(!(db = malloc(sizeof(database_t))))
+    if(!(db = malloc(sizeof(flist_db_t))))
         return NULL;
 
     // set our custom sqlite database handler

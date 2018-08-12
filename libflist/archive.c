@@ -10,9 +10,8 @@
 #include <libtar.h>
 #include <zlib.h>
 #include <libgen.h>
-#include "archive.h"
+#include "libflist.h"
 #include "debug.h"
-#include "flister.h"
 
 //
 // uncompress gzip archive to the temporary directory
@@ -42,7 +41,7 @@ static char *archive_prepare(char *filename, char *target) {
     return destination;
 }
 
-char *archive_extract(char *filename, char *target) {
+char *libflist_archive_extract(char *filename, char *target) {
     TAR *th = NULL;
     struct stat st;
     char *destination;
@@ -94,7 +93,7 @@ static int archive_compress(char *source, char *destination) {
     return 0;
 }
 
-int archive_create(char *filename, char *source) {
+int libflist_archive_create(char *filename, char *source) {
     TAR *th = NULL;
     char *tempfile;
 

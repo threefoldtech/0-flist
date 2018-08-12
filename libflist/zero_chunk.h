@@ -3,12 +3,7 @@
 
     #include <stdint.h>
 
-    #define LIB0STOR_HASH_LENGTH   16
-
-    typedef struct remote_t {
-        void *redis;
-
-    } remote_t;
+    #define ZEROCHUNK_HASH_LENGTH   16
 
     typedef struct buffer_t {
         FILE *fp;
@@ -28,9 +23,6 @@
         size_t length;
 
     } chunk_t;
-
-    // hashing
-    uint8_t *zchunk_hash(const void *buffer, size_t length);
 
     // file buffer
     buffer_t *bufferize(char *filename);

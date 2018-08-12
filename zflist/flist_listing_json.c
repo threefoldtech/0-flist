@@ -4,12 +4,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <jansson.h>
-#include "flister.h"
-#include "debug.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
 #include "flist_walker.h"
-#include "flist_listing.h"
+#include "zflist.h"
+
+#if 0
 
 void *flist_json_init() {
     flist_json_t *obj;
@@ -90,3 +89,4 @@ int flist_json(walker_t *walker, directory_t *root) {
     return 0;
 }
 
+#endif

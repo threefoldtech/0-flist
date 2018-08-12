@@ -3,5 +3,5 @@
 
     #include "database.h"
 
-    int flist_walk(database_t *database);
+    int flist_walk(flist_db_t *database);
 #endif

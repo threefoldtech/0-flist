@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
-#include "flister.h"
+#include "libflist.h"
 #include "database.h"
 #include "flist.capnp.h"
-#include "flist_read.h"
 #include "flist_walker.h"
+#include "zflist.h"
 
 int flist_walk_directory(walker_t *walker, const char *_key, const char *_fullpath) {
     char *key = (char *) _key;

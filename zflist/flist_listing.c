@@ -3,9 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "flister.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
+#include "zflist.h"
 #include "flist_walker.h"
 #include "flist_listing_dump.h"
 #include "flist_listing_json.h"
@@ -14,11 +13,8 @@
 #include "flist_listing_check.h"
 #include "flist_listing_cat.h"
 
-// FIXME: should be outside of the library
-//        this should be moved to flister executable
-
 // walking entry point
-int flist_listing(database_t *database, settings_t *settings) {
+int flist_listing(flist_db_t *database, zflist_settings_t *settings) {
     walker_t walker = {
         .database = database,
         .userptr = NULL,
@@ -37,11 +33,13 @@ int flist_listing(database_t *database, settings_t *settings) {
     if(settings->list == LIST_BLOCKS)
         walker.callback = flist_blocks;
 
+    /*
     if(settings->list == LIST_JSON) {
         walker.callback = flist_json;
         walker.postproc = flist_json_dump;
         walker.userptr = flist_json_init();
     }
+    */
 
     if(settings->list == LIST_CHECK) {
         if(!(settings->backendhost)) {

@@ -4,24 +4,19 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
-#include "flister.h"
-#include "debug.h"
-#include "database.h"
-#include "database_redis.h"
-#include "backend.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
 #include "flist_walker.h"
+#include "zflist.h"
 
 typedef struct flist_cat_t {
     char *filename;
     char *output;
     int status;
-    backend_t *backend;
+    flist_backend_t *backend;
 
 } flist_cat_t;
 
-void *flist_cat_init(settings_t *settings) {
+void *flist_cat_init(zflist_settings_t *settings) {
     flist_cat_t *cat;
     char *target = settings->targetfile;
 
@@ -37,7 +32,7 @@ void *flist_cat_init(settings_t *settings) {
     cat->status = 0;
 
     // FIXME: should not be here at all
-    database_t *backdb;
+    flist_db_t *backdb;
 
     if(!(backdb = database_redis_init_tcp(settings->backendhost, settings->backendport, "default"))) {
         fprintf(stderr, "[-] cannot initialize backend\n");
@@ -100,7 +95,7 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
                 size_t keylen = block.key.p.len;
 
-                backend_data_t *data;
+                flist_backend_data_t *data;
 
                 if(!(data = download_block(cat->backend, hash, hashlen, key, keylen))) {
                     fprintf(stderr, "[-] could not download file\n");

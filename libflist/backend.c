@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
-#include "flister.h"
+#include "libflist.h"
 #include "debug.h"
 #include "backend.h"
 #include "flist_write.h"
@@ -16,10 +16,10 @@
 #include "database_sqlite.h"
 #include "zero_chunk.h"
 
-backend_t *backend_init(database_t *database, char *rootpath) {
-    backend_t *backend;
+flist_backend_t *backend_init(flist_db_t *database, char *rootpath) {
+    flist_backend_t *backend;
 
-    if(!(backend = malloc(sizeof(backend_t))))
+    if(!(backend = malloc(sizeof(flist_backend_t))))
         return NULL;
 
     backend->database = database;
@@ -30,14 +30,14 @@ backend_t *backend_init(database_t *database, char *rootpath) {
 
 #if 0
 // FIXME: don't use global variable
-typedef struct backend_t {
+typedef struct flist_backend_t {
     redisContext *redis;  // redis context
     int pwrite;           // pending write
     size_t buflen;        // buffer length
 
-} backend_t;
+} flist_backend_t;
 
-backend_t bcontext = {
+flist_backend_t bcontext = {
     .redis = NULL,
     .pwrite = 0,
     .buflen = 0,
@@ -45,7 +45,7 @@ backend_t bcontext = {
 #endif
 
 #if 0
-static redisContext *backend_connect(backend_t *context, char *hostname, int port) {
+static redisContext *backend_connect(flist_backend_t *context, char *hostname, int port) {
     debug("[+] backend: connecting (%s, %d)\n", hostname, port);
 
     if(!(context->redis = redisConnect(hostname, port)))
@@ -63,7 +63,7 @@ void upload_free() {
 }
 #endif
 
-void upload_flush(backend_t *context) {
+void upload_flush(flist_backend_t *context) {
     (void) context;
 #if 0
     redisReply *reply;
@@ -90,7 +90,7 @@ void upload_flush(backend_t *context) {
 #endif
 }
 
-static int chunk_upload(backend_t *context, chunk_t *chunk) {
+static int chunk_upload(flist_backend_t *context, chunk_t *chunk) {
 #if 0
     // insert new key
     redisAppendCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
@@ -115,14 +115,14 @@ static int chunk_upload(backend_t *context, chunk_t *chunk) {
 
     freeReplyObject(reply);
 #endif
-    database_t *db = context->database;
-    if(db->set(db, chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length))
+    flist_db_t *db = context->database;
+    if(db->set(db, chunk->id, ZEROCHUNK_HASH_LENGTH, chunk->data, chunk->length))
         return 1;
 
     return 0;
 }
 
-static chunks_t *upload_file(backend_t *context, char *filename) {
+static chunks_t *upload_file(flist_backend_t *context, char *filename) {
     buffer_t *buffer;
     chunks_t *chunks;
 
@@ -147,8 +147,8 @@ static chunks_t *upload_file(backend_t *context, char *filename) {
         // encrypting chunk
         chunk_t *chunk = encrypt_chunk(data, buffer->chunksize);
 
-        chunks->chunks[i].id = bufdup(chunk->id, LIB0STOR_HASH_LENGTH);
-        chunks->chunks[i].cipher = bufdup(chunk->cipher, LIB0STOR_HASH_LENGTH);
+        chunks->chunks[i].id = bufdup(chunk->id, ZEROCHUNK_HASH_LENGTH);
+        chunks->chunks[i].cipher = bufdup(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
         chunks->upsize += chunk->length;
 
         // hiredis upload
@@ -176,7 +176,7 @@ void chunks_free(chunks_t *chunks) {
     free(chunks);
 }
 
-chunks_t *upload_inode(backend_t *backend, char *path, char *filename) {
+chunks_t *upload_inode(flist_backend_t *backend, char *path, char *filename) {
     char *physical = NULL;
 
     /*
@@ -193,10 +193,10 @@ chunks_t *upload_inode(backend_t *backend, char *path, char *filename) {
     return chunks;
 }
 
-backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
+flist_backend_data_t *download_block(flist_backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
     // redisReply *reply;
     (void) cipherlen;
-    backend_data_t *data;    // internal data
+    flist_backend_data_t *data;    // internal data
     chunk_t input, *output;  // input chunk, output decrypted chunk
 
     /*
@@ -208,7 +208,7 @@ backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, ui
         return NULL;
     */
 
-    database_t *db = backend->database;
+    flist_db_t *db = backend->database;
     value_t *value = db->get(db, id, idlen);
 
     if(value == NULL)
@@ -224,7 +224,7 @@ backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, ui
         return NULL;
 
     // internal chunk, which make lib0stor opaque
-    if(!(data = malloc(sizeof(backend_data_t))))
+    if(!(data = malloc(sizeof(flist_backend_data_t))))
         diep("backend malloc");
 
     data->opaque = output;
@@ -236,7 +236,7 @@ backend_data_t *download_block(backend_t *backend, uint8_t *id, size_t idlen, ui
     return data;
 }
 
-void download_free(backend_data_t *data) {
+void download_free(flist_backend_data_t *data) {
     chunk_free(data->opaque);
     free(data);
 }
@@ -245,7 +245,7 @@ void upload_inode_flush() {
     // upload_flush(&bcontext);
 }
 
-void backend_free(backend_t *backend) {
+void backend_free(flist_backend_t *backend) {
     backend->database->close(backend->database);
     free(backend);
 }

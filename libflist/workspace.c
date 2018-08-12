@@ -6,9 +6,8 @@
 #include <ftw.h>
 #include <unistd.h>
 #include <sys/mount.h>
+#include "libflist.h"
 #include "debug.h"
-#include "workspace.h"
-#include "flister.h"
 
 static int workspace_clean_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 	(void) sb;
@@ -25,7 +24,7 @@ static int workspace_clean(char *workspace) {
     return nftw(workspace, workspace_clean_cb, 64, FTW_DEPTH | FTW_PHYS);
 }
 
-char *workspace_create() {
+char *libflist_workspace_create() {
 	char *mountpoint;
 	char path[32] = "/tmp/flist_XXXXXX";
 
@@ -35,19 +34,19 @@ char *workspace_create() {
 	return strdup(mountpoint);
 }
 
-char *workspace_destroy(char *mountpoint) {
+char *libflist_workspace_destroy(char *mountpoint) {
 	workspace_clean(mountpoint);
 	return (char *) 1;
 }
 
-char *ramdisk_create(char *mountpoint) {
+char *libflist_ramdisk_create(char *mountpoint) {
 	if(mount("tmpfs", mountpoint, "tmpfs", 0, "size=32M"))
 		return NULL;
 
 	return mountpoint;
 }
 
-char *ramdisk_destroy(char *mountpoint) {
+char *libflist_ramdisk_destroy(char *mountpoint) {
 	if(umount(mountpoint))
 		return NULL;
 

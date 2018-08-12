@@ -1,7 +1,5 @@
-#ifndef LIBFLIST_H
-    #define LIBFLIST_H
-
-    void *bufdup(void *source, size_t length);
+#ifndef ZFLIST_H
+    #define ZFLIST_H
 
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
@@ -27,7 +25,7 @@
 
     } merge_list_t;
 
-    typedef struct settings_t {
+    typedef struct zflist_settings_t {
         int ramdisk;       // do we extract to ramdisk
         char *archive;     // required input/output archive
 
@@ -43,5 +41,5 @@
         list_mode_t list;    // list view mode
         merge_list_t merge;  // list of merging flists
 
-    } settings_t;
+    } zflist_settings_t;
 #endif

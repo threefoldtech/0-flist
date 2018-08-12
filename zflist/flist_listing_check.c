@@ -4,31 +4,26 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
-#include "flister.h"
-#include "debug.h"
-#include "database.h"
-#include "database_redis.h"
-#include "backend.h"
-#include "flist.capnp.h"
-#include "flist_read.h"
+#include "libflist.h"
 #include "flist_walker.h"
+#include "zflist.h"
 
 typedef struct flist_check_t {
-    backend_t *backend;
+    flist_backend_t *backend;
     size_t files;
     size_t size;
     int status;
 
 } flist_check_t;
 
-void *flist_check_init(settings_t *settings) {
+void *flist_check_init(zflist_settings_t *settings) {
     flist_check_t *checker;
 
     if(!(checker = calloc(sizeof(flist_check_t), 1)))
         diep("checker malloc");
 
     // FIXME: should not be here at all
-    database_t *backdb;
+    flist_db_t *backdb;
 
     if(!(backdb = database_redis_init_tcp(settings->backendhost, settings->backendport, "default"))) {
         fprintf(stderr, "[-] cannot initialize backend\n");
@@ -75,7 +70,7 @@ int flist_check(walker_t *walker, directory_t *root) {
                 uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
                 size_t keylen = block.key.p.len;
 
-                backend_data_t *data;
+                flist_backend_data_t *data;
 
                 if(!(data = download_block(checker->backend, hash, hashlen, key, keylen))) {
                     checker->status = 1;

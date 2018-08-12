@@ -7,18 +7,10 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <jansson.h>
-#include "flister.h"
-#include "archive.h"
-#include "workspace.h"
-#include "backend.h"
-#include "database.h"
-#include "database_sqlite.h"
-#include "database_redis.h"
-#include "flist_listing.h"
-#include "flist_merger.h"
-#include "flist_write.h"
+#include "libflist.h"
+#include "zflist.h"
 
-settings_t settings;
+zflist_settings_t settings;
 
 static struct option long_options[] = {
     {"list",    no_argument,       0, 'l'},
@@ -93,13 +85,13 @@ int usage(char *basename) {
 
 static int flister_create(char *workspace) {
     // no backend by default
-    backend_t *backend = NULL;
+    flist_backend_t *backend = NULL;
 
-    database_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = database_sqlite_init(workspace);
     database->create(database);
 
     if(settings.backendhost) {
-        database_t *backdb;
+        flist_db_t *backdb;
 
         if(!(backdb = database_redis_init_tcp(settings.backendhost, settings.backendport, "default"))) {
             fprintf(stderr, "[-] cannot initialize backend\n");
@@ -121,7 +113,7 @@ static int flister_create(char *workspace) {
 
     // removing possible already existing db
     unlink(settings.archive);
-    archive_create(settings.archive, workspace);
+    libflist_archive_create(settings.archive, workspace);
 
     return 0;
 }
@@ -132,14 +124,14 @@ static int flister_list(char *workspace) {
     if(settings.json)
         settings.list = LIST_JSON;
 
-    if(!archive_extract(settings.archive, workspace)) {
-        warnp("archive_extract");
+    if(!libflist_archive_extract(settings.archive, workspace)) {
+        warnp("libflist_archive_extract");
         return 1;
     }
 
 
     debug("[+] loading database\n");
-    database_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = database_sqlite_init(workspace);
     database->open(database);
 
     debug("[+] walking over database\n");
@@ -152,7 +144,7 @@ static int flister_list(char *workspace) {
 }
 
 static int flister_merge(char *workspace) {
-    database_t *database = database_sqlite_init(workspace);
+    flist_db_t *database = database_sqlite_init(workspace);
     database->create(database);
 
     // building database
@@ -164,7 +156,7 @@ static int flister_merge(char *workspace) {
 
     // removing possible already existing db
     unlink(settings.archive);
-    archive_create(settings.archive, workspace);
+    libflist_archive_create(settings.archive, workspace);
 
 
     return 0;
@@ -174,13 +166,13 @@ static int flister() {
     char *workspace;
 
     debug("[+] initializing workspace\n");
-    if(!(workspace = workspace_create()))
+    if(!(workspace = libflist_workspace_create()))
         diep("workspace_create");
 
     if(settings.ramdisk) {
         debug("[+] initializing ramdisk\n");
 
-        if(!ramdisk_create(workspace))
+        if(!libflist_ramdisk_create(workspace))
             diep("ramdisk_create");
     }
 
@@ -216,12 +208,12 @@ clean:
     if(settings.ramdisk) {
         debug("[+] cleaning ramdisk\n");
 
-        if(!ramdisk_destroy(workspace))
+        if(!libflist_ramdisk_destroy(workspace))
             diep("ramdisk_destroy");
     }
 
     debug("[+] cleaning workspace\n");
-    if(!workspace_destroy(workspace))
+    if(!libflist_workspace_destroy(workspace))
         diep("workspace_destroy");
 
     free(workspace);
@@ -234,7 +226,7 @@ int main(int argc, char *argv[]) {
     int i;
 
     // reset settings
-    memset(&settings, 0, sizeof(settings_t));
+    memset(&settings, 0, sizeof(zflist_settings_t));
 
     // initializing default settings
     settings.list = LIST_DISABLED;

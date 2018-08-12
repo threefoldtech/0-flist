@@ -17,7 +17,7 @@
 #include <sys/sysmacros.h>
 #include <regex.h>
 #include <jansson.h>
-#include "flister.h"
+#include "libflist.h"
 #include "debug.h"
 #include "database.h"
 #include "backend.h"
@@ -63,33 +63,6 @@ int excluders_matches(const char *input) {
 #define KEYLENGTH 16
 #define ACLLENGTH 8
 
-typedef struct acl_t {
-    char *uname;     // username (user id if not found)
-    char *gname;     // group name (group id if not found)
-    uint16_t mode;   // integer file mode
-    char *key;       // hash of the payload (dedupe in db)
-
-} acl_t;
-
-// link internal type to capnp type directly
-// this make things easier later
-typedef enum inode_type_t {
-    INODE_DIRECTORY = Inode_attributes_dir,
-    INODE_FILE = Inode_attributes_file,
-    INODE_LINK = Inode_attributes_link,
-    INODE_SPECIAL = Inode_attributes_special,
-
-} inode_type_t;
-
-typedef enum inode_special_t {
-    SOCKET = Special_Type_socket,
-    BLOCK = Special_Type_block,
-    CHARDEV = Special_Type_chardev,
-    FIFOPIPE = Special_Type_fifopipe,
-    UNKNOWN = Special_Type_unknown,
-
-} inode_special_t;
-
 const char *inode_type_str[] = {
     "INODE_DIRECTORY",
     "INODE_FILE",
@@ -97,53 +70,13 @@ const char *inode_type_str[] = {
     "INODE_SPECIAL",
 };
 
-typedef struct inode_t {
-    char *name;       // relative inode name (filename)
-    char *fullpath;   // full relative path
-    size_t size;      // size in byte
-    acl_t acl;        // access control
-
-    inode_type_t type;     // internal file type
-    time_t modification;   // modification time
-    time_t creation;       // creation time
-
-    char *subdirkey;       // for directory: directory target key
-    inode_special_t stype; // for special: special type
-    char *sdata;           // for special: special metadata
-    char *link;            // for symlink: symlink target
-
-    struct inode_t *next;
-
-} inode_t;
-
-typedef struct dirnode_t {
-    struct inode_t *inode_list;
-    struct inode_t *inode_last;
-    size_t inode_length;
-
-    struct dirnode_t *dir_list;
-    struct dirnode_t *dir_last;
-    size_t dir_length;
-
-    char *fullpath;        // virtual full path
-    char *name;            // directory name
-    char *hashkey;         // internal hash (for db)
-
-    acl_t acl;             // access control
-    time_t creation;       // creation time
-    time_t modification;   // modification time
-
-    struct dirnode_t *next;
-
-} dirnode_t;
-
 //
 //
 
 typedef struct flist_write_global_t {
     char *root;
-    database_t *database;
-    backend_t *backend;
+    flist_db_t *database;
+    flist_backend_t *backend;
     dirnode_t *rootdir;
     dirnode_t *currentdir;
     settings_t *settings;
@@ -521,7 +454,7 @@ static capn_text chars_to_text(const char *chars) {
     };
 }
 
-void inode_acl_persist(database_t *database, acl_t *acl) {
+void inode_acl_persist(flist_db_t *database, acl_t *acl) {
     if(database->sexists(database, acl->key))
         return;
 
@@ -573,7 +506,7 @@ static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t l
 
 // flist_json_t jsonresponse = {0};
 
-void dirnode_tree_capn(dirnode_t *root, database_t *database, dirnode_t *parent, backend_t *backend) {
+void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -969,7 +902,7 @@ something_wrong:
     return 1;
 }
 
-int flist_create(database_t *database, const char *root, backend_t *backend, settings_t *settings) {
+int flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings) {
     debug("[+] preparing flist for: %s\n", root);
 
     // initialize excluders

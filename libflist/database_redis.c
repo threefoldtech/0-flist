@@ -5,12 +5,12 @@
 #include <assert.h>
 #include <unistd.h>
 #include <hiredis/hiredis.h>
+#include "libflist.h"
 #include "debug.h"
 #include "database.h"
 #include "database_redis.h"
-#include "flister.h"
 
-static void database_redis_close(database_t *database) {
+static void database_redis_close(flist_db_t *database) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisFree(db->redis);
 
@@ -18,7 +18,7 @@ static void database_redis_close(database_t *database) {
     free(database);
 }
 
-static database_t *database_redis_dummy(database_t *database) {
+static flist_db_t *database_redis_dummy(flist_db_t *database) {
     (void) database;
     return 0;
 }
@@ -26,17 +26,17 @@ static database_t *database_redis_dummy(database_t *database) {
 //
 // GET
 //
-static redisReply *database_redis_get_real(database_t *database, uint8_t *key, size_t keylen) {
+static redisReply *database_redis_get_real(flist_db_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     return redisCommand(db->redis, "HGET %s %b", db->namespace, key, keylen);
 }
 
-static redisReply *database_redis_get_zdb(database_t *database, uint8_t *key, size_t keylen) {
+static redisReply *database_redis_get_zdb(flist_db_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     return redisCommand(db->redis, "GET %b", key, keylen);
 }
 
-static value_t *database_redis_get(database_t *database, uint8_t *key, size_t keylen) {
+static value_t *database_redis_get(flist_db_t *database, uint8_t *key, size_t keylen) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
     value_t *value = NULL;
@@ -63,14 +63,14 @@ static value_t *database_redis_get(database_t *database, uint8_t *key, size_t ke
     return value;
 }
 
-static value_t *database_redis_sget(database_t *database, char *key) {
+static value_t *database_redis_sget(flist_db_t *database, char *key) {
     return database_redis_get(database, (uint8_t *) key, strlen(key));
 }
 
 //
 // SET
 //
-static redisReply *database_redis_set_real(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_real(flist_db_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -84,7 +84,7 @@ static redisReply *database_redis_set_real(database_t *database, uint8_t *key, s
     return reply;
 }
 
-static redisReply *database_redis_set_zdb(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
+static redisReply *database_redis_set_zdb(flist_db_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -102,7 +102,7 @@ static redisReply *database_redis_set_zdb(database_t *database, uint8_t *key, si
     return reply;
 }
 
-static int database_redis_set(database_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
+static int database_redis_set(flist_db_t *database, uint8_t *key, size_t keylen, uint8_t *payload, size_t length) {
     database_redis_t *db = (database_redis_t *) database->handler;
     redisReply *reply;
 
@@ -114,7 +114,7 @@ static int database_redis_set(database_t *database, uint8_t *key, size_t keylen,
     return 0;
 }
 
-static int database_redis_sset(database_t *database, char *key, uint8_t *payload, size_t length) {
+static int database_redis_sset(flist_db_t *database, char *key, uint8_t *payload, size_t length) {
     return database_redis_set(database, (uint8_t *) key, strlen(key), payload, length);
 }
 
@@ -125,7 +125,7 @@ static void database_redis_clean(value_t *value) {
 
 
 // poor implementation of exists
-static int database_redis_exists(database_t *database, uint8_t *key, size_t keylen) {
+static int database_redis_exists(flist_db_t *database, uint8_t *key, size_t keylen) {
     int retval = 0;
 
     value_t *value = database_redis_get(database, key, keylen);
@@ -136,11 +136,11 @@ static int database_redis_exists(database_t *database, uint8_t *key, size_t keyl
     return retval;
 }
 
-static int database_redis_sexists(database_t *database, char *key) {
+static int database_redis_sexists(flist_db_t *database, char *key) {
     return database_redis_exists(database, (uint8_t *) key, strlen(key));
 }
 
-database_t *database_redis_init_global(database_t *db) {
+flist_db_t *database_redis_init_global(flist_db_t *db) {
     // setting global db
     db->type = "REDIS";
 
@@ -160,11 +160,11 @@ database_t *database_redis_init_global(database_t *db) {
 }
 
 // public sqlite function initializer
-static database_t *database_redis_init() {
-    database_t *db;
+static flist_db_t *database_redis_init() {
+    flist_db_t *db;
 
     // allocate generic database object
-    if(!(db = malloc(sizeof(database_t))))
+    if(!(db = malloc(sizeof(flist_db_t))))
         return NULL;
 
     // set our custom redis database handler
@@ -218,8 +218,8 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
 
 }
 
-database_t *database_redis_init_tcp(char *host, int port, char *namespace) {
-    database_t *db = database_redis_init();
+flist_db_t *database_redis_init_tcp(char *host, int port, char *namespace) {
+    flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
     if(!(handler->redis = redisConnect(host, port))) {
@@ -237,8 +237,8 @@ database_t *database_redis_init_tcp(char *host, int port, char *namespace) {
     return db;
 }
 
-database_t *database_redis_init_unix(char *socket, char *namespace) {
-    database_t *db = database_redis_init();
+flist_db_t *database_redis_init_unix(char *socket, char *namespace) {
+    flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
     if(!(handler->redis = redisConnectUnix(socket))) {

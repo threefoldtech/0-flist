@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <unistd.h>
+#include "libflist.h"
 #include "database.h"
 #include "database_redis.h"
 #include "database_sqlite.h"

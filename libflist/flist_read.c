@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <blake2.h>
-#include "flister.h"
+#include "libflist.h"
 #include "debug.h"
 #include "flist.capnp.h"
-#include "flist_read.h"
 
 // reading a flist -- iterating -- walking
 //
@@ -24,7 +23,7 @@
 //
 // directory object reader
 //
-directory_t *flist_directory_get(database_t *database, char *key, char *fullpath) {
+directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath) {
     directory_t *dir;
 
     if(!(dir = malloc(sizeof(directory_t))))
@@ -54,7 +53,7 @@ directory_t *flist_directory_get(database_t *database, char *key, char *fullpath
     return dir;
 }
 
-void flist_directory_close(database_t *database, directory_t *dir) {
+void flist_directory_close(flist_db_t *database, directory_t *dir) {
     database->clean(dir->value);
     capn_free(&dir->ctx);
     free(dir);

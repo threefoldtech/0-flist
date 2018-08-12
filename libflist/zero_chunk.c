@@ -11,7 +11,7 @@
 #include "zero_chunk.h"
 
 #define CHUNK_SIZE    1024 * 512    // 512 KB
-#define HASH_LENGTH   LIB0STOR_HASH_LENGTH
+#define HASH_LENGTH   ZEROCHUNK_HASH_LENGTH
 
 static int libdebug = 1;
 
@@ -195,7 +195,7 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     unsigned char *hashkey = zchunk_hash(chunk, chunksize);
 
     if(libdebug) {
-        char *inhash = hashhex(hashkey, LIB0STOR_HASH_LENGTH);
+        char *inhash = hashhex(hashkey, ZEROCHUNK_HASH_LENGTH);
         printf("[+] chunk hash: %s\n", inhash);
         free(inhash);
     }
@@ -221,7 +221,7 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     unsigned char *hashcrypt = zchunk_hash(encrypt_data, encrypt_length);
 
     if(libdebug) {
-        char *inhash = hashhex(hashcrypt, LIB0STOR_HASH_LENGTH);
+        char *inhash = hashhex(hashcrypt, ZEROCHUNK_HASH_LENGTH);
         printf("[+] encrypted hash: %s\n", inhash);
         free(inhash);
     }
@@ -272,8 +272,8 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
 
 
     if(memcmp(integrity, chunk->cipher, HASH_LENGTH)) {
-        char *inhash = hashhex(integrity, LIB0STOR_HASH_LENGTH);
-        char *outhash = hashhex(chunk->cipher, LIB0STOR_HASH_LENGTH);
+        char *inhash = hashhex(integrity, ZEROCHUNK_HASH_LENGTH);
+        char *outhash = hashhex(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
 
         verbose("[-] integrity check failed: hash mismatch\n");
         verbose("[-] %s <> %s\n", inhash, outhash);
@@ -288,38 +288,4 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
     free(plaindata);
 
     return output;
-}
-
-//
-// deprecated
-//
-chunk_t *upload_chunk(remote_t *remote, chunk_t *chunk) {
-    (void) remote;
-
-    printf("[-] upload: deprecated, not implemented anymore\n");
-    return chunk;
-}
-
-chunk_t *download_chunk(remote_t *remote, chunk_t *chunk) {
-    (void) remote;
-
-    printf("[-] upload: deprecated, not implemented anymore\n");
-    return chunk;
-}
-
-chunk_t *upload(remote_t *remote, buffer_t *buffer) {
-    (void) remote;
-    (void) buffer;
-
-    printf("[-] upload: deprecated, not implemented anymore\n");
-    return NULL;
-}
-
-size_t download(remote_t *remote, chunk_t *chunk, buffer_t *buffer) {
-    (void) remote;
-    (void) chunk;
-    (void) buffer;
-
-    printf("[-] download: deprecated, not implemented anymore\n");
-    return 0;
 }
