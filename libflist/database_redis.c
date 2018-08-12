@@ -78,7 +78,7 @@ static redisReply *database_redis_set_real(database_t *database, uint8_t *key, s
     if(!(reply = redisCommand(db->redis, "HSET %s %b %b", db->namespace, key, keylen, payload, length)))
         return NULL;
 
-    if(strcmp(reply->str, "OK"))
+    if(reply->type == REDIS_REPLY_ERROR)
         warndb("set", reply->str);
 
     return reply;
