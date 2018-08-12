@@ -3,9 +3,10 @@ from distutils.core import setup, Extension
 flist = Extension(
     'pyflist',
     include_dirs=['../libflist/'],
-    libraries=['snappy', 'z', 'm', 'b2'],
+    libraries=['snappy', 'z', 'm', 'b2', 'sqlite3', 'tar'],
     sources=['pyflist.c'],
-    extra_compile_args=['-std=c99'],
+    extra_compile_args=['-std=c99', '-fopenmp'],
+    extra_link_args=['-fopenmp', '../libflist/libflist.a'],
 )
 
 setup(

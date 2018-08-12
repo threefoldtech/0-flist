@@ -1,9 +1,18 @@
 #include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib0stor.h"
+#include "flister.h"
+#include "archive.h"
+#include "workspace.h"
+#include "backend.h"
+#include "database.h"
+#include "database_sqlite.h"
+#include "database_redis.h"
+#include "flist_merger.h"
+#include "flist_write.h"
 
-/*
+
+#if 0
 remote_t *remotes = NULL;
 
 static PyObject *g8storclient_connect(PyObject *self, PyObject *args) {
@@ -125,46 +134,122 @@ static PyObject *g8storclient_decrypt(PyObject *self, PyObject *args) {
 
     return PyLong_FromLong(finalsize);
 }
+#endif
 
 static PyObject *db_open(PyObject *self, PyObject *args) {
-    //
+    return NULL;
 }
 
 static PyObject *db_close(PyObject *self, PyObject *args) {
-    //
+    return NULL;
 }
 
 static PyObject *backend_open(PyObject *self, PyObject *args) {
-    //
+    return NULL;
 }
 
 static PyObject *backend_close(PyObject *self, PyObject *args) {
-    //
+    return NULL;
 }
 
-static PyObject *open(PyObject *self, PyObject *args) {
-    //
+typedef struct flist_pyobj_t {
+    database_t *database;
+    backend_t *backend;
+    const char *filename;
+    char *workspace;
+
+} flist_pyobj_t;
+
+static PyObject *pyflist_open(PyObject *self, PyObject *args) {
+    (void) self;
+    flist_pyobj_t *root;
+    const char *filename;
+
+    if(!PyArg_ParseTuple(args, "s", &filename))
+        return NULL;
+
+    if(!(root = (flist_pyobj_t *) PyMem_Malloc(sizeof(flist_pyobj_t))))
+        return NULL;
+
+    root->filename = strdup(filename);
+
+    debug("[+] initializing workspace\n");
+    if(!(root->workspace = workspace_create())) {
+        fprintf(stderr, "workspace_create");
+        // TODO: free
+        return NULL;
+    }
+
+    debug("[+] workspace: %s\n", workspace);
+
+    if(!archive_extract(root->filename, root->workspace)) {
+        fprintf(stderr, "archive_extract");
+        return NULL; // FIXME
+    }
+
+    debug("[+] loading database\n");
+    root->database = database_sqlite_init(root->workspace);
+    root->database->open(root->database);
+
+    // flist_listing(root->database, &settings);
+
+    // capsule will encapsulate our object which contains
+    // everything needed
+    return PyCapsule_New(root, "FlistObject", NULL);
 }
 
-static PyObject *create(PyObject *self, PyObject *args) {
-    //
+static PyObject *pyflist_close(PyObject *self, PyObject *args) {
+    PyObject *pycaps = NULL;
+
+    if(!PyArg_ParseTuple(args, "O", &pycaps))
+        return NULL;
+
+    flist_pyobj_t *root;
+    if(!(root = (flist_pyobj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
+        return NULL;
+
+    debug("[+] closing database\n");
+    root->database->close(root->database);
+
+    debug("[+] cleaning workspace\n");
+    if(!workspace_destroy(root->workspace)) {
+        fprintf(stderr, "workspace_destroy\n");
+        return NULL;
+    }
+
+    free(root->workspace);
+    PyMem_Free(root);
+
+    return Py_BuildValue("");
 }
 
-static PyObject *getfile(PyObject *self, PyObject *args) {
-    //
+static PyObject *pyflist_create(PyObject *self, PyObject *args) {
+    return NULL;
 }
+
+static PyObject *pyflist_getfile(PyObject *self, PyObject *args) {
+    return NULL;
+}
+
+static PyObject *pyflist_getdirectory(PyObject *self, PyObject *args) {
+    return NULL;
+}
+
 
 static PyMethodDef pyflister_cm[] = {
-    // {"connect",  g8storclient_connect,  METH_VARARGS, "Initialize client"},
+#if 0
     {"db_open", db_open, METH_VARARGS, "Open a database handler"},
     {"db_close", db_close, METH_VARARGS, "Close and free a database handler"},
 
     {"backend_open", backend_open, METH_VARARGS, "Create a backend object from a database"},
     {"backend_close", backend_close, METH_VARARGS, "Close and free a backend objecy"},
+#endif
 
-    {"open", open, METH_VARARGS, "Open an existing flist"},
-    {"create", create, METH_VARARGS, "Create a new empty flist"},
-    {"getfile", getfile, METH_VARARGS, "Read a file from the backend"}
+    {"open", pyflist_open, METH_VARARGS, "Open an existing flist"},
+    {"close", pyflist_close, METH_VARARGS, "Close an opened flist"},
+    {"create", pyflist_create, METH_VARARGS, "Create a new empty flist"},
+    {"getdirectory", pyflist_getdirectory, METH_VARARGS, "List the contents of a directory"},
+    {"getfile", pyflist_getfile, METH_VARARGS, "Read a file from the backend"},
 
     {NULL, NULL, 0, NULL}
 };
@@ -177,6 +262,6 @@ static struct PyModuleDef pyflister = {
     pyflister_cm
 };
 
-PyMODINIT_FUNC pyflister(void) {
+PyMODINIT_FUNC PyInit_pyflist(void) {
     return PyModule_Create(&pyflister);
 }

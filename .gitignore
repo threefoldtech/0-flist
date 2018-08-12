@@ -3,5 +3,5 @@
 *.so
 *.a
 
-tool/zflist
+zflist/zflist
 
