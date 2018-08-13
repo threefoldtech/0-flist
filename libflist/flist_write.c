@@ -21,9 +21,7 @@
 #include "debug.h"
 #include "database.h"
 #include "backend.h"
-#include "flist_write.h"
 #include "flist.capnp.h"
-// #include "flist_listing.h"
 
 #define FLIST_WRITE_FULLDUMP
 
@@ -80,6 +78,7 @@ typedef struct flist_write_global_t {
     dirnode_t *rootdir;
     dirnode_t *currentdir;
     settings_t *settings;
+    flist_stats_t stats;
 
 } flist_write_global_t;
 
@@ -525,7 +524,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             target.attributes.dir = new_SubDir(cs);
             write_SubDir(&sd, target.attributes.dir);
 
-            // jsonresponse.directory += 1;
+            globaldata.stats.directory += 1;
         }
 
         if(inode->type == INODE_LINK) {
@@ -536,7 +535,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             target.attributes.link = new_Link(cs);
             write_Link(&l, target.attributes.link);
 
-            // jsonresponse.symlink += 1;
+            globaldata.stats.symlink += 1;
         }
 
         if(inode->type == INODE_SPECIAL) {
@@ -554,7 +553,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             target.attributes.special = new_Special(cs);
             write_Special(&sp, target.attributes.special);
 
-            // jsonresponse.special += 1;
+            globaldata.stats.special += 1;
         }
 
         if(inode->type == INODE_FILE) {
@@ -586,7 +585,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             target.attributes.file = new_File(cs);
             write_File(&f, target.attributes.file);
 
-            // jsonresponse.regular += 1;
+            globaldata.stats.regular += 1;
         }
 
         set_Inode(&target, dir.contents, index);
@@ -877,14 +876,16 @@ something_wrong:
     return 1;
 }
 
-int flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings) {
+flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings) {
+    flist_stats_t *stats = NULL;
+
     debug("[+] preparing flist for: %s\n", root);
 
     // initialize excluders
     excluders_init();
 
     if(!(globaldata.rootdir = dirnode_create("", "")))
-        return 1;
+        return NULL;
 
     // FIXME: thread safe ? add one global lock ?
 
@@ -892,6 +893,8 @@ int flist_create(flist_db_t *database, const char *root, flist_backend_t *backen
     globaldata.database = database;
     globaldata.backend = backend;
     globaldata.settings = settings;
+
+    memset(&globaldata.stats, 0x00, sizeof(flist_stats_t));
 
     debug("[+] building database\n");
     if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
@@ -912,13 +915,11 @@ int flist_create(flist_db_t *database, const char *root, flist_backend_t *backen
     dirnode_tree_free(globaldata.rootdir);
     upload_inode_flush();
 
-    /*
-    if(settings->json)
-        dirnode_json(&jsonresponse);
-    */
-
     if(backend)
         backend_free(backend);
 
-    return 0;
+    // convert local stats
+    stats = libflist_bufdup(&globaldata.stats, sizeof(flist_stats_t));
+
+    return stats;
 }

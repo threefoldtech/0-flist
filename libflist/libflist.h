@@ -207,6 +207,17 @@
     } flist_backend_data_t;
 
 
+    typedef struct flist_stats_t {
+        size_t regular;
+        size_t directory;
+        size_t symlink;
+        size_t special;
+
+    } flist_stats_t;
+
+    flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings);
+
+
     // initialize a backend
     flist_backend_t *backend_init(flist_db_t *database, char *rootpath);
 

@@ -9,7 +9,6 @@
 #include "libflist.h"
 #include "debug.h"
 #include "backend.h"
-#include "flist_write.h"
 #include "flist.capnp.h"
 #include "database.h"
 #include "database_redis.h"
