@@ -13,9 +13,9 @@ embedded: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
 embedded: LDFLAGS = -g ../libflist/libflist.a -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3
 embedded: $(EXEC)
 
-# embeded without debug
-production: CFLAGS = -std=c99 -W -Wall -O2 -g -I../libflist
-production: LDFLAGS = -g ../libflist/libflist.a -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3
+# embeded, static without debug
+production: CFLAGS = -std=c99 -W -Wall -O2 -I../libflist
+production: LDFLAGS = -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 production: $(EXEC)
 
 # shared without debug
