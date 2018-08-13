@@ -110,20 +110,6 @@ static flist_write_global_t globaldata = {
 //
 //
 
-static char __hex[] = "0123456789abcdef";
-
-static char *hashhex(unsigned char *hash, int dlength) {
-    char *buffer = calloc((dlength * 2) + 1, sizeof(char));
-    char *writer = buffer;
-
-    for(int i = 0, j = 0; i < dlength; i++, j += 2) {
-        *writer++ = __hex[(hash[i] & 0xF0) >> 4];
-        *writer++ = __hex[hash[i] & 0x0F];
-    }
-
-    return buffer;
-}
-
 char *inode_acl_key(acl_t *acl) {
     char *key;
     char strmode[32];
@@ -145,7 +131,7 @@ char *inode_acl_key(acl_t *acl) {
     if(blake2b(hash, key, "", ACLLENGTH, strlen(key), 0) < 0)
         dies("blake2 acl error");
 
-    char *hashkey = hashhex(hash, ACLLENGTH);
+    char *hashkey = libflist_hashhex(hash, ACLLENGTH);
     free(key);
 
     return hashkey;
@@ -201,17 +187,6 @@ void inode_acl_free(acl_t *acl) {
     free(acl->key);
 }
 
-static char *path_key(const char *path) {
-    uint8_t hash[KEYLENGTH];
-
-    if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0)
-        dies("blake2 error");
-
-    return hashhex(hash, KEYLENGTH);
-}
-
-
-
 static dirnode_t *dirnode_create(char *fullpath, char *name) {
     dirnode_t *directory;
 
@@ -227,7 +202,7 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
     if(lf && directory->fullpath[lf - 1] == '/')
         directory->fullpath[lf - 1] = '\0';
 
-    directory->hashkey = path_key(directory->fullpath);
+    directory->hashkey = libflist_path_key(directory->fullpath);
 
     return directory;
 }
@@ -280,7 +255,7 @@ void inode_dumps(inode_t *inode, dirnode_t *rootdir) {
         printf("[+] inode:   special: %s\n", inode->sdata);
 }
 
-static dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
+dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
     inode->next = NULL;
 
     if(!root->inode_list)
@@ -672,7 +647,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     // type of inode
     if(S_ISDIR(sb->st_mode)) {
         inode->type = INODE_DIRECTORY;
-        inode->subdirkey = path_key(vpath);
+        inode->subdirkey = libflist_path_key(vpath);
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {

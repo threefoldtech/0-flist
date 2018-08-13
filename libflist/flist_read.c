@@ -6,17 +6,6 @@
 #include <blake2.h>
 #include "libflist.h"
 #include "debug.h"
-#include "flist.capnp.h"
-
-// reading a flist -- iterating -- walking
-//
-// flist is a rocksdb database
-// - each directory is one key-value object
-// - each acl are stored and dedupe on the db
-//
-// - one directory is identified by blake2 hash of it's full path
-// - the root directory is the blake2 hash of empty string
-//
 
 #define KEYLENGTH 16
 
@@ -59,79 +48,275 @@ void flist_directory_close(flist_db_t *database, directory_t *dir) {
     free(dir);
 }
 
+static char *flist_inode_fullpath(directory_t *directory, struct Inode *inode) {
+    char *fullpath;
+
+    if(asprintf(&fullpath, "%s/%s", directory->dir.location.str, inode->name.str) < 0)
+        return NULL;
+
+    return fullpath;
+}
+
 //
 // helpers
 //
 char *libflist_path_key(char *path) {
     uint8_t hash[KEYLENGTH];
-    char *hexhash;
 
     if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0) {
         fprintf(stderr, "[-] blake2 error\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if(!(hexhash = malloc(sizeof(char) * ((KEYLENGTH * 2) + 1))))
-        diep("malloc");
-
-    for(int i = 0; i < KEYLENGTH; i++)
-        sprintf(hexhash + (i * 2), "%02x", hash[i]);
-
-    return hexhash;
-}
-
-//
-// FIXME: ugly, use bitwise
-//
-static char *permsingle(char value) {
-    if(value == '0') return "---";
-    if(value == '1') return "--x";
-    if(value == '2') return "-w-";
-    if(value == '3') return "-wx";
-    if(value == '4') return "r--";
-    if(value == '5') return "r-x";
-    if(value == '6') return "rw-";
-    if(value == '7') return "rwx";
-    return "???";
-}
-
-//
-// FIXME: ugly, use bitwise
-//
-char *flist_read_permstr(unsigned int mode, char *modestr, size_t slen) {
-    char octstr[16];
-
-    if(slen < 12)
-        return NULL;
-
-
-    int length = snprintf(octstr, sizeof(octstr), "%o", mode);
-    if(length < 3 && length > 6) {
-        strcpy(modestr, "?????????");
         return NULL;
     }
 
-    strcpy(modestr, permsingle(octstr[length - 3]));
-    strcpy(modestr + 3, permsingle(octstr[length - 2]));
-    strcpy(modestr + 6, permsingle(octstr[length - 1]));
-
-    return modestr;
+    return libflist_hashhex(hash, KEYLENGTH);
 }
 
-char *flist_fullpath(directory_t *root, struct Inode *inode) {
-    char *path;
+static char *flist_clean_path(char *path) {
+    size_t offset, length;
 
-    if(strlen(root->dir.location.str)) {
-        // item under a directory
-        if(asprintf(&path, "/%s/%s", root->dir.location.str, inode->name.str) < 0)
-            diep("asprintf");
+    offset = 0;
+    length = strlen(path);
 
-    } else {
-        // item on the root
-        if(asprintf(&path, "/%s", inode->name.str) < 0)
-            diep("asprintf");
+    // remove lead slash
+    if(path[0] == '/')
+        offset = 1;
+
+    // remove trailing slash
+    if(path[length - 1] == '/')
+        length -= 1;
+
+    return strndup(path + offset, length);
+}
+
+static inode_chunks_t *capnp_inode_to_chunks(struct Inode *inode) {
+    inode_chunks_t *blocks;
+
+    struct File file;
+    read_File(&file, inode->attributes.file);
+
+    // allocate empty blocks
+    if(!(blocks = calloc(sizeof(inode_chunks_t), 1)))
+        return NULL;
+
+    blocks->size = capn_len(file.blocks);
+    blocks->blocksize = 0;
+
+    if(!(blocks->list = (inode_chunk_t *) malloc(sizeof(inode_chunk_t) * blocks->size)))
+        return NULL;
+
+    for(size_t i = 0; i < blocks->size; i++) {
+        FileBlock_ptr blockp;
+        struct FileBlock block;
+
+        blockp.p = capn_getp(file.blocks.p, i, 1);
+        read_FileBlock(&block, blockp);
+
+        blocks->list[i].entryid = libflist_bufdup(block.hash.p.data, block.hash.p.len);
+        blocks->list[i].entrylen = block.hash.p.len;
+
+        blocks->list[i].decipher = libflist_bufdup(block.key.p.data, block.key.p.len);
+        blocks->list[i].decipherlen = block.key.p.len;
     }
 
-    return path;
+    return blocks;
 }
 
+void inode_chunks_free(inode_t *inode) {
+    if(!inode->chunks)
+        return;
+
+    for(size_t i = 0; i < inode->chunks->size; i += 1) {
+        free(inode->chunks->list[i].entryid);
+        free(inode->chunks->list[i].decipher);
+    }
+
+    free(inode->chunks->list);
+    free(inode->chunks);
+}
+
+//
+// public helpers
+//
+flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) {
+    flist_acl_t *acl;
+
+    value_t *rawdata = database->sget(database, (char *) aclkey);
+    if(!rawdata->data) {
+        printf("[-] acl key <%s> not found\n", aclkey);
+        return NULL;
+    }
+
+    if(!(acl = malloc(sizeof(flist_acl_t))))
+        return NULL;
+
+    // load acl database object
+    // into an acl readable entry
+    ACI_ptr acip;
+    struct ACI aci;
+
+    struct capn permsctx;
+    if(capn_init_mem(&permsctx, (unsigned char *) rawdata->data, rawdata->length, 0)) {
+        fprintf(stderr, "[-] capnp: init error\n");
+        return NULL;
+    }
+
+    acip.p = capn_getp(capn_root(&permsctx), 0, 1);
+    read_ACI(&aci, acip);
+
+    // now we can populate our public acl object
+    // from the database entry
+    acl->uname = strdup(aci.uname.str);
+    acl->gname = strdup(aci.gname.str);
+    acl->mode = aci.mode;
+
+    return acl;
+}
+
+int flist_fileindex_from_name(directory_t *direntry, char *filename) {
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    for(int i = 0; i < capn_len(direntry->dir.contents); i++) {
+        inodep.p = capn_getp(direntry->dir.contents.p, i, 1);
+        read_Inode(&inode, inodep);
+
+        if(strcmp(inode.name.str, filename) == 0)
+            return i;
+    }
+
+    return -1;
+}
+
+inode_t *flist_itementry_to_inode(flist_db_t *database, directory_t *direntry, int fileindex) {
+    inode_t *target;
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    // pointing to the right item
+    // on the contents list
+    inodep.p = capn_getp(direntry->dir.contents.p, fileindex, 1);
+    read_Inode(&inode, inodep);
+
+    // allocate a new inode empty object
+    if(!(target = calloc(sizeof(inode_t), 1)))
+        return NULL;
+
+    // fill in default information
+    target->name = strdup(inode.name.str);
+    target->size = inode.size;
+    target->fullpath = flist_inode_fullpath(direntry, &inode);
+    target->creation = inode.creationTime;
+    target->modification = inode.modificationTime;
+    target->racl = libflist_get_permissions(database, inode.aclkey.str);
+
+    // fill in specific information dependent of
+    // the type of the entry
+    switch(inode.attributes_which) {
+        case Inode_attributes_dir: ;
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            target->type = INODE_DIRECTORY;
+            target->subdirkey = strdup(sub.key.str);
+            break;
+
+        case Inode_attributes_file: ;
+            target->type = INODE_FILE;
+            target->chunks = capnp_inode_to_chunks(&inode);
+            break;
+
+        case Inode_attributes_link: ;
+            struct Link link;
+            read_Link(&link, inode.attributes.link);
+
+            target->type = INODE_LINK;
+            target->link = strdup(link.target.str);
+            break;
+
+        case Inode_attributes_special: ;
+            struct Special special;
+            read_Special(&special, inode.attributes.special);
+
+            target->type = INODE_SPECIAL;
+            target->stype = special.type;
+            // inode->sdata = strdup(special.data.
+            break;
+    }
+
+    return target;
+}
+
+dirnode_t *flist_directory_to_dirnode(flist_db_t *database, directory_t *direntry) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
+        return NULL;
+
+    // setting directory metadata
+    dirnode->fullpath = strdup(direntry->dir.location.str);
+    dirnode->name = strdup(direntry->dir.name.str);
+    dirnode->creation = direntry->dir.creationTime;
+    dirnode->modification = direntry->dir.modificationTime;
+    dirnode->racl = libflist_get_permissions(database, direntry->dir.aclkey.str);
+
+    // iterating over the full contents
+    // and add each inode to the inode list of this directory
+    for(int i = 0; i < capn_len(direntry->dir.contents); i++) {
+        inode_t *inode = flist_itementry_to_inode(database, direntry, i);
+        dirnode_appends_inode(dirnode, inode);
+    }
+
+    return dirnode;
+}
+
+// convert an internal capnp object
+// directory into a public directory object
+dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
+    char *cleanpath = NULL;
+
+    // we use strict convention to store
+    // entry on the database since the id is a hash of
+    // the path, the path needs to match exactly
+    //
+    // all the keys don't have leading slash and never have
+    // trailing slash, the root directory is an empty string
+    //
+    // to make this function working for mostly everybody, let's
+    // clean the path to ensure it should reflect exactly how
+    // it's stored on the database
+    if(!(cleanpath = flist_clean_path(path)))
+        return NULL;
+
+    printf("[+] directory get: clean path: <%s> -> <%s>\n", path, cleanpath);
+
+    // converting this directory string into a directory
+    // hash by the internal way used everywhere, this will
+    // give the key required to find entry on the database
+    char *key = libflist_path_key(cleanpath);
+    printf("[+] directory get: entry key: <%s>\n", key);
+
+    // requesting the directory object from the database
+    // the object in the database is packed, this function will
+    // return us something decoded and ready to use
+    directory_t *direntry;
+
+    if(!(direntry = flist_directory_get(database, key, cleanpath)))
+        return NULL;
+
+    // we now have the full directory contents into memory
+    // because the internal object contains everything, but in
+    // an internal format, it's time to convert this format
+    // into our public interface
+    dirnode_t *contents;
+
+    if(!(contents = flist_directory_to_dirnode(database, direntry)))
+        return NULL;
+
+    // cleaning temporary string allocated
+    // by internal functions and not needed objects anymore
+    flist_directory_close(database, direntry);
+    free(cleanpath);
+    free(key);
+
+    return contents;
+}

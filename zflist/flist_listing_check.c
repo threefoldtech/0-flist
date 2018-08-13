@@ -64,10 +64,10 @@ int flist_check(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
-                uint8_t *hash = bufdup(block.hash.p.data, block.hash.p.len);
+                uint8_t *hash = libflist_bufdup(block.hash.p.data, block.hash.p.len);
                 size_t hashlen = block.hash.p.len;
 
-                uint8_t *key = bufdup(block.key.p.data, block.key.p.len);
+                uint8_t *key = libflist_bufdup(block.key.p.data, block.key.p.len);
                 size_t keylen = block.key.p.len;
 
                 flist_backend_data_t *data;

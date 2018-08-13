@@ -9,6 +9,23 @@
 #include "zflist.h"
 
 #if 0
+char *flist_fullpath(directory_t *root, struct Inode *inode) {
+    char *path;
+
+    if(strlen(root->dir.location.str)) {
+        // item under a directory
+        if(asprintf(&path, "/%s/%s", root->dir.location.str, inode->name.str) < 0)
+            diep("asprintf");
+
+    } else {
+        // item on the root
+        if(asprintf(&path, "/%s", inode->name.str) < 0)
+            diep("asprintf");
+    }
+
+    return path;
+}
+
 
 void *flist_json_init() {
     flist_json_t *obj;

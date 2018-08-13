@@ -3,16 +3,16 @@
 
     #include "database.h"
 
-    typedef struct inode_chunk_t {
+    typedef struct backend_chunk_t {
         char *id;
         char *cipher;
 
-    } inode_chunk_t;
+    } backend_chunk_t;
 
     typedef struct chunks_t {
         size_t upsize;  // uploaded size
         size_t length;  // amount of chunks
-        inode_chunk_t *chunks;
+        backend_chunk_t *chunks;
 
     } chunks_t;
 

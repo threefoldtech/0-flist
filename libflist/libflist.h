@@ -4,8 +4,6 @@
     #include <stdint.h>
     #include <time.h>
 
-    void *bufdup(void *source, size_t length);
-
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
     #else
@@ -38,6 +36,14 @@
         char *key;       // hash of the payload (dedupe in db)
 
     } acl_t;
+
+    typedef struct flist_acl_t {
+        char *uname;     // username (user id if not found)
+        char *gname;     // group name (group id if not found)
+        uint16_t mode;   // integer file mode
+
+    } flist_acl_t;
+
 
     #if 0
     // link internal type to capnp type directly
@@ -80,6 +86,23 @@
 
     } inode_special_t;
 
+    // represent one chunk of a file payload
+    typedef struct inode_chunk_t {
+        uint8_t *entryid;      // binary identifier (key in the backend)
+        uint8_t entrylen;      // length of the identifier
+        uint8_t *decipher;     // decipher key to uncrypt the payload
+        uint8_t decipherlen;   // length of the decipher key
+
+    } inode_chunk_t;
+
+    // represent list of chunks to get
+    // file payload
+    typedef struct inode_chunks_t {
+        size_t size;          // amount of chunks on the list
+        size_t blocksize;     // size of each block (this is ignored)
+        inode_chunk_t *list;  // list of chunks
+
+    } inode_chunks_t;
 
     typedef struct inode_t {
         char *name;       // relative inode name (filename)
@@ -87,14 +110,17 @@
         size_t size;      // size in byte
         acl_t acl;        // access control
 
-        inode_type_t type;     // internal file type
-        time_t modification;   // modification time
-        time_t creation;       // creation time
+        flist_acl_t *racl;       // file permissions
 
-        char *subdirkey;       // for directory: directory target key
-        inode_special_t stype; // for special: special type
-        char *sdata;           // for special: special metadata
-        char *link;            // for symlink: symlink target
+        inode_type_t type;       // internal file type
+        time_t modification;     // modification time
+        time_t creation;         // creation time
+
+        char *subdirkey;         // for directory: directory target key
+        inode_special_t stype;   // for special: special type
+        char *sdata;             // for special: special metadata
+        char *link;              // for symlink: symlink target
+        inode_chunks_t *chunks;  // for regular file: list of chunks
 
         struct inode_t *next;
 
@@ -114,6 +140,7 @@
         char *hashkey;         // internal hash (for db)
 
         acl_t acl;             // access control
+        flist_acl_t *racl;     // read acl
         time_t creation;       // creation time
         time_t modification;   // modification time
 
@@ -212,16 +239,19 @@
     char *libflist_ramdisk_create();
     char *libflist_ramdisk_destroy(char *mountpoint);
 
+    // convert a binary hash into hexadecimal hash
+    char *libflist_hashhex(unsigned char *hash, int length);
 
-
+    dirnode_t *libflist_directory_get(flist_db_t *database, char *path);
 
     directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath);
     void flist_directory_close(flist_db_t *database, directory_t *dir);
 
-    char *flist_fullpath(directory_t *root, struct Inode *inode);
-    char *flist_read_permstr(unsigned int mode, char *modestr, size_t slen);
     char *libflist_path_key(char *path);
 
     int flist_walk(flist_db_t *database);
 
+    dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+
+    void *libflist_bufdup(void *source, size_t length);
 #endif

@@ -42,17 +42,6 @@ void dies(const char *str) {
     exit(EXIT_FAILURE);
 }
 
-void *bufdup(void *source, size_t length) {
-    void *buffer;
-
-    if(!(buffer = malloc(length)))
-        return NULL;
-
-    memcpy(buffer, source, length);
-
-    return buffer;
-}
-
 int usage(char *basename) {
     fprintf(stderr, "Usage: %s [options]\n", basename);
     fprintf(stderr, "       %s --archive <filename> --list [--output tree]\n", basename);

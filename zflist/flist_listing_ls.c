@@ -7,6 +7,44 @@
 #include "flist_walker.h"
 #include "zflist.h"
 
+//
+// FIXME: ugly, use bitwise
+//
+static char *permsingle(char value) {
+    if(value == '0') return "---";
+    if(value == '1') return "--x";
+    if(value == '2') return "-w-";
+    if(value == '3') return "-wx";
+    if(value == '4') return "r--";
+    if(value == '5') return "r-x";
+    if(value == '6') return "rw-";
+    if(value == '7') return "rwx";
+    return "???";
+}
+
+//
+// FIXME: ugly, use bitwise
+//
+char *flist_read_permstr(unsigned int mode, char *modestr, size_t slen) {
+    char octstr[16];
+
+    if(slen < 12)
+        return NULL;
+
+
+    int length = snprintf(octstr, sizeof(octstr), "%o", mode);
+    if(length < 3 && length > 6) {
+        strcpy(modestr, "?????????");
+        return NULL;
+    }
+
+    strcpy(modestr, permsingle(octstr[length - 3]));
+    strcpy(modestr + 3, permsingle(octstr[length - 2]));
+    strcpy(modestr + 6, permsingle(octstr[length - 1]));
+
+    return modestr;
+}
+
 // dumps contents using kind of 'ls -al' view
 // generate a list with type, permissions, size, blocks, name
 int flist_ls(walker_t *walker, directory_t *root) {

@@ -151,6 +151,83 @@ typedef struct pyflist_obj_t {
 
 } pyflist_obj_t;
 
+//
+// internal utilities
+//
+PyObject *acl_to_dict(flist_acl_t *acl) {
+    PyObject *item = PyDict_New();
+
+    PyDict_SetItemString(item, "user", Py_BuildValue("s", acl->uname));
+    PyDict_SetItemString(item, "group", Py_BuildValue("s", acl->gname));
+    PyDict_SetItemString(item, "mode", Py_BuildValue("k", acl->mode));
+
+    return item;
+}
+
+PyObject *inode_to_dict(inode_t *inode) {
+    PyObject *item = PyDict_New();
+    PyDict_SetItemString(item, "name", Py_BuildValue("s", inode->name));
+    PyDict_SetItemString(item, "fullpath", Py_BuildValue("s", inode->fullpath));
+    PyDict_SetItemString(item, "size", Py_BuildValue("i", inode->size));
+    PyDict_SetItemString(item, "acl", acl_to_dict(inode->racl));
+    PyDict_SetItemString(item, "modificatonTime", Py_BuildValue("k", inode->modification));
+    PyDict_SetItemString(item, "creationTime", Py_BuildValue("k", inode->creation));
+
+    if(inode->type == INODE_DIRECTORY) {
+        PyDict_SetItemString(item, "type", Py_BuildValue("s", "directory"));
+        PyDict_SetItemString(item, "subdir", Py_BuildValue("s", inode->subdirkey));
+        return item;
+    }
+
+    if(inode->type == INODE_LINK) {
+        PyDict_SetItemString(item, "type", Py_BuildValue("s", "symlink"));
+        PyDict_SetItemString(item, "link", Py_BuildValue("s", inode->link));
+        return item;
+    }
+
+    if(inode->type == INODE_SPECIAL) {
+        PyDict_SetItemString(item, "type", Py_BuildValue("s", "symlink"));
+        return item;
+    }
+
+    if(inode->type == INODE_FILE) {
+        PyDict_SetItemString(item, "type", Py_BuildValue("s", "regular"));
+
+        PyObject *chunks = PyList_New(inode->chunks->size);
+
+        for(size_t i = 0; i < inode->chunks->size; i++) {
+            PyObject *pych = PyDict_New();
+            inode_chunk_t *chk = &inode->chunks->list[i];
+
+            PyDict_SetItemString(pych, "id", Py_BuildValue("y#", chk->entryid, chk->entrylen));
+            PyDict_SetItemString(pych, "decipher", Py_BuildValue("y#", chk->decipher, chk->decipherlen));
+
+            PyList_SetItem(chunks, i, pych);
+        }
+
+        PyDict_SetItemString(item, "chunks", chunks);
+        return item;
+    }
+
+    return NULL;
+}
+
+PyObject *dirnode_to_dict(dirnode_t *dirnode) {
+    PyObject *dir = PyDict_New();
+    PyDict_SetItemString(dir, "name", Py_BuildValue("s", dirnode->name));
+
+    PyObject *entries = PyDict_New();
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next)
+        PyDict_SetItemString(entries, inode->name, inode_to_dict(inode));
+
+    PyDict_SetItemString(dir, "entries", entries);
+    return dir;
+}
+
+//
+// public functions
+//
 static PyObject *pyflist_open(PyObject *self, PyObject *args) {
     (void) self;
     pyflist_obj_t *root;
@@ -233,10 +310,15 @@ static PyObject *pyflist_getdirectory(PyObject *self, PyObject *args) {
     if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
         return NULL;
 
-    char *key = libflist_path_key((char *) directory);
-    printf("Query %s\n", key);
+    dirnode_t *dirnode = libflist_directory_get(root->database, (char *) directory);
+    if(dirnode == NULL)
+        return NULL;
 
+    PyObject *dict = dirnode_to_dict(dirnode);
 
+    // FIXME: free everything
+
+    return dict;
 }
 
 

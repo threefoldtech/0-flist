@@ -21,3 +21,29 @@ void libflist_warns(const char *str) {
     printf("[-] %s\n", str);
 }
 
+static char __hex[] = "0123456789abcdef";
+
+char *libflist_hashhex(unsigned char *hash, int length) {
+    char *buffer = calloc((length * 2) + 1, sizeof(char));
+    char *writer = buffer;
+
+    for(int i = 0, j = 0; i < length; i++, j += 2) {
+        *writer++ = __hex[(hash[i] & 0xF0) >> 4];
+        *writer++ = __hex[hash[i] & 0x0F];
+    }
+
+    return buffer;
+}
+
+void *libflist_bufdup(void *source, size_t length) {
+    void *buffer;
+
+    if(!(buffer = malloc(length)))
+        return NULL;
+
+    memcpy(buffer, source, length);
+
+    return buffer;
+}
+
+

@@ -136,7 +136,7 @@ static chunks_t *upload_file(flist_backend_t *context, char *filename) {
     // setting number of expected chunks
     chunks->length = buffer->chunks;
 
-    if(!(chunks->chunks = (inode_chunk_t *) malloc(sizeof(inode_chunk_t) * chunks->length)))
+    if(!(chunks->chunks = (backend_chunk_t *) malloc(sizeof(backend_chunk_t) * chunks->length)))
         diep("upload: chunks: calloc");
 
     // processing each chunks
@@ -147,8 +147,8 @@ static chunks_t *upload_file(flist_backend_t *context, char *filename) {
         // encrypting chunk
         chunk_t *chunk = encrypt_chunk(data, buffer->chunksize);
 
-        chunks->chunks[i].id = bufdup(chunk->id, ZEROCHUNK_HASH_LENGTH);
-        chunks->chunks[i].cipher = bufdup(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
+        chunks->chunks[i].id = libflist_bufdup(chunk->id, ZEROCHUNK_HASH_LENGTH);
+        chunks->chunks[i].cipher = libflist_bufdup(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
         chunks->upsize += chunk->length;
 
         // hiredis upload
