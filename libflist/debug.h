@@ -10,4 +10,6 @@
     void libflist_diep(const char *str);
     void libflist_dies(const char *str);
     void libflist_warns(const char *str);
+
+    #define debug(...) { if(libflist_debug_flag) { printf(__VA_ARGS__); } }
 #endif

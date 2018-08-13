@@ -240,19 +240,19 @@ void inode_free(inode_t *inode) {
 }
 
 void inode_dumps(inode_t *inode, dirnode_t *rootdir) {
-    printf("[+] inode: rootdir: 0x%p\n", rootdir);
-    printf("[+] inode: %s: %s/%s\n", inode_type_str[inode->type], rootdir->fullpath, inode->name);
+    debug("[+] inode: rootdir: 0x%p\n", rootdir);
+    debug("[+] inode: %s: %s/%s\n", inode_type_str[inode->type], rootdir->fullpath, inode->name);
 
-    printf("[+] inode:   size: %lu bytes (%.2f MB)\n", inode->size, inode->size / (1024 * 1024.0));
-    printf("[+] inode:   ctime: %lu, mtime: %lu\n", inode->creation, inode->modification);
-    printf("[+] inode:   user: %s, group: %s\n", inode->acl.uname, inode->acl.gname);
-    printf("[+] inode:   mode: %o\n", inode->acl.mode);
+    debug("[+] inode:   size: %lu bytes (%.2f MB)\n", inode->size, inode->size / (1024 * 1024.0));
+    debug("[+] inode:   ctime: %lu, mtime: %lu\n", inode->creation, inode->modification);
+    debug("[+] inode:   user: %s, group: %s\n", inode->acl.uname, inode->acl.gname);
+    debug("[+] inode:   mode: %o\n", inode->acl.mode);
 
     if(inode->type == INODE_LINK)
-        printf("[+] inode:   symlink: %s\n", inode->link);
+        debug("[+] inode:   symlink: %s\n", inode->link);
 
     if(inode->type == INODE_SPECIAL)
-        printf("[+] inode:   special: %s\n", inode->sdata);
+        debug("[+] inode:   special: %s\n", inode->sdata);
 }
 
 dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
@@ -358,9 +358,9 @@ static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
 
 #ifdef FLIST_WRITE_FULLDUMP
 static void dirnode_dumps(dirnode_t *root) {
-    printf("[+] directory: <%s> [fullpath: /%s]\n", root->name, root->fullpath);
-    printf("[+]   subdirectories: %lu\n", root->dir_length);
-    printf("[+]   inodes: %lu\n", root->inode_length);
+    debug("[+] directory: <%s> [fullpath: /%s]\n", root->name, root->fullpath);
+    debug("[+]   subdirectories: %lu\n", root->dir_length);
+    debug("[+]   inodes: %lu\n", root->inode_length);
 
     for(dirnode_t *source = root->dir_list; source; source = source->next) {
         dirnode_dumps(source);
@@ -508,7 +508,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         struct Inode target;
 
-        printf("[+]   populate inode: <%s>\n", inode->name);
+        debug("[+]   populate inode: <%s>\n", inode->name);
 
         target.name = chars_to_text(inode->name);
         target.size = inode->size;
@@ -900,7 +900,7 @@ int flist_create(flist_db_t *database, const char *root, flist_backend_t *backen
     // FIXME: release the global lock ?
 
 #ifdef FLIST_WRITE_FULLDUMP
-    printf("===================================\n");
+    debug("===================================\n");
     dirnode_dumps(globaldata.rootdir);
 #endif
 

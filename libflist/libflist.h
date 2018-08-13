@@ -4,11 +4,8 @@
     #include <stdint.h>
     #include <time.h>
 
-    #ifdef FLIST_DEBUG
-        #define debug(...) { printf(__VA_ARGS__); }
-    #else
-        #define debug(...) ((void)0)
-    #endif
+    extern int libflist_debug_flag;
+    void libflist_debug_enable(int enable);
 
     // FIXME -- should not be defined here
     typedef struct settings_t {
@@ -254,4 +251,6 @@
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
 
     void *libflist_bufdup(void *source, size_t length);
+
+
 #endif

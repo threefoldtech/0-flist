@@ -3,21 +3,41 @@
 #include <string.h>
 #include <errno.h>
 
+// global static flag to enable or disable
+// debug message on the whole library
+int libflist_debug_flag = 1;
+
+void libflist_debug_enable(int enable) {
+    libflist_debug_flag = enable;
+}
+
 void libflist_warnp(const char *str) {
+    if(!libflist_debug_flag)
+        return;
+
     fprintf(stderr, "[-] %s: %s\n", str, strerror(errno));
 }
 
 void libflist_diep(const char *str) {
+    if(!libflist_debug_flag)
+        return;
+
     libflist_warnp(str);
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE);
 }
 
 void libflist_dies(const char *str) {
+    if(!libflist_debug_flag)
+        return;
+
     fprintf(stderr, "[-] %s\n", str);
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE);
 }
 
 void libflist_warns(const char *str) {
+    if(!libflist_debug_flag)
+        return;
+
     printf("[-] %s\n", str);
 }
 

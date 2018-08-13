@@ -7,19 +7,13 @@
 #include <math.h>
 #include <time.h>
 #include <blake2.h>
+#include "libflist.h"
+#include "debug.h"
 #include "xxtea.h"
 #include "zero_chunk.h"
 
 #define CHUNK_SIZE    1024 * 512    // 512 KB
 #define HASH_LENGTH   ZEROCHUNK_HASH_LENGTH
-
-static int libdebug = 1;
-
-void lib0stor_enable_debug() {
-    libdebug = 1;
-}
-
-#define verbose(...) { if(libdebug) { printf(__VA_ARGS__); } }
 
 //
 // buffer manager
@@ -42,7 +36,7 @@ static ssize_t file_load(char *filename, buffer_t *buffer) {
     }
 
     buffer->length = file_length(buffer->fp);
-    verbose("[+] filesize: %lu bytes\n", buffer->length);
+    debug("[+] filesize: %lu bytes\n", buffer->length);
 
     if(buffer->length == 0)
         return 0;
@@ -69,7 +63,7 @@ buffer_t *bufferize(char *filename) {
 
     // file empty, nothing to do.
     if(buffer->length == 0) {
-        verbose("[-] file is empty, nothing to do.\n");
+        debug("[-] file is empty, nothing to do.\n");
         free(buffer);
         return NULL;
     }
@@ -150,7 +144,7 @@ uint8_t *zchunk_hash(const void *buffer, size_t length) {
     }
 
     if(blake2b(hash, buffer, "", HASH_LENGTH, length, 0)) {
-        fprintf(stderr, "[-] blake2 failed\n");
+        debug("[-] blake2 failed\n");
         return NULL;
     }
 
@@ -194,9 +188,9 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     // hashing this chunk
     unsigned char *hashkey = zchunk_hash(chunk, chunksize);
 
-    if(libdebug) {
+    if(libflist_debug_flag) {
         char *inhash = hashhex(hashkey, ZEROCHUNK_HASH_LENGTH);
-        printf("[+] chunk hash: %s\n", inhash);
+        debug("[+] chunk hash: %s\n", inhash);
         free(inhash);
     }
 
@@ -206,8 +200,8 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     size_t output_length = snappy_max_compressed_length(chunksize);
     char *compressed = (char *) malloc(output_length);
     if(snappy_compress((char *) chunk, chunksize, compressed, &output_length) != SNAPPY_OK) {
-        fprintf(stderr, "[-] snappy compression error\n");
-        exit(EXIT_FAILURE);
+        debug("[-] snappy compression error\n");
+        return NULL;
     }
 
     // printf("Compressed size: %lu\n", output_length);
@@ -220,9 +214,9 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
 
     unsigned char *hashcrypt = zchunk_hash(encrypt_data, encrypt_length);
 
-    if(libdebug) {
+    if(libflist_debug_flag) {
         char *inhash = hashhex(hashcrypt, ZEROCHUNK_HASH_LENGTH);
-        printf("[+] encrypted hash: %s\n", inhash);
+        debug("[+] encrypted hash: %s\n", inhash);
         free(inhash);
     }
 
@@ -245,7 +239,7 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
     size_t plainlength;
     // printf("[+] cipher: %s\n", chunk->cipher);
     if(!(plaindata = xxtea_decrypt_bkey(chunk->data, chunk->length, chunk->cipher, HASH_LENGTH, &plainlength))) {
-        verbose("[-] cannot decrypt data, invalid key or payload\n");
+        debug("[-] cannot decrypt data, invalid key or payload\n");
         return NULL;
     }
 
@@ -257,7 +251,7 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
 
     unsigned char *uncompress = (unsigned char *) malloc(uncompressed_length);
     if(snappy_uncompress(plaindata, plainlength, (char *) uncompress, &uncompressed_length) != SNAPPY_OK) {
-        verbose("[-] snappy uncompression error\n");
+        debug("[-] snappy uncompression error\n");
         return NULL;
     }
 
@@ -275,8 +269,8 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
         char *inhash = hashhex(integrity, ZEROCHUNK_HASH_LENGTH);
         char *outhash = hashhex(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
 
-        verbose("[-] integrity check failed: hash mismatch\n");
-        verbose("[-] %s <> %s\n", inhash, outhash);
+        debug("[-] integrity check failed: hash mismatch\n");
+        debug("[-] %s <> %s\n", inhash, outhash);
 
         free(inhash);
         free(outhash);

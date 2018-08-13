@@ -189,9 +189,9 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         // this is a zero-db server
         freeReplyObject(reply);
 
-        printf("[+] database: zero-db detected, selecting namespace\n");
+        debug("[+] database: zero-db detected, selecting namespace\n");
         if(password) {
-            printf("[+] database: authenticating using password\n");
+            debug("[+] database: authenticating using password\n");
 
             if(!(reply = redisCommand(db->redis, "SELECT %s %s", namespace, password)))
                 return 1;
@@ -213,7 +213,7 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
 
     } else {
         // this is a redis-compatible server
-        printf("[+] database: redis compatible detected\n");
+        debug("[+] database: redis compatible detected\n");
 
         // linking to redis settings
         db->namespace = namespace;

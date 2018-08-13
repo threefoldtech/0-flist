@@ -22,13 +22,13 @@ directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath
     dir->value = database->sget(database, key);
 
     if(!dir->value->data) {
-        fprintf(stderr, "[-] directory: key [%s, %s] not found\n", key, fullpath);
+        debug("[-] directory: key [%s, %s] not found\n", key, fullpath);
         return NULL;
     }
 
     // build capn context
     if(capn_init_mem(&dir->ctx, (unsigned char *) dir->value->data, dir->value->length, 0)) {
-        fprintf(stderr, "[-] directory: capnp: init error\n");
+        debug("[-] directory: capnp: init error\n");
         database->clean(dir->value);
         return NULL;
     }
@@ -64,7 +64,7 @@ char *libflist_path_key(char *path) {
     uint8_t hash[KEYLENGTH];
 
     if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0) {
-        fprintf(stderr, "[-] blake2 error\n");
+        debug("[-] blake2 error\n");
         return NULL;
     }
 
@@ -142,7 +142,7 @@ flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) 
 
     value_t *rawdata = database->sget(database, (char *) aclkey);
     if(!rawdata->data) {
-        printf("[-] acl key <%s> not found\n", aclkey);
+        debug("[-] acl key <%s> not found\n", aclkey);
         return NULL;
     }
 
@@ -156,7 +156,7 @@ flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) 
 
     struct capn permsctx;
     if(capn_init_mem(&permsctx, (unsigned char *) rawdata->data, rawdata->length, 0)) {
-        fprintf(stderr, "[-] capnp: init error\n");
+        debug("[-] capnp: init error\n");
         return NULL;
     }
 
@@ -287,13 +287,13 @@ dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
     if(!(cleanpath = flist_clean_path(path)))
         return NULL;
 
-    printf("[+] directory get: clean path: <%s> -> <%s>\n", path, cleanpath);
+    debug("[+] directory get: clean path: <%s> -> <%s>\n", path, cleanpath);
 
     // converting this directory string into a directory
     // hash by the internal way used everywhere, this will
     // give the key required to find entry on the database
     char *key = libflist_path_key(cleanpath);
-    printf("[+] directory get: entry key: <%s>\n", key);
+    debug("[+] directory get: entry key: <%s>\n", key);
 
     // requesting the directory object from the database
     // the object in the database is packed, this function will
