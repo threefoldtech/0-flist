@@ -74,6 +74,20 @@ int usage(char *basename) {
     exit(EXIT_FAILURE);
 }
 
+void flister_create_json(flist_stats_t *stats) {
+    json_t *root = json_object();
+    json_object_set_new(root, "regular", json_integer(stats->regular));
+    json_object_set_new(root, "symlink", json_integer(stats->symlink));
+    json_object_set_new(root, "directory", json_integer(stats->directory));
+    json_object_set_new(root, "special", json_integer(stats->special));
+
+    char *output = json_dumps(root, 0);
+    json_decref(root);
+
+    puts(output);
+    free(output);
+}
+
 static int flister_create(char *workspace) {
     // no backend by default
     flist_backend_t *backend = NULL;
@@ -96,7 +110,12 @@ static int flister_create(char *workspace) {
     }
 
     // building database
-    flist_create(database, settings.create, backend, &settings);
+    flist_stats_t *stats = flist_create(database, settings.create, backend, &settings);
+    if(!stats)
+        return 0;
+
+    if(settings.json)
+        flister_create_json(stats);
 
     // closing database before archiving
     debug("[+] closing database\n");
