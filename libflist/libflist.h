@@ -223,8 +223,8 @@
 
 
     // initializers
-    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset);
-    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace);
+    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password);
+    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password);
 
     // initializers
     flist_db_t *libflist_db_sqlite_init(char *rootpath);

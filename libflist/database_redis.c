@@ -176,7 +176,7 @@ static flist_db_t *database_redis_init() {
     return database_redis_init_global(db);
 }
 
-static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
+static int database_redis_set_namespace(database_redis_t *db, char *namespace, char *password) {
     redisReply *reply;
 
     if(!(reply = redisCommand(db->redis, "INFO")))
@@ -190,8 +190,16 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
         freeReplyObject(reply);
 
         printf("[+] database: zero-db detected, selecting namespace\n");
-        if(!(reply = redisCommand(db->redis, "SELECT %s", namespace)))
-            return 1;
+        if(password) {
+            printf("[+] database: authenticating using password\n");
+
+            if(!(reply = redisCommand(db->redis, "SELECT %s %s", namespace, password)))
+                return 1;
+
+        } else {
+            if(!(reply = redisCommand(db->redis, "SELECT %s", namespace)))
+                return 1;
+        }
 
         if(strcmp(reply->str, "OK")) {
             warndb(namespace, reply->str);
@@ -218,7 +226,7 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace) {
 
 }
 
-flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace) {
+flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, char *password) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -232,12 +240,12 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace) {
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace);
+    database_redis_set_namespace(handler, namespace, password);
 
     return db;
 }
 
-flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace) {
+flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -251,7 +259,7 @@ flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace) {
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace);
+    database_redis_set_namespace(handler, namespace, password);
 
     return db;
 }

@@ -34,6 +34,7 @@
 
         char *backendhost;   // backend host
         int backendport;     // backend port
+        char *bpass;         // backend password
 
         int json;            // json output flag
         char *targetfile;    // specific target file (see cat action)

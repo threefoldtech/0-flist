@@ -13,18 +13,19 @@
 zflist_settings_t settings;
 
 static struct option long_options[] = {
-    {"list",    no_argument,       0, 'l'},
-    {"create",  required_argument, 0, 'c'},
-    {"action",  required_argument, 0, 'o'},
-    {"archive", required_argument, 0, 'a'},
-    {"backend", required_argument, 0, 'b'},
-    {"merge",   required_argument, 0, 'm'},
-    {"ramdisk", no_argument,       0, 'r'},
-    {"json",    no_argument,       0, 'j'},
-    {"file",    required_argument, 0, 'f'},
-    {"output",  required_argument, 0, 'O'},
-    {"root",    required_argument, 0, 'p'},
-    {"help",    no_argument,       0, 'h'},
+    {"list",     no_argument,       0, 'l'},
+    {"create",   required_argument, 0, 'c'},
+    {"action",   required_argument, 0, 'o'},
+    {"archive",  required_argument, 0, 'a'},
+    {"backend",  required_argument, 0, 'b'},
+    {"password", required_argument, 0, 'x'},
+    {"merge",    required_argument, 0, 'm'},
+    {"ramdisk",  no_argument,       0, 'r'},
+    {"json",     no_argument,       0, 'j'},
+    {"file",     required_argument, 0, 'f'},
+    {"output",   required_argument, 0, 'O'},
+    {"root",     required_argument, 0, 'p'},
+    {"help",     no_argument,       0, 'h'},
     {0, 0, 0, 0}
 };
 
@@ -53,7 +54,8 @@ int usage(char *basename) {
     fprintf(stderr, "                        (this option is always required)\n\n");
 
     fprintf(stderr, "  --create <root>       create an archive from <root> directory\n\n");
-    fprintf(stderr, "  --backend <host:port> upload/download files from archive, on this backend\n\n");
+    fprintf(stderr, "  --backend <host:port> upload/download files from archive, on this backend\n");
+    fprintf(stderr, "  --password <pwd>      password for default namespace (for protected mode)\n\n");
 
     fprintf(stderr, "  --list       list archive content\n");
     fprintf(stderr, "  --action        action to do while listing archive:\n");
@@ -82,7 +84,7 @@ static int flister_create(char *workspace) {
     if(settings.backendhost) {
         flist_db_t *backdb;
 
-        if(!(backdb = libflist_db_redis_init_tcp(settings.backendhost, settings.backendport, "default"))) {
+        if(!(backdb = libflist_db_redis_init_tcp(settings.backendhost, settings.backendport, "default", settings.bpass))) {
             fprintf(stderr, "[-] cannot initialize backend\n");
             return 1;
         }
@@ -320,6 +322,11 @@ int main(int argc, char *argv[]) {
                     settings.rootlen -= 1;
                 }
 
+                break;
+            }
+
+            case 'x': {
+                settings.bpass = optarg;
                 break;
             }
 
