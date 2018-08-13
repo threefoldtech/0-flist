@@ -33,13 +33,11 @@ int flist_listing(flist_db_t *database, zflist_settings_t *settings) {
     if(settings->list == LIST_BLOCKS)
         walker.callback = flist_blocks;
 
-    /*
     if(settings->list == LIST_JSON) {
         walker.callback = flist_json;
         walker.postproc = flist_json_dump;
         walker.userptr = flist_json_init();
     }
-    */
 
     if(settings->list == LIST_CHECK) {
         if(!(settings->backendhost)) {

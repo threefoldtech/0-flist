@@ -216,6 +216,11 @@ int main(int argc, char *argv[]) {
     int option_index = 0;
     int i;
 
+    #ifndef FLIST_DEBUG
+    // disable library debug in release mode
+    libflist_debug_enable(0);
+    #endif
+
     // reset settings
     memset(&settings, 0, sizeof(zflist_settings_t));
 

@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <jansson.h>
-#include "libflist.h"
-#include "flist_walker.h"
 #include "zflist.h"
+#include "libflist.h"
+#include "flist_listing.h"
+#include "flist_walker.h"
 
-#if 0
 char *flist_fullpath(directory_t *root, struct Inode *inode) {
     char *path;
 
@@ -105,5 +105,3 @@ int flist_json(walker_t *walker, directory_t *root) {
 
     return 0;
 }
-
-#endif
