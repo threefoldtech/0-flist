@@ -24,9 +24,9 @@ release: LDFLAGS = -pthread -L../libflist -lflist -ltar -lrt -lb2 -lcapnp_c -lz 
 release: $(EXEC)
 
 # embedded with libraries static linked (except libc)
-static: CFLAGS = -std=c99 -W -Wall -O2 -I../libflist
-static: LDFLAGS = -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -lhiredis -fopenmp -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
-static: $(EXEC)
+s-embedded: CFLAGS = -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
+s-embedded: LDFLAGS = -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
+s-embedded: $(EXEC)
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
