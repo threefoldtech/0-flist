@@ -77,7 +77,6 @@ typedef struct flist_write_global_t {
     flist_backend_t *backend;
     dirnode_t *rootdir;
     dirnode_t *currentdir;
-    settings_t *settings;
     flist_stats_t stats;
 
 } flist_write_global_t;
@@ -103,7 +102,6 @@ static flist_write_global_t globaldata = {
     .backend = NULL,
     .rootdir = NULL,
     .currentdir = NULL,
-    .settings = NULL,
 };
 
 //
@@ -693,14 +691,14 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
 //  - always lookup relative directory from fpath
 //  - when FTW_DP && fpath == / -> we are done
 //  - recursive create directories when lookup
-static char *relative_path(const char *fpath, int typeflag, settings_t *settings) {
+static char *relative_path(const char *fpath, int typeflag, const char *rootpath) {
     // building general relative path
     //
     //      real: /realroot/somewhere/target/hello/world   # current path
     //    create: ++++++++++++++++++++++++++^              # create root path provided
     //  relative: ........................../hello/world   # relative path
     //
-    const char *relative = fpath + settings->rootlen;
+    const char *relative = fpath + strlen(rootpath);
 
     // we are on the root, nothing more to check
     if(strlen(relative) == 0)
@@ -746,7 +744,6 @@ static char *relative_path_parent(char *relative) {
 }
 
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    settings_t *settings = globaldata.settings;
     char *relpath = NULL;
     char *parent = NULL;
 
@@ -760,7 +757,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     // building relative directory, which is the directory
     // where the file (or the directory itself if target is a directory)
     // is located
-    if(!(relpath = relative_path(fpath, typeflag, settings)))
+    if(!(relpath = relative_path(fpath, typeflag, globaldata.root)))
         goto something_wrong;
 
     debug("[+] relative directory: </%s>\n", relpath);
@@ -876,7 +873,24 @@ something_wrong:
     return 1;
 }
 
-flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings) {
+// ensure the root path is well formatted
+char *flist_rootpath_clean(const char *input) {
+    size_t length = strlen(input);
+    char *fixed = strdup(input);
+
+    if(!fixed)
+        return NULL;
+
+    // forcing rootpath to not have trailing slash
+    while(fixed[length - 1] == '/') {
+        fixed[length - 1] = '\0';
+        length -= 1;
+    }
+
+    return fixed;
+}
+
+flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend) {
     flist_stats_t *stats = NULL;
 
     debug("[+] preparing flist for: %s\n", root);
@@ -889,10 +903,9 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
 
     // FIXME: thread safe ? add one global lock ?
 
-    globaldata.root = root;
+    globaldata.root = flist_rootpath_clean(root);
     globaldata.database = database;
     globaldata.backend = backend;
-    globaldata.settings = settings;
 
     memset(&globaldata.stats, 0x00, sizeof(flist_stats_t));
 
@@ -917,6 +930,8 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
 
     if(backend)
         backend_free(backend);
+
+    free(globaldata.root);
 
     // convert local stats
     stats = libflist_bufdup(&globaldata.stats, sizeof(flist_stats_t));

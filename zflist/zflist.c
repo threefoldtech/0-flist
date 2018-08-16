@@ -110,7 +110,7 @@ static int flister_create(char *workspace) {
     }
 
     // building database
-    flist_stats_t *stats = flist_create(database, settings.create, backend, &settings);
+    flist_stats_t *stats = flist_create(database, settings.create, backend);
     if(!stats)
         return 0;
 
@@ -337,14 +337,7 @@ int main(int argc, char *argv[]) {
 
             case 'c': {
                 // root path
-                settings.create = strdup(optarg);
-                settings.rootlen = strlen(settings.create);
-
-                // forcing rootpath to not have trailing slash
-                while(settings.create[settings.rootlen - 1] == '/') {
-                    settings.create[settings.rootlen - 1] = '\0';
-                    settings.rootlen -= 1;
-                }
+                settings.create = optarg;
 
                 break;
             }

@@ -215,7 +215,7 @@
 
     } flist_stats_t;
 
-    flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend, settings_t *settings);
+    flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
 
     // initialize a backend
