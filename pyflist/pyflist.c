@@ -241,21 +241,21 @@ static PyObject *pyflist_open(PyObject *self, PyObject *args) {
 
     root->filename = strdup(filename);
 
-    debug("[+] initializing workspace\n");
+    printf("[+] initializing workspace\n");
     if(!(root->workspace = libflist_workspace_create())) {
         fprintf(stderr, "workspace_create");
         // TODO: free
         return NULL;
     }
 
-    debug("[+] workspace: %s\n", workspace);
+    printf("[+] workspace: %s\n", root->workspace);
 
     if(!libflist_archive_extract((char *) root->filename, root->workspace)) {
         fprintf(stderr, "libflist_archive_extract");
         return NULL; // FIXME
     }
 
-    debug("[+] loading database\n");
+    printf("[+] loading database\n");
     root->database = libflist_db_sqlite_init(root->workspace);
     root->database->open(root->database);
 
@@ -276,10 +276,10 @@ static PyObject *pyflist_close(PyObject *self, PyObject *args) {
     if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
         return NULL;
 
-    debug("[+] closing database\n");
+    printf("[+] closing database\n");
     root->database->close(root->database);
 
-    debug("[+] cleaning workspace\n");
+    printf("[+] cleaning workspace\n");
     if(!libflist_workspace_destroy(root->workspace)) {
         fprintf(stderr, "workspace_destroy\n");
         return NULL;
@@ -292,7 +292,63 @@ static PyObject *pyflist_close(PyObject *self, PyObject *args) {
 }
 
 static PyObject *pyflist_create(PyObject *self, PyObject *args) {
-    return NULL;
+    flist_backend_t *backend = NULL;
+    flist_db_t *backdb;
+    const char *rootpath = NULL;
+    const char *targetfile = NULL;
+    pyflist_obj_t root;
+    PyObject *pycaps = NULL;
+
+    if(!PyArg_ParseTuple(args, "ssO", &rootpath, &targetfile, &pycaps))
+        return NULL;
+
+    if(!(backdb = (flist_db_t *) PyCapsule_GetPointer(pycaps, "FlistBackend")))
+        return NULL;
+
+    printf("[+] initializing workspace\n");
+    if(!(root.workspace = libflist_workspace_create())) {
+        fprintf(stderr, "workspace_create");
+        // TODO: free
+        return NULL;
+    }
+
+    printf("[+] workspace: %s\n", root.workspace);
+
+    root.database = libflist_db_sqlite_init(root.workspace);
+    root.database->create(root.database);
+
+    if(!(backend = backend_init(backdb, rootpath))) {
+        return NULL;
+    }
+
+    // building database
+    flist_stats_t *stats = flist_create(root.database, rootpath, backend);
+    if(!stats)
+        return NULL;
+
+    // building dict response
+    PyObject *response = PyDict_New();
+    PyDict_SetItemString(response, "regular", Py_BuildValue("i", stats->regular));
+    PyDict_SetItemString(response, "symlink", Py_BuildValue("i", stats->symlink));
+    PyDict_SetItemString(response, "directory", Py_BuildValue("i", stats->directory));
+    PyDict_SetItemString(response, "special", Py_BuildValue("i", stats->special));
+
+    // closing database before archiving
+    printf("[+] closing database\n");
+    root.database->close(root.database);
+
+        // removing possible already existing db
+    unlink(targetfile);
+    libflist_archive_create(targetfile, root.workspace);
+
+
+    printf("[+] cleaning workspace\n");
+    if(!libflist_workspace_destroy(root.workspace)) {
+        fprintf(stderr, "workspace_destroy\n");
+        return NULL;
+    }
+
+    return response;
 }
 
 static PyObject *pyflist_getfile(PyObject *self, PyObject *args) {
@@ -321,15 +377,27 @@ static PyObject *pyflist_getdirectory(PyObject *self, PyObject *args) {
     return dict;
 }
 
+static PyObject *pyflist_zdb_open(PyObject *self, PyObject *args) {
+    const char *host;
+    const char *namespace = "default";
+    const char *password = NULL;
+    const int port;
+
+    if(!PyArg_ParseTuple(args, "si|ss", &host, &port, &namespace, &password))
+        return NULL;
+
+    flist_db_t *backdb;
+
+    if(!(backdb = libflist_db_redis_init_tcp(host, port, namespace, password))) {
+        fprintf(stderr, "[-] cannot initialize backend\n");
+        return 1;
+    }
+
+    return PyCapsule_New(backdb, "FlistBackend", NULL);
+}
 
 static PyMethodDef pyflister_cm[] = {
-#if 0
-    {"db_open", db_open, METH_VARARGS, "Open a database handler"},
-    {"db_close", db_close, METH_VARARGS, "Close and free a database handler"},
-
-    {"backend_open", backend_open, METH_VARARGS, "Create a backend object from a database"},
-    {"backend_close", backend_close, METH_VARARGS, "Close and free a backend objecy"},
-#endif
+    {"backend_zdb_open", pyflist_zdb_open, METH_VARARGS, "Open a connection to zdb"},
 
     {"open", pyflist_open, METH_VARARGS, "Open an existing flist"},
     {"close", pyflist_close, METH_VARARGS, "Close an opened flist"},
