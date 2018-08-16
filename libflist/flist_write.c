@@ -376,19 +376,6 @@ static void dirnode_dumps(dirnode_t *root) {
 #endif
 
 #if 0
-void dirnode_json(flist_json_t *json) {
-    json->root = json_object();
-    json_object_set_new(json->root, "regular", json_integer(json->regular));
-    json_object_set_new(json->root, "symlink", json_integer(json->symlink));
-    json_object_set_new(json->root, "directory", json_integer(json->directory));
-    json_object_set_new(json->root, "special", json_integer(json->special));
-
-    char *output = json_dumps(json->root, 0);
-    json_decref(json->root);
-
-    puts(output);
-    free(output);
-}
 #endif
 
 static void dirnode_tree_free(dirnode_t *root) {
