@@ -9,6 +9,7 @@
 #include <jansson.h>
 #include "libflist.h"
 #include "zflist.h"
+#include "flist_listing.h"
 
 zflist_settings_t settings;
 

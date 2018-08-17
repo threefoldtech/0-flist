@@ -7,6 +7,10 @@
         #define debug(...) ((void)0)
     #endif
 
+    void warnp(const char *str);
+    void diep(const char *str);
+    void dies(const char *str);
+
     typedef enum list_mode_t {
         LIST_DISABLED,
         LIST_LS,
