@@ -10,12 +10,9 @@ This projects contains multiple components:
 - `pyflist`: python flist binding native extension
 
 ## libflist
-You can build the library in debug mode by taping `make` on the `libflist` directory. This build will
-contains lot of verbosity and debug symbols.
-
-In order to produce a production library, type `make release` which will strip debug message.
-
-Any build will produce a static version of the library `libflist.a` and a dynamic version `libstatic.so`
+Library don't have special compilation mode. Default build produce a shared library and a static archive
+to static link `libflist` code. The code produced contains debug and production version (customized by a flag
+on runtime to enable or not debug output).
 
 Please note this library is in a early stage and was a fully static binary in a first step. Strip is not
 complete right now.
@@ -27,27 +24,30 @@ You can easily ship a (mostly) static version of `zflist` by compiling it using 
 will static link `libflist` and it's dependencies, but not produce a fully static binary. It will still
 be linked to `glibc` in order to use any resolution and users functions correctly.
 
+The `embedded` target produce a debug version, there is also a `production` target which disable any
+debug output by default.
+
 # pyflist
 Python binding of the library. Work in progress.
 
 # Dependencies
-In order to compile correctly `0-flist`, you'll need:
-- `sqlite3` (library)
-- `hiredis`
-- `libtar`
-- `libsnappy`
-- `c-capnp`
-- `libb2` (blake2)
-- `zlib`
-- `jansson`
-- `python3` (for binding)
+In order to compile correctly `0-flist`, you'll need theses libraries:
+- `sqlite3` (database, libflist)
+- `hiredis` (redis, libflist)
+- `libtar` (archive, libflist)
+- `libsnappy` (compression, libflist)
+- `c-capnp` (serialization, libflist)
+- `libb2` (hashing [blake2], libflist)
+- `zlib` (compression, libflist)
+- `jansson` (serialization, zflist)
+- `python3` (extension, pyflist)
 
 ## Ubuntu
 - Packages dependencies
 ```
 build-essential libsnappy-dev libz-dev libtar-dev libb2-dev libjansson-dev libhiredis-dev libsqlite3-dev 
 ```
-You will need to compile `c-capnp` yourself.
+You will need to compile `c-capnp` yourself, see autobuild directory.
 
 # Usage
 ```
