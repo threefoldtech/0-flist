@@ -302,6 +302,7 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     const char *targetfile = NULL;
     pyflist_obj_t root;
     PyObject *pycaps = NULL;
+    PyObject *response = NULL;
 
     if(!PyArg_ParseTuple(args, "ssO", &rootpath, &targetfile, &pycaps))
         return NULL;
@@ -311,8 +312,7 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
 
     debug("[+] initializing workspace\n");
     if(!(root.workspace = libflist_workspace_create())) {
-        fprintf(stderr, "workspace_create");
-        // TODO: free
+        PyErr_SetString(PyExc_RuntimeError, libflist_strerror());
         return NULL;
     }
 
@@ -322,33 +322,42 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     root.database->create(root.database);
 
     if(!(backend = backend_init(backdb, rootpath))) {
-        return NULL;
+        PyErr_SetString(PyExc_RuntimeError, libflist_strerror());
+        goto reply;
     }
 
     // building database
-    flist_stats_t *stats = flist_create(root.database, rootpath, backend);
-    if(!stats)
-        return NULL;
+    flist_stats_t *stats;
 
-    // building dict response
-    PyObject *response = PyDict_New();
+    if(!(stats = flist_create(root.database, rootpath, backend))) {
+        PyErr_SetString(PyExc_RuntimeError, libflist_strerror());
+        goto reply;
+    }
+
+    // everything was fine
+    // building clean dict response
+    response = PyDict_New();
     PyDict_SetItemString(response, "regular", Py_BuildValue("i", stats->regular));
     PyDict_SetItemString(response, "symlink", Py_BuildValue("i", stats->symlink));
     PyDict_SetItemString(response, "directory", Py_BuildValue("i", stats->directory));
     PyDict_SetItemString(response, "special", Py_BuildValue("i", stats->special));
 
+
+reply:
     // closing database before archiving
     debug("[+] closing database\n");
     root.database->close(root.database);
 
+    if(response) {
         // removing possible already existing db
-    unlink(targetfile);
-    libflist_archive_create(targetfile, root.workspace);
+        unlink(targetfile);
 
+        if(!(libflist_archive_create(targetfile, root.workspace)))
+            PyErr_SetString(PyExc_RuntimeError, libflist_strerror());
+    }
 
     debug("[+] cleaning workspace\n");
     if(!libflist_workspace_destroy(root.workspace)) {
-        fprintf(stderr, "workspace_destroy\n");
         return NULL;
     }
 
@@ -418,7 +427,7 @@ static PyObject *pyflist_zdb_open(PyObject *self, PyObject *args) {
 
     if(!(backdb = libflist_db_redis_init_tcp(host, port, namespace, password))) {
         PyErr_SetString(PyExc_RuntimeError, "Could not initialize tcp connection");
-        return NULL
+        return NULL;
     }
 
     return PyCapsule_New(backdb, "FlistBackend", NULL);
