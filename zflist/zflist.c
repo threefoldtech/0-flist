@@ -135,6 +135,8 @@ static int flister_create(char *workspace) {
 }
 
 static int flister_list(char *workspace) {
+    int value = 0;
+
     // if json flag is set, ensure we output
     // json format listing
     if(settings.json)
@@ -145,21 +147,22 @@ static int flister_list(char *workspace) {
         return 1;
     }
 
-
     debug("[+] loading database\n");
     flist_db_t *database = libflist_db_sqlite_init(workspace);
     database->open(database);
 
     debug("[+] walking over database\n");
-    flist_listing(database, &settings);
+    value = flist_listing(database, &settings);
 
     debug("[+] closing database\n");
     database->close(database);
 
-    return 0;
+    return value;
 }
 
 static int flister_merge(char *workspace) {
+    int value = 0;
+
     flist_db_t *database = libflist_db_sqlite_init(workspace);
     database->create(database);
 
@@ -174,12 +177,12 @@ static int flister_merge(char *workspace) {
     unlink(settings.archive);
     libflist_archive_create(settings.archive, workspace);
 
-
-    return 0;
+    return value;
 }
 
 static int flister() {
     char *workspace;
+    int value = 0;
 
     debug("[+] initializing workspace\n");
     if(!(workspace = libflist_workspace_create()))
@@ -199,7 +202,7 @@ static int flister() {
     //
     if(settings.create) {
         debug("[+] creating database\n");
-        flister_create(workspace);
+        value = flister_create(workspace);
     }
 
     //
@@ -207,7 +210,7 @@ static int flister() {
     //
     if(settings.list) {
         debug("[+] extracting archive\n");
-        if(flister_list(workspace))
+        if((value = flister_list(workspace)))
             goto clean;
     }
 
@@ -216,7 +219,7 @@ static int flister() {
     //
     if(settings.merge.length) {
         debug("[+] merging flists\n");
-        if(flister_merge(workspace))
+        if((value = flister_merge(workspace)))
             goto clean;
     }
 
@@ -234,7 +237,7 @@ clean:
 
     free(workspace);
 
-    return 0;
+    return value;
 }
 
 int main(int argc, char *argv[]) {
