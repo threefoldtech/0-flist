@@ -81,6 +81,7 @@ void flister_create_json(flist_stats_t *stats) {
     json_object_set_new(root, "symlink", json_integer(stats->symlink));
     json_object_set_new(root, "directory", json_integer(stats->directory));
     json_object_set_new(root, "special", json_integer(stats->special));
+    json_object_set_new(root, "failure", json_integer(stats->failure));
 
     char *output = json_dumps(root, 0);
     json_decref(root);
@@ -88,6 +89,18 @@ void flister_create_json(flist_stats_t *stats) {
     puts(output);
     free(output);
 }
+
+void flister_create_response(flist_stats_t *stats) {
+    printf("[+]\n");
+    printf("[+] flist creation summary:\n");
+    printf("[+]   flist: regular  : %lu\n", stats->regular);
+    printf("[+]   flist: symlink  : %lu\n", stats->symlink);
+    printf("[+]   flist: directory: %lu\n", stats->directory);
+    printf("[+]   flist: special  : %lu\n", stats->special);
+    printf("[+]   flist: failure  : %lu\n", stats->failure);
+    printf("[+]\n");
+}
+
 
 static int flister_create(char *workspace) {
     // no backend by default
@@ -99,8 +112,10 @@ static int flister_create(char *workspace) {
     if(settings.backendhost) {
         flist_db_t *backdb;
 
+        debug("[+] initializing backend\n");
+
         if(!(backdb = libflist_db_redis_init_tcp(settings.backendhost, settings.backendport, "default", settings.bpass))) {
-            fprintf(stderr, "[-] cannot initialize backend\n");
+            fprintf(stderr, "[-] backend: %s\n", libflist_strerror());
             return 1;
         }
 
@@ -120,6 +135,8 @@ static int flister_create(char *workspace) {
 
     if(settings.json)
         flister_create_json(stats);
+
+    else flister_create_response(stats);
 
     free(stats);
 
