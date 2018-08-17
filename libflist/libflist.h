@@ -278,7 +278,7 @@
     //
     extern int libflist_debug_flag;
 
-    const char *libflist_errstr();
+    const char *libflist_strerror();
     char *libflist_hashhex(unsigned char *hash, int length);
     void libflist_debug_enable(int enable);
     void *libflist_bufdup(void *source, size_t length);

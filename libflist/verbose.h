@@ -14,8 +14,8 @@
     void libflist_warns(const char *str);
     void libflist_warnp(const char *str);
 
-    #define debug(...) { if(libflist_debug_flag) { printf(__VA_ARGS__); } }
+    // wrap printf style error definiton
+    void *libflist_set_error(const char *format, ...);
 
-    #define libflist_set_error(...) \
-        snprintf(libflist_internal_error, sizeof(libflist_internal_error), __VA_ARGS__);
+    #define debug(...) { if(libflist_debug_flag) { printf(__VA_ARGS__); } }
 #endif

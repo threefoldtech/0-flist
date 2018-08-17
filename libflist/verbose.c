@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
 #include "verbose.h"
 
 char libflist_internal_error[1024] = {0};
@@ -28,6 +29,16 @@ void libflist_debug_enable(int enable) {
 // this error can be retrived via 'libflist_strerror'
 const char *libflist_strerror() {
     return (const char *) libflist_internal_error;
+}
+
+void *libflist_set_error(const char *format, ...) {
+    va_list args;
+
+    va_start(args, format);
+    vsnprintf(libflist_internal_error, sizeof(libflist_internal_error), format, args);
+    va_end(args);
+
+    return NULL;
 }
 
 void *libflist_errp(const char *str) {
