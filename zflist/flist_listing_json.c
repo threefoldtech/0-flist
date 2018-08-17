@@ -55,6 +55,7 @@ void flist_json_dump(walker_t *walker) {
 
     puts(output);
     free(output);
+    free(json);
 }
 
 int flist_json(walker_t *walker, directory_t *root) {

@@ -73,4 +73,6 @@ int flist_tree(walker_t *walker, directory_t *root) {
     return 0;
 }
 
-
+void flist_tree_done(walker_t *walker) {
+    free(walker->userptr);
+}

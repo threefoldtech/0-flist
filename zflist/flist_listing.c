@@ -25,6 +25,7 @@ int flist_listing(flist_db_t *database, zflist_settings_t *settings) {
     if(settings->list == LIST_TREE) {
         walker.callback = flist_tree;
         walker.userptr = flist_tree_init();
+        walker.postproc = flist_tree_done;
     }
 
     if(settings->list == LIST_DUMP)
