@@ -26,6 +26,12 @@ static int database_sqlite_build(database_sqlite_t *db) {
 
     sqlite3_finalize(value.handler);
 
+    // if the database is opened in creation mode
+    // it's probably to do motification
+    //
+    // we prepare one transaction to do everything in batch
+    // this could not be always what the user wants, this will
+    // maybe move to some external call later
     sqlite3_exec(db->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
 
     return 0;
@@ -35,6 +41,11 @@ static int database_sqlite_optimize(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     // pre-compute query
+    // preparing statements we will reuse all the way
+    // since we only do like key-value store with the database
+    // we only do the same GET and the same SET/INSERT all the time
+    // reusing the same prepared statement improve hugely performances
+    // and memory usage
     char *select_query = "SELECT value FROM entries WHERE key = ?1";
     char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
 
@@ -93,8 +104,19 @@ static void database_sqlite_close(flist_db_t *database) {
         sqlite3_exec(db->db, "VACUUM;", NULL, NULL, NULL);
     }
 
+    // closing prepared statements
+    sqlite3_finalize(db->select);
+    sqlite3_finalize(db->insert);
+
+    // closing database
     sqlite3_close(db->db);
+
+    // freeing handler
+    free(db->filename);
     free(db);
+
+    // freeing global database object
+    free(database);
 }
 
 static value_t *database_sqlite_get(flist_db_t *database, uint8_t *key, size_t keylen) {
