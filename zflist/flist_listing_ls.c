@@ -150,7 +150,11 @@ int flist_ls(walker_t *walker, directory_t *root) {
                 printf("%8lu %s\n", inode.size, inode.name.str);
                 break;
         }
+
+        capn_free(&permsctx);
+        walker->database->clean(perms);
     }
+
 
     // newline between directories
     printf("\n");
