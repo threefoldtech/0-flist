@@ -118,6 +118,8 @@ static int flister_create(char *workspace) {
     if(settings.json)
         flister_create_json(stats);
 
+    free(stats);
+
     // closing database before archiving
     debug("[+] closing database\n");
     database->close(database);

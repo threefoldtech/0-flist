@@ -44,6 +44,12 @@ void excluders_init() {
     }
 }
 
+void excluders_free() {
+    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
+        regfree(&excluders[i]);
+    }
+}
+
 int excluders_matches(const char *input) {
     // allows empty strings
     if(strlen(input) == 0)
@@ -720,7 +726,7 @@ static char *relative_path(const char *fpath, int typeflag, const char *rootpath
 static char *relative_path_parent(char *relative) {
     size_t length = strlen(relative);
 
-    while(relative[length - 1] != '/' && length)
+    while(length && relative[length - 1] != '/')
         length -= 1;
 
     if(length == 0)
@@ -919,6 +925,7 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
         backend_free(backend);
 
     free(globaldata.root);
+    excluders_free();
 
     // convert local stats
     stats = libflist_bufdup(&globaldata.stats, sizeof(flist_stats_t));
