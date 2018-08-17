@@ -78,8 +78,11 @@ static redisReply *database_redis_set_real(flist_db_t *database, uint8_t *key, s
     if(!(reply = redisCommand(db->redis, "HSET %s %b %b", db->namespace, key, keylen, payload, length)))
         return NULL;
 
-    if(reply->type == REDIS_REPLY_ERROR)
-        warndb("set", reply->str);
+    if(reply->type == REDIS_REPLY_ERROR) {
+        libflist_set_error("redis: set: %s", reply->str);
+        freeReplyObject(reply);
+        return NULL;
+    }
 
     return reply;
 }
@@ -96,7 +99,9 @@ static redisReply *database_redis_set_zdb(flist_db_t *database, uint8_t *key, si
         return reply;
 
     if(memcmp(reply->str, key, keylen)) {
-        warndb("set: invalid response", reply->str);
+        libflist_set_error("set: invalid response: %s", reply->str);
+        freeReplyObject(reply);
+        return NULL;
     }
 
     return reply;
@@ -202,7 +207,8 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         }
 
         if(strcmp(reply->str, "OK")) {
-            warndb(namespace, reply->str);
+            libflist_set_error("%s: %s", namespace, reply->str);
+            freeReplyObject(reply);
             return 1;
         }
 
@@ -230,13 +236,12 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, ch
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnect(host, port))) {
-        warndb("redisConnect", "cannot allocate memory");
-        return NULL;
-    }
+    if(!(handler->redis = redisConnect(host, port)))
+        return libflist_set_error("redis: connect: cannot allocate memory");
 
     if(handler->redis->err) {
-        warndb("redisConnect", handler->redis->errstr);
+        libflist_set_error("redis: connect: tcp: %s", handler->redis->errstr);
+        redisFree(handler->redis);
         return NULL;
     }
 
@@ -249,13 +254,12 @@ flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *pas
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnectUnix(socket))) {
-        warndb("redisConnectUnix", "cannot allocate memory");
-        return NULL;
-    }
+    if(!(handler->redis = redisConnectUnix(socket)))
+        return libflist_set_error("redis: connect: unix: cannot allocate memory");
 
     if(handler->redis->err) {
-        warndb("redisConnectUnix", handler->redis->errstr);
+        libflist_set_error("redis: connect: unix: %s", handler->redis->errstr);
+        redisFree(handler->redis);
         return NULL;
     }
 

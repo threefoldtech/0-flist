@@ -495,7 +495,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
     // populating contents
     int index = 0;
-    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
+    for(inode_t *inode = root->inode_list; inode; inode = inode->next, index += 1) {
         struct Inode target;
 
         debug("[+]   populate inode: <%s>\n", inode->name);
@@ -556,8 +556,10 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             if(inode->size && backend) {
                 chunks_t *chunks;
 
-                if(!(chunks = upload_inode(backend, root->fullpath, inode->name)))
-                    dies("upload failed: unexpected error");
+                if(!(chunks = upload_inode(backend, root->fullpath, inode->name))) {
+                    globaldata.stats.failure += 1;
+                    continue;
+                }
 
                 f.blocks = new_FileBlock_list(cs, chunks->length);
 
@@ -581,8 +583,6 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
         set_Inode(&target, dir.contents, index);
         inode_acl_persist(database, &inode->acl);
-
-        index += 1;
     }
 
     // commit capnp object
@@ -590,6 +590,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
     Dir_ptr dp = new_Dir(cs);
     write_Dir(&dir, dp);
+
 
     if(capn_setp(capn_root(&c), 0, dp.p))
         dies("capnp setp failed");

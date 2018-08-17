@@ -151,7 +151,13 @@ static chunks_t *upload_file(flist_backend_t *context, char *filename) {
         chunks->upsize += chunk->length;
 
         // hiredis upload
-        chunk_upload(context, chunk);
+        if(chunk_upload(context, chunk)) {
+            debug("[-] chunk_upload: %s\n", libflist_strerror());
+
+            chunk_free(chunk);
+            chunks = NULL;
+            goto cleanup;
+        }
 
         // cleaning
         chunk_free(chunk);
@@ -159,6 +165,7 @@ static chunks_t *upload_file(flist_backend_t *context, char *filename) {
 
     debug("[+] finalsize: %lu bytes\n", chunks->upsize);
 
+cleanup:
     // cleaning
     buffer_free(buffer);
 

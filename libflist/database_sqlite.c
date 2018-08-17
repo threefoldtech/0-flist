@@ -15,12 +15,12 @@ static int database_sqlite_build(database_sqlite_t *db) {
     value_t value;
 
     if(sqlite3_prepare_v2(db->db, query, -1, (sqlite3_stmt **) &value.handler, NULL) != SQLITE_OK) {
-        warndb("build: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        libflist_set_error("create: sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
         return 1;
     }
 
     if(sqlite3_step(value.handler) != SQLITE_DONE) {
-        warndb("build: sqlite3_step", sqlite3_errmsg(db->db));
+        libflist_set_error("create: sqlite3_step: %s", sqlite3_errmsg(db->db));
         return 1;
     }
 
@@ -50,12 +50,12 @@ static int database_sqlite_optimize(flist_db_t *database) {
     char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
 
     if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
-        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
         return 1;
     }
 
     if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
-        warndb("prepare: sqlite3_prepare_v2", sqlite3_errmsg(db->db));
+        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
         return 1;
     }
 
@@ -66,7 +66,7 @@ static database_sqlite_t *database_sqlite_root_init(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     if(sqlite3_open(db->filename, &db->db)) {
-        warndb("sqlite3_open", sqlite3_errmsg(db->db));
+        libflist_set_error("sqlite3_open: %s", sqlite3_errmsg(db->db));
         return NULL;
     }
 
@@ -142,7 +142,7 @@ static value_t *database_sqlite_get(flist_db_t *database, uint8_t *key, size_t k
         return value;
     }
 
-    warndb("get: sqlite3_step", sqlite3_errmsg(db->db));
+    libflist_set_error("get: sqlite3_step: %s", sqlite3_errmsg(db->db));
     return value;
 }
 
@@ -164,8 +164,10 @@ static int database_sqlite_set(flist_db_t *database, uint8_t *key, size_t keylen
     sqlite3_bind_text(db->insert, 1, (char *) key, keylen, SQLITE_STATIC);
     sqlite3_bind_blob(db->insert, 2, payload, length, SQLITE_STATIC);
 
-    if(sqlite3_step(db->insert) != SQLITE_DONE)
-        warndb("set: sqlite3_step", sqlite3_errmsg(db->db));
+    if(sqlite3_step(db->insert) != SQLITE_DONE) {
+        libflist_set_error("set: sqlite3_step: %s", sqlite3_errmsg(db->db));
+        return 1;
+    }
 
     db->updated = 1;
 

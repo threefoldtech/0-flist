@@ -221,6 +221,7 @@
         size_t directory;
         size_t symlink;
         size_t special;
+        size_t failure;
 
     } flist_stats_t;
 
@@ -237,15 +238,8 @@
     // initialize a backend
     flist_backend_t *backend_init(flist_db_t *database, char *rootpath);
 
-        int flist_merger(flist_db_t *database, void *merge);
+    int flist_merger(flist_db_t *database, void *merge);
 
-
-    // initializers
-    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password);
-    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password);
-
-    // initializers
-    flist_db_t *libflist_db_sqlite_init(char *rootpath);
 
     // hashing
     uint8_t *zchunk_hash(const void *buffer, size_t length);
@@ -296,5 +290,17 @@
     char *libflist_workspace_destroy(char *mountpoint);
     char *libflist_ramdisk_create();
     char *libflist_ramdisk_destroy(char *mountpoint);
+
+    //
+    // database_redis.c
+    //
+    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password);
+    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password);
+
+    //
+    // database_sqlite.c
+    //
+    flist_db_t *libflist_db_sqlite_init(char *rootpath);
+
 
 #endif
