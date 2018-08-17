@@ -885,8 +885,17 @@ char *flist_rootpath_clean(const char *input) {
 
 flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend) {
     flist_stats_t *stats = NULL;
+    struct stat st;
 
     debug("[+] preparing flist for: %s\n", root);
+
+    // does that directory exists, before doing
+    // anything on it
+    if(stat(root, &st))
+        return libflist_errp(root);
+
+    if(!S_ISDIR(st.st_mode))
+        return libflist_set_error("source path is not a directory");
 
     // initialize excluders
     excluders_init();
