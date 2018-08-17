@@ -111,9 +111,12 @@ static int flister_create(char *workspace) {
     }
 
     // building database
-    flist_stats_t *stats = flist_create(database, settings.create, backend);
-    if(!stats)
-        return 0;
+    flist_stats_t *stats;
+
+    if(!(stats = flist_create(database, settings.create, backend))) {
+        fprintf(stderr, "[-] flist_create: %s\n", libflist_strerror());
+        return 1;
+    }
 
     if(settings.json)
         flister_create_json(stats);
