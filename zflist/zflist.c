@@ -374,7 +374,6 @@ int main(int argc, char *argv[]) {
 
     // cleaning
     free(settings.archive);
-    free(settings.create);
     free(settings.backendhost);
     free(settings.merge.sources);
 
