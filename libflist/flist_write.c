@@ -16,7 +16,6 @@
 #include <grp.h>
 #include <sys/sysmacros.h>
 #include <regex.h>
-#include <jansson.h>
 #include "libflist.h"
 #include "verbose.h"
 #include "database.h"
