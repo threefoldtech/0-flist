@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <blake2.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 
 #define KEYLENGTH 16
 
@@ -319,4 +319,15 @@ dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
     free(key);
 
     return contents;
+}
+
+dirnode_t *libflist_directory_get_recursive(flist_db_t *database, char *path) {
+    dirnode_t *root = NULL;
+
+    // fetching root directory
+    if(!(root = libflist_directory_get(database, path)))
+        return NULL;
+
+
+    return NULL;
 }

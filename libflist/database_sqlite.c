@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <sqlite3.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 #include "database.h"
 #include "database_sqlite.h"
 

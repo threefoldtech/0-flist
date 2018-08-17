@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 #include "backend.h"
 #include "flist.capnp.h"
 #include "database.h"

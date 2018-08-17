@@ -18,7 +18,7 @@
 #include <regex.h>
 #include <jansson.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 #include "database.h"
 #include "backend.h"
 #include "flist.capnp.h"
@@ -141,7 +141,8 @@ static char *uidstr(struct passwd *passwd, uid_t uid) {
     // if username cannot be found
     // let use user id as username
     if(!passwd) {
-        warnp("getpwuid");
+        libflist_warnp("getpwuid");
+
         if(asprintf(&target, "%d", uid) < 0)
             diep("asprintf");
 
@@ -913,7 +914,7 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
 
     debug("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(globaldata.rootdir);
-    upload_inode_flush();
+    // upload_inode_flush(); // FIXME
 
     if(backend)
         backend_free(backend);

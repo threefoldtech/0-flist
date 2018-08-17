@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sys/mount.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 
 static int workspace_clean_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 	(void) sb;
@@ -15,7 +15,7 @@ static int workspace_clean_cb(const char *fpath, const struct stat *sb, int type
 	(void) ftwbuf;
 
     if(remove(fpath))
-		warnp(fpath);
+		libflist_warnp(fpath);
 
     return 0;
 }
@@ -29,7 +29,7 @@ char *libflist_workspace_create() {
 	char path[32] = "/tmp/flist_XXXXXX";
 
 	if(!(mountpoint = mkdtemp(path)))
-		return NULL;
+		return libflist_errp(path);
 
 	return strdup(mountpoint);
 }
@@ -41,14 +41,14 @@ char *libflist_workspace_destroy(char *mountpoint) {
 
 char *libflist_ramdisk_create(char *mountpoint) {
 	if(mount("tmpfs", mountpoint, "tmpfs", 0, "size=32M"))
-		return NULL;
+		return libflist_errp("mount");
 
 	return mountpoint;
 }
 
 char *libflist_ramdisk_destroy(char *mountpoint) {
 	if(umount(mountpoint))
-		return NULL;
+		return libflist_errp("umount");
 
 	return mountpoint;
 }

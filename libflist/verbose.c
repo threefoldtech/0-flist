@@ -2,36 +2,56 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "verbose.h"
+
+char libflist_internal_error[1024] = {0};
 
 // global static flag to enable or disable
 // debug message on the whole library
+//
+// you should not change this variable directoy
+// but use the 'libflist_debug_enable' function
+// which could potentially do more than just changing
+// the variable
 int libflist_debug_flag = 1;
 
 void libflist_debug_enable(int enable) {
     libflist_debug_flag = enable;
 }
 
-void libflist_warnp(const char *str) {
-    if(!libflist_debug_flag)
-        return;
-
-    fprintf(stderr, "[-] %s: %s\n", str, strerror(errno));
+// error handling
+//
+// here are defined how error handling works
+// basicly we keep a static string buffer in memory
+// which will contains the last string error
+//
+// this error can be retrived via 'libflist_strerror'
+const char *libflist_strerror() {
+    return (const char *) libflist_internal_error;
 }
 
-void libflist_diep(const char *str) {
+void *libflist_errp(const char *str) {
     if(!libflist_debug_flag)
-        return;
+        return NULL;
 
-    libflist_warnp(str);
-    // exit(EXIT_FAILURE);
+    libflist_set_error("%s: %s", str, strerror(errno));
+    return NULL;
 }
 
-void libflist_dies(const char *str) {
+void *libflist_diep(const char *str) {
+    return libflist_errp(str);
+}
+
+void *libflist_dies(const char *str) {
     if(!libflist_debug_flag)
-        return;
+        return NULL;
 
     fprintf(stderr, "[-] %s\n", str);
-    // exit(EXIT_FAILURE);
+    return NULL;
+}
+
+void libflist_warnp(const char *str) {
+    debug("%s: %s", str, strerror(errno));
 }
 
 void libflist_warns(const char *str) {
@@ -41,6 +61,8 @@ void libflist_warns(const char *str) {
     printf("[-] %s\n", str);
 }
 
+
+// hex dumps
 static char __hex[] = "0123456789abcdef";
 
 char *libflist_hashhex(unsigned char *hash, int length) {
@@ -55,6 +77,7 @@ char *libflist_hashhex(unsigned char *hash, int length) {
     return buffer;
 }
 
+// duplicate a buffer
 void *libflist_bufdup(void *source, size_t length) {
     void *buffer;
 

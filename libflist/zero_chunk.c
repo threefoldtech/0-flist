@@ -8,7 +8,7 @@
 #include <time.h>
 #include <blake2.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 #include "xxtea.h"
 #include "zero_chunk.h"
 

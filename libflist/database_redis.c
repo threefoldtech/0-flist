@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <hiredis/hiredis.h>
 #include "libflist.h"
-#include "debug.h"
+#include "verbose.h"
 #include "database.h"
 #include "database_redis.h"
 

@@ -1,11 +1,20 @@
 #ifndef LIBFLIST_H
     #define LIBFLIST_H
 
+    //
+    // ---------------------------------------------------------------------
+    //
+    // brace yourself
+    //
+    // most of this file will hurt your eyes...
+    //                    ...for now (I promise, this will change)
+    //
+    // ---------------------------------------------------------------------
+    //
+
     #include <stdint.h>
     #include <time.h>
 
-    extern int libflist_debug_flag;
-    void libflist_debug_enable(int enable);
 
     // FIXME -- should not be defined here
     typedef struct settings_t {
@@ -215,19 +224,20 @@
 
     } flist_stats_t;
 
+    //
+    // ----------------------
+    // welcome in the jungle
+    // everything here need to be review
+    // and rewritten in a library perspective
+    //
+    // see below for better
     flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
 
     // initialize a backend
     flist_backend_t *backend_init(flist_db_t *database, char *rootpath);
 
-
-
-    char *libflist_archive_extract(char *filename, char *target);
-    int libflist_archive_create(char *filename, char *source);
-
-
-    int flist_merger(flist_db_t *database, void *merge);
+        int flist_merger(flist_db_t *database, void *merge);
 
 
     // initializers
@@ -242,13 +252,8 @@
 
 
 
-    char *libflist_workspace_create();
-    char *libflist_workspace_destroy(char *mountpoint);
-    char *libflist_ramdisk_create();
-    char *libflist_ramdisk_destroy(char *mountpoint);
 
     // convert a binary hash into hexadecimal hash
-    char *libflist_hashhex(unsigned char *hash, int length);
 
     dirnode_t *libflist_directory_get(flist_db_t *database, char *path);
 
@@ -261,7 +266,35 @@
 
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
 
+
+    //
+    // --------------------------------------------------
+    // at that point, function are reviewed and handle
+    // error in a library point of view and are exported
+    // here publicly
+
+    //
+    // verbose.c
+    //
+    extern int libflist_debug_flag;
+
+    const char *libflist_errstr();
+    char *libflist_hashhex(unsigned char *hash, int length);
+    void libflist_debug_enable(int enable);
     void *libflist_bufdup(void *source, size_t length);
 
+    //
+    // archive.c
+    //
+    char *libflist_archive_extract(char *filename, char *target);
+    char *libflist_archive_create(char *filename, char *source);
+
+    //
+    // workspace.c
+    //
+    char *libflist_workspace_create();
+    char *libflist_workspace_destroy(char *mountpoint);
+    char *libflist_ramdisk_create();
+    char *libflist_ramdisk_destroy(char *mountpoint);
 
 #endif
