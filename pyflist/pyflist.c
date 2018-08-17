@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include "libflist.h"
 
+#define debug(...) { if(pyflist_debug_flag) { printf(__VA_ARGS__); } }
+
+static int pyflist_debug_flag = 1;
+
 #if 0
 remote_t *remotes = NULL;
 
@@ -15,7 +19,7 @@ static PyObject *g8storclient_connect(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "si", &host, &port))
         return NULL;
 
-    printf("[+] python binding: connecting %s (port: %d)\n", host, port);
+    debug("[+] python binding: connecting %s (port: %d)\n", host, port);
     if(!(remote = remote_connect(host, port)))
         return NULL;
 
@@ -41,7 +45,7 @@ static PyObject *g8storclient_encrypt(PyObject *self, PyObject *args) {
     // chunks
     PyObject *hashes = PyList_New(buffer->chunks);
 
-    // printf("[+] encrypting %d chunks\n", buffer->chunks);
+    // debug("[+] encrypting %d chunks\n", buffer->chunks);
     for(int i = 0; i < buffer->chunks; i++) {
         const unsigned char *data = buffer_next(buffer);
 
@@ -59,7 +63,7 @@ static PyObject *g8storclient_encrypt(PyObject *self, PyObject *args) {
         chunk_free(chunk);
     }
 
-    // printf("[+] finalsize: %lu bytes\n", finalsize);
+    // debug("[+] finalsize: %lu bytes\n", finalsize);
 
     // cleaning
     buffer_free(buffer);
@@ -84,7 +88,7 @@ static PyObject *g8storclient_decrypt(PyObject *self, PyObject *args) {
     int chunks = (int) PyList_Size(hashes);
 
     // chunks
-    // printf("[+] decrypting %d chunks\n", chunks);
+    // debug("[+] decrypting %d chunks\n", chunks);
     for(int i = 0; i < chunks; i++) {
         char *id, *cipher;
         unsigned char **data, *datadup;
@@ -112,13 +116,13 @@ static PyObject *g8storclient_decrypt(PyObject *self, PyObject *args) {
 
         buffer->chunks += 1;
         buffer->finalsize += output->length;
-        // printf("[+] chunk restored: %lu bytes\n", output->length);
+        // debug("[+] chunk restored: %lu bytes\n", output->length);
 
         chunk_free(chunk);
     }
 
     size_t finalsize = buffer->finalsize;
-    // printf("[+] finalsize: %lu bytes\n", finalsize);
+    // debug("[+] finalsize: %lu bytes\n", finalsize);
 
     // cleaning
     buffer_free(buffer);
@@ -241,21 +245,21 @@ static PyObject *pyflist_open(PyObject *self, PyObject *args) {
 
     root->filename = strdup(filename);
 
-    printf("[+] initializing workspace\n");
+    debug("[+] initializing workspace\n");
     if(!(root->workspace = libflist_workspace_create())) {
         fprintf(stderr, "workspace_create");
         // TODO: free
         return NULL;
     }
 
-    printf("[+] workspace: %s\n", root->workspace);
+    debug("[+] workspace: %s\n", root->workspace);
 
     if(!libflist_archive_extract((char *) root->filename, root->workspace)) {
         fprintf(stderr, "libflist_archive_extract");
         return NULL; // FIXME
     }
 
-    printf("[+] loading database\n");
+    debug("[+] loading database\n");
     root->database = libflist_db_sqlite_init(root->workspace);
     root->database->open(root->database);
 
@@ -276,10 +280,10 @@ static PyObject *pyflist_close(PyObject *self, PyObject *args) {
     if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
         return NULL;
 
-    printf("[+] closing database\n");
+    debug("[+] closing database\n");
     root->database->close(root->database);
 
-    printf("[+] cleaning workspace\n");
+    debug("[+] cleaning workspace\n");
     if(!libflist_workspace_destroy(root->workspace)) {
         fprintf(stderr, "workspace_destroy\n");
         return NULL;
@@ -305,14 +309,14 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     if(!(backdb = (flist_db_t *) PyCapsule_GetPointer(pycaps, "FlistBackend")))
         return NULL;
 
-    printf("[+] initializing workspace\n");
+    debug("[+] initializing workspace\n");
     if(!(root.workspace = libflist_workspace_create())) {
         fprintf(stderr, "workspace_create");
         // TODO: free
         return NULL;
     }
 
-    printf("[+] workspace: %s\n", root.workspace);
+    debug("[+] workspace: %s\n", root.workspace);
 
     root.database = libflist_db_sqlite_init(root.workspace);
     root.database->create(root.database);
@@ -334,7 +338,7 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     PyDict_SetItemString(response, "special", Py_BuildValue("i", stats->special));
 
     // closing database before archiving
-    printf("[+] closing database\n");
+    debug("[+] closing database\n");
     root.database->close(root.database);
 
         // removing possible already existing db
@@ -342,7 +346,7 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     libflist_archive_create(targetfile, root.workspace);
 
 
-    printf("[+] cleaning workspace\n");
+    debug("[+] cleaning workspace\n");
     if(!libflist_workspace_destroy(root.workspace)) {
         fprintf(stderr, "workspace_destroy\n");
         return NULL;
@@ -352,6 +356,7 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
 }
 
 static PyObject *pyflist_getfile(PyObject *self, PyObject *args) {
+    PyErr_SetString(PyExc_NotImplementedError, "Not Implemented (yet)");
     return NULL;
 }
 
@@ -377,6 +382,29 @@ static PyObject *pyflist_getdirectory(PyObject *self, PyObject *args) {
     return dict;
 }
 
+static PyObject *pyflist_dumps(PyObject *self, PyObject *args) {
+    PyObject *pycaps = NULL;
+    const char *directory;
+
+    if(!PyArg_ParseTuple(args, "Os", &pycaps, &directory))
+        return NULL;
+
+    pyflist_obj_t *root;
+    if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
+        return NULL;
+
+    dirnode_t *dirnode = libflist_directory_get(root->database, (char *) directory);
+    if(dirnode == NULL)
+        return NULL;
+
+    PyObject *dict = dirnode_to_dict(dirnode);
+
+    // FIXME: free everything
+
+    return dict;
+}
+
+
 static PyObject *pyflist_zdb_open(PyObject *self, PyObject *args) {
     const char *host;
     const char *namespace = "default";
@@ -389,21 +417,42 @@ static PyObject *pyflist_zdb_open(PyObject *self, PyObject *args) {
     flist_db_t *backdb;
 
     if(!(backdb = libflist_db_redis_init_tcp(host, port, namespace, password))) {
-        fprintf(stderr, "[-] cannot initialize backend\n");
-        return 1;
+        PyErr_SetString(PyExc_RuntimeError, "Could not initialize tcp connection");
+        return NULL
     }
 
     return PyCapsule_New(backdb, "FlistBackend", NULL);
+}
+
+// enable or disable internal debug and libflist debug
+// take a boolean as argument (True or False) in order to enable
+// or disable debug message
+//
+// debug message are always printed on stdout and are handled on lowlevel
+// and not python level
+static PyObject *pyflist_debug(PyObject *self, PyObject *args) {
+    int enabled;
+
+    if(!PyArg_ParseTuple(args, "p", &enabled))
+        return NULL;
+
+    libflist_debug_enable(enabled);
+    pyflist_debug_flag = enabled;
+
+    return PyBool_FromLong(1);
 }
 
 static PyMethodDef pyflister_cm[] = {
     {"backend_zdb_open", pyflist_zdb_open, METH_VARARGS, "Open a connection to zdb"},
 
     {"open", pyflist_open, METH_VARARGS, "Open an existing flist"},
+    {"dumps", pyflist_dumps, METH_VARARGS, "Dump opened flist into a dict"},
     {"close", pyflist_close, METH_VARARGS, "Close an opened flist"},
     {"create", pyflist_create, METH_VARARGS, "Create a new empty flist"},
     {"getdirectory", pyflist_getdirectory, METH_VARARGS, "List the contents of a directory"},
     {"getfile", pyflist_getfile, METH_VARARGS, "Read a file from the backend"},
+
+    {"debug", pyflist_debug, METH_VARARGS, "Enable or disable debug"},
 
     {NULL, NULL, 0, NULL}
 };
