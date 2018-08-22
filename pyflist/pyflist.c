@@ -168,7 +168,20 @@ PyObject *acl_to_dict(flist_acl_t *acl) {
     return item;
 }
 
-PyObject *inode_to_dict(inode_t *inode) {
+static dirnode_t *dirnode_lookup(dirnode_t *root, char *name) {
+    if(!root->dir_list)
+        return NULL;
+
+    for(dirnode_t *dir = root->dir_list; dir; dir = dir->next)
+        if(strcmp(dir->name, name) == 0)
+            return dir;
+
+    return NULL;
+}
+
+PyObject *dirnode_to_dict(dirnode_t *dirnode);
+
+PyObject *inode_to_dict(inode_t *inode, dirnode_t *root) {
     PyObject *item = PyDict_New();
     PyDict_SetItemString(item, "name", Py_BuildValue("s", inode->name));
     PyDict_SetItemString(item, "fullpath", Py_BuildValue("s", inode->fullpath));
@@ -180,6 +193,14 @@ PyObject *inode_to_dict(inode_t *inode) {
     if(inode->type == INODE_DIRECTORY) {
         PyDict_SetItemString(item, "type", Py_BuildValue("s", "directory"));
         PyDict_SetItemString(item, "subdir", Py_BuildValue("s", inode->subdirkey));
+
+        if(dirnode_lookup(root, inode->name)) {
+            dirnode_t *subdir;
+
+            if(subdir = dirnode_lookup(root, inode->name))
+                PyDict_SetItemString(item, "contents", dirnode_to_dict(subdir));
+        }
+
         return item;
     }
 
@@ -223,7 +244,7 @@ PyObject *dirnode_to_dict(dirnode_t *dirnode) {
     PyObject *entries = PyDict_New();
 
     for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next)
-        PyDict_SetItemString(entries, inode->name, inode_to_dict(inode));
+        PyDict_SetItemString(entries, inode->name, inode_to_dict(inode, dirnode));
 
     PyDict_SetItemString(dir, "entries", entries);
     return dir;
@@ -298,14 +319,18 @@ static PyObject *pyflist_close(PyObject *self, PyObject *args) {
 static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     flist_backend_t *backend = NULL;
     flist_db_t *backdb;
-    const char *rootpath = NULL;
-    const char *targetfile = NULL;
+    const char *crootpath = NULL;
+    const char *ctargetfile = NULL;
     pyflist_obj_t root;
     PyObject *pycaps = NULL;
     PyObject *response = NULL;
 
-    if(!PyArg_ParseTuple(args, "ssO", &rootpath, &targetfile, &pycaps))
+    if(!PyArg_ParseTuple(args, "ssO", &crootpath, &ctargetfile, &pycaps))
         return NULL;
+
+    // cast to avoid const warning
+    char *rootpath = (char *) crootpath;
+    char *targetfile = (char *) targetfile;
 
     if(!(backdb = (flist_db_t *) PyCapsule_GetPointer(pycaps, "FlistBackend")))
         return NULL;
@@ -341,7 +366,6 @@ static PyObject *pyflist_create(PyObject *self, PyObject *args) {
     PyDict_SetItemString(response, "symlink", Py_BuildValue("i", stats->symlink));
     PyDict_SetItemString(response, "directory", Py_BuildValue("i", stats->directory));
     PyDict_SetItemString(response, "special", Py_BuildValue("i", stats->special));
-
 
 reply:
     // closing database before archiving
@@ -402,26 +426,28 @@ static PyObject *pyflist_dumps(PyObject *self, PyObject *args) {
     if(!(root = (pyflist_obj_t *) PyCapsule_GetPointer(pycaps, "FlistObject")))
         return NULL;
 
-    dirnode_t *dirnode = libflist_directory_get(root->database, (char *) directory);
+    dirnode_t *dirnode = libflist_directory_get_recursive(root->database, (char *) directory);
     if(dirnode == NULL)
         return NULL;
 
     PyObject *dict = dirnode_to_dict(dirnode);
-
-    // FIXME: free everything
 
     return dict;
 }
 
 
 static PyObject *pyflist_zdb_open(PyObject *self, PyObject *args) {
-    const char *host;
-    const char *namespace = "default";
-    const char *password = NULL;
+    const char *chost;
+    const char *cnamespace = "default";
+    const char *cpassword = NULL;
     const int port;
 
-    if(!PyArg_ParseTuple(args, "si|ss", &host, &port, &namespace, &password))
+    if(!PyArg_ParseTuple(args, "si|ss", &chost, &port, &cnamespace, &cpassword))
         return NULL;
+
+    char *host = (char *) host;
+    char *namespace = (char *) cnamespace;
+    char *password = (char *) cpassword;
 
     flist_db_t *backdb;
 
