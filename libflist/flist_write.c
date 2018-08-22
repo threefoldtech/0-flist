@@ -273,7 +273,7 @@ dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
     return root;
 }
 
-static dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
+dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     dir->next = NULL;
 
     if(!root->dir_list)

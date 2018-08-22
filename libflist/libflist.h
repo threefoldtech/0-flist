@@ -250,8 +250,11 @@
     // convert a binary hash into hexadecimal hash
 
     dirnode_t *libflist_directory_get(flist_db_t *database, char *path);
+    dirnode_t *libflist_directory_get_recursive(flist_db_t *database, char *path);
+    void inode_free(inode_t *inode);
 
     directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath);
+
     void flist_directory_close(flist_db_t *database, directory_t *dir);
 
     char *libflist_path_key(char *path);
@@ -259,6 +262,7 @@
     int flist_walk(flist_db_t *database);
 
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+    dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
 
 
     //

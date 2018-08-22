@@ -140,9 +140,14 @@ void inode_chunks_free(inode_t *inode) {
 flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) {
     flist_acl_t *acl;
 
+    if(strlen(aclkey) == 0) {
+        debug("[-] get_permissions: empty acl key, cannot load it\n");
+        return NULL;
+    }
+
     value_t *rawdata = database->sget(database, (char *) aclkey);
     if(!rawdata->data) {
-        debug("[-] acl key <%s> not found\n", aclkey);
+        debug("[-] get_permissions: acl key <%s> not found\n", aclkey);
         return NULL;
     }
 
@@ -207,7 +212,11 @@ inode_t *flist_itementry_to_inode(flist_db_t *database, directory_t *direntry, i
     target->fullpath = flist_inode_fullpath(direntry, &inode);
     target->creation = inode.creationTime;
     target->modification = inode.modificationTime;
-    target->racl = libflist_get_permissions(database, inode.aclkey.str);
+
+    if(!(target->racl = libflist_get_permissions(database, inode.aclkey.str))) {
+        inode_free(target);
+        return NULL;
+    }
 
     // fill in specific information dependent of
     // the type of the entry
@@ -262,8 +271,10 @@ dirnode_t *flist_directory_to_dirnode(flist_db_t *database, directory_t *direntr
     // iterating over the full contents
     // and add each inode to the inode list of this directory
     for(int i = 0; i < capn_len(direntry->dir.contents); i++) {
-        inode_t *inode = flist_itementry_to_inode(database, direntry, i);
-        dirnode_appends_inode(dirnode, inode);
+        inode_t *inode;
+
+        if((inode = flist_itementry_to_inode(database, direntry, i)))
+            dirnode_appends_inode(dirnode, inode);
     }
 
     return dirnode;
@@ -328,6 +339,19 @@ dirnode_t *libflist_directory_get_recursive(flist_db_t *database, char *path) {
     if(!(root = libflist_directory_get(database, path)))
         return NULL;
 
+    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
+        // ignoring non-directories
+        if(inode->type != INODE_DIRECTORY)
+            continue;
 
-    return NULL;
+        // if it's a directory, loading it's contents
+        // and adding it to the directory lists
+        dirnode_t *subdir;
+        if(!(subdir = libflist_directory_get_recursive(database, inode->fullpath)))
+            return NULL;
+
+        dirnode_appends_dirnode(root, subdir);
+    }
+
+    return root;
 }
