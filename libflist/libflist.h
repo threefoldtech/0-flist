@@ -16,26 +16,6 @@
     #include <stdint.h>
     #include <time.h>
 
-
-    // FIXME -- should not be defined here
-    typedef struct settings_t {
-        int ramdisk;       // do we extract to ramdisk
-        char *archive;     // required input/output archive
-
-        char *create;      // create root path
-        size_t rootlen;    // create root string length
-
-        char *backendhost;   // backend host
-        int backendport;     // backend port
-
-        int json;            // json output flag
-        char *targetfile;    // specific target file (see cat action)
-        char *outputfile;    // specific output file (see cat action)
-        // list_mode_t list;    // list view mode
-        // merge_list_t merge;  // list of merging flists
-
-    } settings_t;
-
     typedef struct acl_t {
         char *uname;     // username (user id if not found)
         char *gname;     // group name (group id if not found)
