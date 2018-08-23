@@ -31,7 +31,7 @@ void *flist_check_init(zflist_settings_t *settings) {
     }
 
     // initizlizing backend as requested
-    if(!(checker->backend = backend_init(backdb, "/"))) {
+    if(!(checker->backend = libflist_backend_init(backdb, "/"))) {
         return NULL;
     }
 
@@ -64,25 +64,24 @@ int flist_check(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
+                debug("[+] check: downloading block %d / %d\n", i + 1, capn_len(file.blocks));
+
                 uint8_t *hash = libflist_bufdup(block.hash.p.data, block.hash.p.len);
-                size_t hashlen = block.hash.p.len;
-
                 uint8_t *key = libflist_bufdup(block.key.p.data, block.key.p.len);
-                size_t keylen = block.key.p.len;
 
-                flist_backend_data_t *data;
+                flist_chunk_t *chunk = libflist_chunk_new(hash, key, NULL, 0);
 
-                if(!(data = download_block(checker->backend, hash, hashlen, key, keylen))) {
-                    checker->status = 1;
+                // integrity check is done inside the download function
+                if(!libflist_backend_download_chunk(checker->backend, chunk)) {
+                    fprintf(stderr, "[-] could not download file: %s\n", libflist_strerror());
+                    checker->status = 2;
                     return 1;
                 }
 
-
-
                 checker->files += 1;
-                checker->size += data->length;
+                checker->size += chunk->plain.length;
 
-                download_free(data);
+                // download_free(data);
                 free(hash);
                 free(key);
             }

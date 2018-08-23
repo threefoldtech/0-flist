@@ -120,7 +120,7 @@ static int flister_create(char *workspace) {
         }
 
         // initizlizing backend as requested
-        if(!(backend = backend_init(backdb, settings.create))) {
+        if(!(backend = libflist_backend_init(backdb, settings.create))) {
             return 1;
         }
     }

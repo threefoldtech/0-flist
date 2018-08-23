@@ -40,7 +40,7 @@ void *flist_cat_init(zflist_settings_t *settings) {
     }
 
     // initizlizing backend as requested
-    if(!(cat->backend = backend_init(backdb, "/"))) {
+    if(!(cat->backend = libflist_backend_init(backdb, "/"))) {
         return NULL;
     }
 
@@ -70,9 +70,11 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 diep("asprintf");
         }
 
-        // debug("[+] parsing: %s\n", fullpath);
+        debug("[+] parsing: %s\n", fullpath);
 
         if(inode.attributes_which == Inode_attributes_file && strcmp(fullpath, cat->filename) == 0) {
+            debug("[+] file found, downloading contents\n");
+
             FILE *fp = NULL;
             struct File file;
             read_File(&file, inode.attributes.file);
@@ -89,35 +91,33 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 blockp.p = capn_getp(file.blocks.p, i, 1);
                 read_FileBlock(&block, blockp);
 
+                debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks));
+
                 uint8_t *hash = libflist_bufdup(block.hash.p.data, block.hash.p.len);
-                size_t hashlen = block.hash.p.len;
-
                 uint8_t *key = libflist_bufdup(block.key.p.data, block.key.p.len);
-                size_t keylen = block.key.p.len;
 
-                flist_backend_data_t *data;
+                // flist_chunk_t *chunk = libflist_chunk_new(hash, hashlen, key, keylen, NULL, 0);
+                flist_chunk_t *chunk = libflist_chunk_new(hash, key, NULL, 0);
 
-                if(!(data = download_block(cat->backend, hash, hashlen, key, keylen))) {
-                    fprintf(stderr, "[-] could not download file\n");
+                if(!libflist_backend_download_chunk(cat->backend, chunk)) {
+                    fprintf(stderr, "[-] could not download file: %s\n", libflist_strerror());
                     cat->status = 2;
                     return 1;
                 }
 
-                debug("[+] cat: data found, downloading block %d / %d\n", i + 1, capn_len(file.blocks));
-
                 if(!cat->output) {
                     debug("[+] =======================================================\n");
-                    printf("%.*s\n", (int) data->length, data->payload);
+                    printf("%.*s\n", (int) chunk->plain.length, chunk->plain.data);
                     debug("[+] =======================================================\n");
                 }
 
                 if(cat->output) {
-                    if(fwrite(data->payload, data->length, 1, fp) != 1) {
+                    if(fwrite(chunk->plain.data, chunk->plain.length, 1, fp) != 1) {
                         diep("fwrite");
                     }
                 }
 
-                download_free(data);
+                // download_free(data);
                 free(hash);
                 free(key);
 
