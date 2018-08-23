@@ -14,18 +14,18 @@ int flist_walk_directory(walker_t *walker, const char *_key, const char *_fullpa
     char *key = (char *) _key;
     char *fullpath = (char *) _fullpath;
     directory_t *dir;
+    int value = 0;
 
     if(!(dir = flist_directory_get(walker->database, key, fullpath)))
         return 1;
 
     // walking over this directory
-    if(walker->callback(walker, dir))
-        return 1;
+    value = walker->callback(walker, dir);
 
     // cleaning this directory
     flist_directory_close(walker->database, dir);
 
-    return 0;
+    return value;
 }
 
 

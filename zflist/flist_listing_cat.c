@@ -96,7 +96,6 @@ int flist_cat(walker_t *walker, directory_t *root) {
                 uint8_t *hash = libflist_bufdup(block.hash.p.data, block.hash.p.len);
                 uint8_t *key = libflist_bufdup(block.key.p.data, block.key.p.len);
 
-                // flist_chunk_t *chunk = libflist_chunk_new(hash, hashlen, key, keylen, NULL, 0);
                 flist_chunk_t *chunk = libflist_chunk_new(hash, key, NULL, 0);
 
                 if(!libflist_backend_download_chunk(cat->backend, chunk)) {
@@ -117,9 +116,9 @@ int flist_cat(walker_t *walker, directory_t *root) {
                     }
                 }
 
-                // download_free(data);
-                free(hash);
-                free(key);
+                // this call free the contents of
+                // hash and key duplicated
+                libflist_chunk_free(chunk);
 
                 cat->status = 1;
             }
@@ -127,6 +126,7 @@ int flist_cat(walker_t *walker, directory_t *root) {
             if(cat->output)
                 fclose(fp);
 
+            free(fullpath);
             return 1;
         }
 
@@ -138,6 +138,8 @@ int flist_cat(walker_t *walker, directory_t *root) {
             // recursive list contents
             flist_walk_directory(walker, sub.key.str, inode.name.str);
         }
+
+        free(fullpath);
     }
 
     return 0;
@@ -149,6 +151,7 @@ void flist_cat_done(walker_t *walker) {
     if(cat->status == 1)
         debug("[+] file found !\n");
 
+    libflist_backend_free(cat->backend);
     free(cat->filename);
     free(cat);
 
