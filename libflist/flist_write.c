@@ -19,7 +19,6 @@
 #include "libflist.h"
 #include "verbose.h"
 #include "database.h"
-#include "backend.h"
 #include "flist.capnp.h"
 
 #define FLIST_WRITE_FULLDUMP

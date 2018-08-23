@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include "libflist.h"
 #include "verbose.h"
-#include "backend.h"
 #include "flist.capnp.h"
 #include "database.h"
 #include "database_redis.h"
