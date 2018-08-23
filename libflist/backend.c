@@ -14,7 +14,7 @@
 #include "database_sqlite.h"
 #include "zero_chunk.h"
 
-flist_backend_t *backend_init(flist_db_t *database, char *rootpath) {
+flist_backend_t *libflist_backend_init(flist_db_t *database, char *rootpath) {
     flist_backend_t *backend;
 
     if(!(backend = malloc(sizeof(flist_backend_t))))
@@ -88,78 +88,61 @@ void upload_flush(flist_backend_t *context) {
 #endif
 }
 
-static int chunk_upload(flist_backend_t *context, chunk_t *chunk) {
-#if 0
-    // insert new key
-    redisAppendCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
-    context->pwrite += 1;
-    context->buflen += chunk->length;
-
-    // flush 32 MB
-    if(context->buflen > 32 * 1024 * 1024)
-        upload_flush(context);
-#endif
-
-#if 0
-    redisReply *reply;
-    reply = redisCommand(context->redis, "SET %b %b", chunk->id, LIB0STOR_HASH_LENGTH, chunk->data, chunk->length);
-
-    if(!reply)
-        diep("redis command");
-
-    if(reply->len == 0 || reply->type == REDIS_REPLY_ERROR) {
-        fprintf(stderr, "[-] redis error\n");
-    }
-
-    freeReplyObject(reply);
-#endif
+int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk) {
     flist_db_t *db = context->database;
-    if(db->set(db, chunk->id, ZEROCHUNK_HASH_LENGTH, chunk->data, chunk->length))
+
+    if(db->set(db, chunk->id.data, chunk->id.length, chunk->encrypted.data, chunk->encrypted.length))
         return 1;
 
     return 0;
 }
 
-static chunks_t *upload_file(flist_backend_t *context, char *filename) {
+flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *filename) {
     buffer_t *buffer;
-    chunks_t *chunks;
+    flist_chunks_t *chunks;
 
     // initialize buffer
     if(!(buffer = bufferize(filename)))
         return NULL;
 
-    if(!(chunks = (chunks_t *) calloc(sizeof(chunks_t), 1)))
-        diep("upload: calloc");
+    if(!(chunks = (flist_chunks_t *) calloc(sizeof(flist_chunks_t), 1)))
+        return libflist_errp("upload: calloc");
 
     // setting number of expected chunks
     chunks->length = buffer->chunks;
 
-    if(!(chunks->chunks = (backend_chunk_t *) malloc(sizeof(backend_chunk_t) * chunks->length)))
+    if(!(chunks->chunks = (flist_chunk_t **) malloc(sizeof(flist_chunk_t *) * chunks->length)))
         diep("upload: chunks: calloc");
 
     // processing each chunks
     debug("[+] processing %d chunks\n", buffer->chunks);
+
     for(int i = 0; i < buffer->chunks; i++) {
         const unsigned char *data = buffer_next(buffer);
 
         // encrypting chunk
-        chunk_t *chunk = encrypt_chunk(data, buffer->chunksize);
+        flist_chunk_t *chunk;
 
-        chunks->chunks[i].id = libflist_bufdup(chunk->id, ZEROCHUNK_HASH_LENGTH);
-        chunks->chunks[i].cipher = libflist_bufdup(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
-        chunks->upsize += chunk->length;
+        if(!(chunk = libflist_chunk_encrypt(data, buffer->chunksize)))
+            return NULL;
 
+        chunks->chunks[i] = chunk;
+        chunks->upsize += chunk->encrypted.length;
+
+        /*
         // hiredis upload
         if(chunk_upload(context, chunk)) {
             debug("[-] chunk_upload: %s\n", libflist_strerror());
 
-            chunk_free(chunk);
+            libflist_chunk_free(chunk);
             chunks = NULL;
             goto cleanup;
         }
+        */
 
         // cleaning
-        chunk_free(chunk);
+        // libflist_chunk_free(chunk);
+        // FIXME: free non-needed stuff
     }
 
     debug("[+] finalsize: %lu bytes\n", chunks->upsize);
@@ -171,6 +154,7 @@ cleanup:
     return chunks;
 }
 
+/*
 void chunks_free(chunks_t *chunks) {
     for(size_t i = 0; i < chunks->length; i++) {
         free(chunks->chunks[i].id);
@@ -180,77 +164,52 @@ void chunks_free(chunks_t *chunks) {
     free(chunks->chunks);
     free(chunks);
 }
+*/
 
-chunks_t *upload_inode(flist_backend_t *backend, char *path, char *filename) {
+flist_chunks_t *libflist_backend_upload_inode(flist_backend_t *backend, char *path, char *filename) {
     char *physical = NULL;
-
-    /*
-    if(bcontext.redis == NULL)
-        backend_connect(&bcontext, settings.backendhost, settings.backendport);
-    */
 
     if(asprintf(&physical, "%s/%s/%s", backend->rootpath, path, filename) < 0)
         diep("asprintf");
 
-    chunks_t *chunks = upload_file(backend, physical);
+    flist_chunks_t *chunks = libflist_backend_upload_file(backend, physical);
     free(physical);
 
     return chunks;
 }
 
-flist_backend_data_t *download_block(flist_backend_t *backend, uint8_t *id, size_t idlen, uint8_t *cipher, size_t cipherlen) {
-    // redisReply *reply;
-    (void) cipherlen;
-    flist_backend_data_t *data;    // internal data
-    chunk_t input, *output;  // input chunk, output decrypted chunk
-
-    /*
-    if(bcontext.redis == NULL)
-        backend_connect(&bcontext, settings.backendhost, settings.backendport);
-
-    reply = redisCommand(bcontext.redis, "GET %b", id, idlen);
-    if(!reply->str)
-        return NULL;
-    */
-
+flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_chunk_t *chunk) {
     flist_db_t *db = backend->database;
-    value_t *value = db->get(db, id, idlen);
+    value_t *value;
 
-    if(value == NULL)
+    if(libflist_debug_flag) {
+        char *key = libflist_hashhex(chunk->id.data, chunk->id.length);
+        debug("[+] backend: downloading chunk: %s\n", key);
+        free(key);
+    }
+
+    if(!(value = db->get(db, chunk->id.data, chunk->id.length)))
         return NULL;
 
-    // fill-in input struct
-    input.id = id;
-    input.cipher = cipher;
-    input.data = (unsigned char *) value->data;
-    input.length = value->length;
+    chunk->encrypted.data = (uint8_t *) value->data;
+    chunk->encrypted.length = value->length;
 
-    if(!(output = decrypt_chunk(&input)))
+    if(!libflist_chunk_decrypt(chunk))
         return NULL;
 
-    // internal chunk, which make lib0stor opaque
-    if(!(data = malloc(sizeof(flist_backend_data_t))))
-        diep("backend malloc");
-
-    data->opaque = output;
-    data->payload = output->data;
-    data->length = output->length;
-
+    // clear the downloaded data not needed anymore
+    chunk->encrypted.data = NULL;
+    chunk->encrypted.length = 0;
     db->clean(value);
 
-    return data;
-}
-
-void download_free(flist_backend_data_t *data) {
-    chunk_free(data->opaque);
-    free(data);
+    return chunk;
 }
 
 void upload_inode_flush() {
     // upload_flush(&bcontext);
 }
 
-void backend_free(flist_backend_t *backend) {
+void libflist_backend_free(flist_backend_t *backend) {
     backend->database->close(backend->database);
     free(backend);
 }

@@ -553,9 +553,9 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
             // upload non-empty files
             if(inode->size && backend) {
-                chunks_t *chunks;
+                flist_chunks_t *chunks;
 
-                if(!(chunks = upload_inode(backend, root->fullpath, inode->name))) {
+                if(!(chunks = libflist_backend_upload_inode(backend, root->fullpath, inode->name))) {
                     globaldata.stats.failure += 1;
                     continue;
                 }
@@ -564,14 +564,16 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
                 for(size_t i = 0; i < chunks->length; i++) {
                     struct FileBlock block;
+                    flist_chunk_t *chk = chunks->chunks[i];
 
-                    block.hash.p = capn_databinary(cs, chunks->chunks[i].id, KEYLENGTH);
-                    block.key.p = capn_databinary(cs, chunks->chunks[i].cipher, KEYLENGTH);
+                    block.hash.p = capn_databinary(cs, (char *) chk->id.data, chk->id.length);
+                    block.key.p = capn_databinary(cs, (char *) chk->cipher.data, chk->cipher.length);
 
                     set_FileBlock(&block, f.blocks, i);
                 }
 
-                chunks_free(chunks);
+                // chunks_free(chunks);
+                // FIXME: free
             }
 
             target.attributes.file = new_File(cs);
@@ -931,7 +933,7 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
     // upload_inode_flush(); // FIXME
 
     if(backend)
-        backend_free(backend);
+        libflist_backend_free(backend);
 
     free(globaldata.root);
     excluders_free();

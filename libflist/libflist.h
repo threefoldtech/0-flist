@@ -8,6 +8,7 @@
     //
     // most of this file will hurt your eyes...
     //                    ...for now (I promise, this will change)
+    //                    ...look at the end for a better idea of the futur
     //
     // ---------------------------------------------------------------------
     //
@@ -225,6 +226,30 @@
 
     } flist_stats_t;
 
+
+    typedef struct flist_buffer_t {
+        uint8_t *data;
+        size_t length;
+
+    } flist_buffer_t;
+
+    typedef struct flist_chunk_t {
+        flist_buffer_t id;
+        flist_buffer_t cipher;
+        flist_buffer_t plain;
+        flist_buffer_t encrypted;
+
+    } flist_chunk_t;
+
+    typedef struct flist_chunks_t {
+        size_t upsize;  // uploaded size
+        size_t length;  // amount of chunks
+        flist_chunk_t **chunks;
+
+    } flist_chunks_t;
+
+
+
     //
     // ----------------------
     // welcome in the jungle
@@ -236,13 +261,11 @@
 
 
     // initialize a backend
-    flist_backend_t *backend_init(flist_db_t *database, char *rootpath);
 
     int flist_merger(flist_db_t *database, void *merge);
 
 
     // hashing
-    uint8_t *zchunk_hash(const void *buffer, size_t length);
 
 
 
@@ -277,8 +300,9 @@
     extern int libflist_debug_flag;
 
     const char *libflist_strerror();
-    char *libflist_hashhex(unsigned char *hash, int length);
     void libflist_debug_enable(int enable);
+
+    char *libflist_hashhex(unsigned char *hash, int length);
     void *libflist_bufdup(void *source, size_t length);
 
     //
@@ -288,10 +312,23 @@
     char *libflist_archive_create(char *filename, char *source);
 
     //
+    // backend.c
+    //
+    flist_backend_t *libflist_backend_init(flist_db_t *database, char *rootpath);
+    void libflist_backend_free(flist_backend_t *backend);
+
+    flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *filename);
+    flist_chunks_t *libflist_backend_upload_inode(flist_backend_t *backend, char *path, char *filename);
+    int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk);
+
+    flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_chunk_t *chunk);
+
+    //
     // workspace.c
     //
     char *libflist_workspace_create();
     char *libflist_workspace_destroy(char *mountpoint);
+
     char *libflist_ramdisk_create();
     char *libflist_ramdisk_destroy(char *mountpoint);
 
@@ -306,5 +343,15 @@
     //
     flist_db_t *libflist_db_sqlite_init(char *rootpath);
 
+    //
+    // zero_chunk.c
+    //
+    uint8_t *libflist_chunk_hash(const void *buffer, size_t length);
+
+    flist_chunk_t *libflist_chunk_new(uint8_t *hash, uint8_t *key, void *data, size_t length);
+    flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize);
+    flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk);
+
+    void libflist_chunk_free(flist_chunk_t *chunk);
 
 #endif

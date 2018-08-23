@@ -13,7 +13,6 @@
 #include "zero_chunk.h"
 
 #define CHUNK_SIZE    1024 * 512    // 512 KB
-#define HASH_LENGTH   ZEROCHUNK_HASH_LENGTH
 
 //
 // buffer manager
@@ -120,31 +119,14 @@ void buffer_free(buffer_t *buffer) {
 //
 // hashing
 //
-static char __hex[] = "0123456789abcdef";
-
-char *hashhex(void *_hash, size_t length) {
-    uint8_t *hash = (uint8_t *) _hash;
-    char *buffer = calloc((length * 2) + 1, sizeof(char));
-    char *writer = buffer;
-
-    for(size_t i = 0, j = 0; i < length; i++, j += 2) {
-        *writer++ = __hex[(hash[i] & 0xF0) >> 4];
-        *writer++ = __hex[hash[i] & 0x0F];
-    }
-
-    return buffer;
-}
-
-uint8_t *zchunk_hash(const void *buffer, size_t length) {
+uint8_t *libflist_chunk_hash(const void *buffer, size_t length) {
     uint8_t *hash;
 
-    if(!(hash = malloc(HASH_LENGTH))) {
-        perror("[-] malloc");
-        return NULL;
-    }
+    if(!(hash = malloc(ZEROCHUNK_HASH_LENGTH)))
+        return libflist_errp("chunk_hash: malloc");
 
-    if(blake2b(hash, buffer, "", HASH_LENGTH, length, 0)) {
-        debug("[-] blake2 failed\n");
+    if(blake2b(hash, buffer, "", ZEROCHUNK_HASH_LENGTH, length, 0)) {
+        libflist_set_error("blake2 failed");
         return NULL;
     }
 
@@ -155,27 +137,37 @@ uint8_t *zchunk_hash(const void *buffer, size_t length) {
 //
 // chunks manager
 //
-chunk_t *chunk_new(uint8_t *id, uint8_t *cipher, void *data, size_t length) {
-    chunk_t *chunk;
+flist_buffer_t libflist_buffer_new(uint8_t *data, size_t length) {
+    flist_buffer_t buffer = {
+        .data = data,
+        .length = length,
+    };
 
-    if(!(chunk = malloc(sizeof(chunk_t)))) {
-        perror("[-] malloc");
-        return NULL;
-    }
+    return buffer;
+}
 
-    chunk->id = id;
-    chunk->cipher = cipher;
+void libflist_buffer_free(flist_buffer_t *buffer) {
+    free(buffer->data);
+}
 
-    chunk->data = data;
-    chunk->length = length;
+flist_chunk_t *libflist_chunk_new(uint8_t *id, uint8_t *cipher, void *data, size_t datalen) {
+    flist_chunk_t *chunk;
+
+    if(!(chunk = calloc(sizeof(flist_chunk_t), 1)))
+        return libflist_errp("chunk new: malloc");
+
+    chunk->id = libflist_buffer_new(id, ZEROCHUNK_HASH_LENGTH);
+    chunk->cipher = libflist_buffer_new(cipher, ZEROCHUNK_HASH_LENGTH);
+    chunk->plain = libflist_buffer_new(data, datalen);
 
     return chunk;
 }
 
-void chunk_free(chunk_t *chunk) {
-    free(chunk->id);
-    free(chunk->cipher);
-    free(chunk->data);
+void libflist_chunk_free(flist_chunk_t *chunk) {
+    libflist_buffer_free(&chunk->id);
+    libflist_buffer_free(&chunk->cipher);
+    libflist_buffer_free(&chunk->plain);
+    libflist_buffer_free(&chunk->encrypted);
     free(chunk);
 }
 
@@ -184,13 +176,13 @@ void chunk_free(chunk_t *chunk) {
 //
 // encrypt a buffer
 // returns a chunk with key, cipher, data and it's length
-chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
+flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
     // hashing this chunk
-    unsigned char *hashkey = zchunk_hash(chunk, chunksize);
+    unsigned char *hashkey = libflist_chunk_hash(chunk, chunksize);
 
     if(libflist_debug_flag) {
-        char *inhash = hashhex(hashkey, ZEROCHUNK_HASH_LENGTH);
-        debug("[+] chunk hash: %s\n", inhash);
+        char *inhash = libflist_hashhex(hashkey, ZEROCHUNK_HASH_LENGTH);
+        debug("[+] chunk: encrypt: original hash: %s\n", inhash);
         free(inhash);
     }
 
@@ -199,8 +191,9 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     //
     size_t output_length = snappy_max_compressed_length(chunksize);
     char *compressed = (char *) malloc(output_length);
+
     if(snappy_compress((char *) chunk, chunksize, compressed, &output_length) != SNAPPY_OK) {
-        debug("[-] snappy compression error\n");
+        libflist_set_error("snappy compression error");
         return NULL;
     }
 
@@ -210,67 +203,77 @@ chunk_t *encrypt_chunk(const uint8_t *chunk, size_t chunksize) {
     // encrypt
     //
     size_t encrypt_length;
-    unsigned char *encrypt_data = xxtea_encrypt_bkey(compressed, output_length, hashkey, HASH_LENGTH, &encrypt_length);
+    unsigned char *encrypt_data = xxtea_encrypt_bkey(compressed, output_length, hashkey, ZEROCHUNK_HASH_LENGTH, &encrypt_length);
 
-    unsigned char *hashcrypt = zchunk_hash(encrypt_data, encrypt_length);
+    unsigned char *hashcrypt = libflist_chunk_hash(encrypt_data, encrypt_length);
 
     if(libflist_debug_flag) {
-        char *inhash = hashhex(hashcrypt, ZEROCHUNK_HASH_LENGTH);
-        debug("[+] encrypted hash: %s\n", inhash);
+        char *inhash = libflist_hashhex(hashcrypt, ZEROCHUNK_HASH_LENGTH);
+        debug("[+] chunk: encrypt: final hash: %s\n", inhash);
         free(inhash);
     }
 
     // cleaning
     free(compressed);
 
-    return chunk_new(hashcrypt, hashkey, encrypt_data, encrypt_length);
+    return libflist_chunk_new(hashcrypt, hashkey, encrypt_data, encrypt_length);
 }
 
 // uncrypt a chunk
 // it takes a chunk as parameter
 // returns a chunk (without key and cipher) with payload data and length
-chunk_t *decrypt_chunk(chunk_t *chunk) {
-    chunk_t *output = NULL;
-    char *plaindata = NULL;
+flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk) {
+    char *uncipherdata = NULL;
+    size_t uncipherlength;
 
     //
     // uncrypt payload
     //
-    size_t plainlength;
-    // printf("[+] cipher: %s\n", chunk->cipher);
-    if(!(plaindata = xxtea_decrypt_bkey(chunk->data, chunk->length, chunk->cipher, HASH_LENGTH, &plainlength))) {
-        debug("[-] cannot decrypt data, invalid key or payload\n");
+    char *key = libflist_hashhex(chunk->cipher.data, chunk->cipher.length);
+    debug("[+] uncrypt %lu buffer, with key: %s\n", chunk->encrypted.length, key);
+    free(key);
+
+    if(!(uncipherdata = xxtea_decrypt_bkey(chunk->encrypted.data, chunk->encrypted.length, chunk->cipher.data, chunk->cipher.length, &uncipherlength))) {
+        libflist_set_error("cannot decrypt data, invalid key or payload");
         return NULL;
     }
 
     //
     // decompress
     //
-    size_t uncompressed_length;
-    snappy_uncompressed_length(plaindata, plainlength, &uncompressed_length);
+    size_t uncompressed_length = 0;
+    snappy_status status;
 
-    unsigned char *uncompress = (unsigned char *) malloc(uncompressed_length);
-    if(snappy_uncompress(plaindata, plainlength, (char *) uncompress, &uncompressed_length) != SNAPPY_OK) {
-        debug("[-] snappy uncompression error\n");
+    debug("[+] uncompressing %lu bytes\n", uncipherlength);
+
+    if((status = snappy_uncompressed_length(uncipherdata, uncipherlength, &uncompressed_length)) != SNAPPY_OK) {
+        libflist_set_error("snappy uncompression length error: %d", status);
         return NULL;
     }
 
-    if(!(output = chunk_new(NULL, NULL, uncompress, uncompressed_length)))
+    char *uncompress = (char *) malloc(uncompressed_length);
+    if((status = snappy_uncompress(uncipherdata, uncipherlength, uncompress, &uncompressed_length)) != SNAPPY_OK) {
+        libflist_set_error("snappy uncompression error: %d", status);
         return NULL;
+    }
+
+    chunk->plain.data = (uint8_t *) uncompress;
+    chunk->plain.length = uncompressed_length;
 
     //
     // testing integrity
     //
-    unsigned char *integrity = zchunk_hash((unsigned char *) uncompress, uncompressed_length);
+    unsigned char *integrity = libflist_chunk_hash((unsigned char *) uncompress, uncompressed_length);
     // printf("[+] integrity: %s\n", integrity);
 
 
-    if(memcmp(integrity, chunk->cipher, HASH_LENGTH)) {
-        char *inhash = hashhex(integrity, ZEROCHUNK_HASH_LENGTH);
-        char *outhash = hashhex(chunk->cipher, ZEROCHUNK_HASH_LENGTH);
+    if(memcmp(integrity, chunk->cipher.data, chunk->cipher.length)) {
+        char *inhash = libflist_hashhex(integrity, ZEROCHUNK_HASH_LENGTH);
+        char *outhash = libflist_hashhex(chunk->cipher.data, chunk->cipher.length);
 
         debug("[-] integrity check failed: hash mismatch\n");
         debug("[-] %s <> %s\n", inhash, outhash);
+        libflist_set_error("chunk integrity mismatch");
 
         free(inhash);
         free(outhash);
@@ -279,7 +282,7 @@ chunk_t *decrypt_chunk(chunk_t *chunk) {
     }
 
     free(integrity);
-    free(plaindata);
+    free(uncipherdata);
 
-    return output;
+    return chunk;
 }
