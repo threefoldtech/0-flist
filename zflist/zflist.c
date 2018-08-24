@@ -98,6 +98,7 @@ void flister_create_response(flist_stats_t *stats) {
     printf("[+]   flist: directory: %lu\n", stats->directory);
     printf("[+]   flist: special  : %lu\n", stats->special);
     printf("[+]   flist: failure  : %lu\n", stats->failure);
+    printf("[+]   flist: full size: %lu bytes\n", stats->size);
     printf("[+]\n");
 }
 

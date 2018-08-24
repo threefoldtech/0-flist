@@ -10,9 +10,7 @@
 
 typedef struct flist_check_t {
     flist_backend_t *backend;
-    size_t files;
-    size_t size;
-    int status;
+    flist_stats_t stats;
 
 } flist_check_t;
 
@@ -74,21 +72,29 @@ int flist_check(walker_t *walker, directory_t *root) {
                 // integrity check is done inside the download function
                 if(!libflist_backend_download_chunk(checker->backend, chunk)) {
                     fprintf(stderr, "[-] could not download file: %s\n", libflist_strerror());
-                    checker->status = 2;
-                    return 1;
+                    checker->stats.failure += 1;
                 }
 
-                checker->files += 1;
-                checker->size += chunk->plain.length;
+                checker->stats.regular += 1;
+                checker->stats.size += chunk->plain.length;
 
-                // download_free(data);
-                free(hash);
-                free(key);
+                // this call free the contents of
+                // hash and key duplicated
+                libflist_chunk_free(chunk);
             }
+
         }
+
+        if(inode.attributes_which == Inode_attributes_link)
+            checker->stats.symlink += 1;
+
+        if(inode.attributes_which == Inode_attributes_special)
+            checker->stats.special += 1;
 
         // walking over internal directories
         if(inode.attributes_which == Inode_attributes_dir) {
+            checker->stats.directory += 1;
+
             struct SubDir sub;
             read_SubDir(&sub, inode.attributes.dir);
 
@@ -102,14 +108,18 @@ int flist_check(walker_t *walker, directory_t *root) {
 
 void flist_check_done(walker_t *walker) {
     flist_check_t *checker = (flist_check_t *) walker->userptr;
+    flist_stats_t *stats = &checker->stats;
 
-    if(checker->status) {
-        debug("[-] integrity failed, missing chunk detected\n");
-        return;
-    }
+    printf("[+]\n");
+    printf("[+] flist integrity check summary:\n");
+    printf("[+]   flist: regular  : %lu\n", stats->regular);
+    printf("[+]   flist: symlink  : %lu\n", stats->symlink);
+    printf("[+]   flist: directory: %lu\n", stats->directory);
+    printf("[+]   flist: special  : %lu\n", stats->special);
+    printf("[+]   flist: failure  : %lu\n", stats->failure);
+    printf("[+]   flist: size read: %.2f MB\n", (stats->size / (1024 * 1024.0)));
+    printf("[+]\n");
 
-    debug("[+] integrity check completed, no error found\n");
-
-    debug("[+] files checked: %lu\n", checker->files);
-    debug("[+] fullsize checked: %.2f MB\n", (checker->size / (1024.0 * 1024)));
+    libflist_backend_free(checker->backend);
+    free(checker);
 }
