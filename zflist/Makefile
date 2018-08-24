@@ -28,8 +28,9 @@ s-embedded: CFLAGS += -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
 s-embedded: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -ljansson -lhiredis -fopenmp -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 s-embedded: $(EXEC)
 
+# using CXX for snappy in static
 $(EXEC): $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
