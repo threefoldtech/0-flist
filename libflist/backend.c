@@ -137,10 +137,6 @@ flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *fil
             chunks = NULL;
             goto cleanup;
         }
-
-        // cleaning
-        // libflist_chunk_free(chunk);
-        // FIXME: free non-needed stuff
     }
 
     debug("[+] finalsize: %lu bytes\n", chunks->upsize);
