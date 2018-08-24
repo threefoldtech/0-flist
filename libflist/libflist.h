@@ -198,11 +198,12 @@
 
 
     typedef struct flist_stats_t {
-        size_t regular;
-        size_t directory;
-        size_t symlink;
-        size_t special;
-        size_t failure;
+        size_t regular;     // number of regular files
+        size_t directory;   // number of directories
+        size_t symlink;     // number of symbolic links
+        size_t special;     // number of special devices/files
+        size_t failure;     // number of failure (upload, check, ...)
+        size_t size;        // total amount of bytes of files
 
     } flist_stats_t;
 

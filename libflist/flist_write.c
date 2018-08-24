@@ -580,6 +580,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
             write_File(&f, target.attributes.file);
 
             globaldata.stats.regular += 1;
+            globaldata.stats.size += inode->size;
         }
 
         set_Inode(&target, dir.contents, index);
