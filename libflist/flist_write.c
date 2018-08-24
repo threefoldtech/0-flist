@@ -20,42 +20,68 @@
 #include "verbose.h"
 #include "database.h"
 #include "flist.capnp.h"
+#include "flist_write.h"
 
 // #define FLIST_WRITE_FULLDUMP
 
-// hardcoded version of the 0-hub
-const char *excluderstr[] = {
-    "\\.pyc$",
-    ".*__pycache__",
+// global excluders (regex of files or directory
+// to exclude when creating an flist)
+static excluders_t excluders = {
+    .length = 0,
+    .list = NULL,
 };
 
-regex_t excluders[sizeof(excluderstr) / sizeof(char *)] = {0};
-
-void excluders_init() {
+int libflist_create_excluders_append(char *regex) {
     int errcode;
     char errstr[1024];
 
-    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
-        if((errcode = regcomp(&excluders[i], excluderstr[i], REG_NOSUB | REG_EXTENDED))) {
-            regerror(errcode, &excluders[i], errstr, sizeof(errstr));
-            dies(errstr);
-        }
+    // adding one entry on the list
+    excluders.length += 1;
+
+    // growing up the list
+    if(!(excluders.list = realloc(excluders.list, sizeof(excluder_t) * excluders.length))) {
+        libflist_errp("excluder: realloc");
+        return 1;
     }
+
+    excluder_t *excluder = &excluders.list[excluders.length - 1];
+
+    // append string regex to list
+    if(!(excluder->str = strdup(regex))) {
+        libflist_errp("regex: strdup");
+        return 1;
+    }
+
+    // append compiled regex to list
+    if((errcode = regcomp(&excluder->regex, regex, REG_NOSUB | REG_EXTENDED))) {
+        regerror(errcode, &excluder->regex, errstr, sizeof(errstr));
+        libflist_set_error("regex", errstr);
+        return 1;
+    }
+
+    return 0;
 }
 
-void excluders_free() {
-    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
-        regfree(&excluders[i]);
+void libflist_create_excluders_free() {
+    for(size_t i = 0; i < excluders.length; i++) {
+        excluder_t *excluder = &excluders.list[i];
+        regfree(&excluder->regex);
+        free(excluder->str);
     }
+
+    free(excluders.list);
+    memset(&excluders, 0x00, sizeof(excluders_t));
 }
 
-int excluders_matches(const char *input) {
+int libflist_create_excluders_matches(const char *input) {
     // allows empty strings
     if(strlen(input) == 0)
         return 0;
 
-    for(size_t i = 0; i < sizeof(excluderstr) / sizeof(char *); i++) {
-        if(regexec(&excluders[i], input, 0, NULL, 0) != REG_NOMATCH)
+    for(size_t i = 0; i < excluders.length; i++) {
+        excluder_t *excluder = &excluders.list[i];
+
+        if(regexec(&excluder->regex, input, 0, NULL, 0) != REG_NOMATCH)
             return 1;
     }
 
@@ -746,7 +772,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
 
     // checking if entry is rejected by exclude filter
     // if exclude matches, we don't parse this entry at all
-    if(excluders_matches(fpath)) {
+    if(libflist_create_excluders_matches(fpath)) {
         debug("[+] skipping [%s] from exclude filters\n", fpath);
         return 0;
     }
@@ -902,7 +928,8 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
         return libflist_set_error("source path is not a directory");
 
     // initialize excluders
-    excluders_init();
+    libflist_create_excluders_append("\\.pyc$");
+    libflist_create_excluders_append(".*__pycache__");
 
     if(!(globaldata.rootdir = dirnode_create("", "")))
         return NULL;
@@ -916,8 +943,10 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
     memset(&globaldata.stats, 0x00, sizeof(flist_stats_t));
 
     debug("[+] building database\n");
-    if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS))
-        diep("nftw");
+    if(nftw(root, flist_create_cb, 512, FTW_DEPTH | FTW_PHYS)) {
+        libflist_errp("nftw");
+        return NULL;
+    }
 
     // FIXME: release the global lock ?
 
@@ -937,8 +966,9 @@ flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backen
     if(backend)
         libflist_backend_free(backend);
 
+    // cleaning
     free(globaldata.root);
-    excluders_free();
+    libflist_create_excluders_free();
 
     // convert local stats
     stats = libflist_bufdup(&globaldata.stats, sizeof(flist_stats_t));
