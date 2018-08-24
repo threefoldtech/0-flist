@@ -238,7 +238,6 @@
     // and rewritten in a library perspective
     //
     // see below for better
-    flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
 
     // initialize a backend
@@ -337,4 +336,11 @@
 
     void libflist_chunk_free(flist_chunk_t *chunk);
 
+    //
+    // flist_write.c
+    //
+    int libflist_create_excluders_append(char *regex);
+    void libflist_create_excluders_free();
+
+    flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 #endif

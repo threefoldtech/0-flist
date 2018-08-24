@@ -913,7 +913,7 @@ char *flist_rootpath_clean(const char *input) {
     return fixed;
 }
 
-flist_stats_t *flist_create(flist_db_t *database, const char *root, flist_backend_t *backend) {
+flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend) {
     flist_stats_t *stats = NULL;
     struct stat st;
 

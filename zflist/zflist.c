@@ -129,7 +129,7 @@ static int flister_create(char *workspace) {
     // building database
     flist_stats_t *stats;
 
-    if(!(stats = flist_create(database, settings.create, backend))) {
+    if(!(stats = libflist_create(database, settings.create, backend))) {
         fprintf(stderr, "[-] flist_create: %s\n", libflist_strerror());
         return 1;
     }
