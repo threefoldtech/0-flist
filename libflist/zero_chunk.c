@@ -216,7 +216,11 @@ flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
     // cleaning
     free(compressed);
 
-    return libflist_chunk_new(hashcrypt, hashkey, encrypt_data, encrypt_length);
+    flist_chunk_t *response = libflist_chunk_new(hashcrypt, hashkey, NULL, 0);
+    response->encrypted.data = encrypt_data;
+    response->encrypted.length = encrypt_length;
+
+    return response;
 }
 
 // uncrypt a chunk

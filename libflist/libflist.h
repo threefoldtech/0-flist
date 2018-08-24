@@ -304,6 +304,8 @@
 
     flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_chunk_t *chunk);
 
+    void libflist_backend_chunks_free(flist_chunks_t *chunks);
+
     //
     // workspace.c
     //

@@ -21,7 +21,7 @@
 #include "database.h"
 #include "flist.capnp.h"
 
-#define FLIST_WRITE_FULLDUMP
+// #define FLIST_WRITE_FULLDUMP
 
 // hardcoded version of the 0-hub
 const char *excluderstr[] = {
@@ -572,8 +572,9 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
                     set_FileBlock(&block, f.blocks, i);
                 }
 
-                // chunks_free(chunks);
-                // FIXME: free
+                // now it's put on the capnp struct
+                // we don't need the chunks anymore
+                libflist_backend_chunks_free(chunks);
             }
 
             target.attributes.file = new_File(cs);

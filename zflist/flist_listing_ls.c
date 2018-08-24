@@ -78,7 +78,7 @@ int flist_ls(walker_t *walker, directory_t *root) {
             directory_t *subdir;
             char *keystr = (char *) sub.key.str;
 
-            if(!(subdir = flist_directory_get(walker->database, keystr, inode.name.str)))
+            if(!(subdir = flist_directory_get(walker->database, keystr, (char *) inode.name.str)))
                 return 0;
 
             // reading directory permissions

@@ -129,16 +129,14 @@ flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *fil
         chunks->chunks[i] = chunk;
         chunks->upsize += chunk->encrypted.length;
 
-        /*
         // hiredis upload
-        if(chunk_upload(context, chunk)) {
+        if(libflist_backend_upload_chunk(context, chunk)) {
             debug("[-] chunk_upload: %s\n", libflist_strerror());
 
             libflist_chunk_free(chunk);
             chunks = NULL;
             goto cleanup;
         }
-        */
 
         // cleaning
         // libflist_chunk_free(chunk);
@@ -154,17 +152,13 @@ cleanup:
     return chunks;
 }
 
-/*
-void chunks_free(chunks_t *chunks) {
-    for(size_t i = 0; i < chunks->length; i++) {
-        free(chunks->chunks[i].id);
-        free(chunks->chunks[i].cipher);
-    }
+void libflist_backend_chunks_free(flist_chunks_t *chunks) {
+    for(size_t i = 0; i < chunks->length; i++)
+        libflist_chunk_free(chunks->chunks[i]);
 
     free(chunks->chunks);
     free(chunks);
 }
-*/
 
 flist_chunks_t *libflist_backend_upload_inode(flist_backend_t *backend, char *path, char *filename) {
     char *physical = NULL;
