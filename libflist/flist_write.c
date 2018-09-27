@@ -930,6 +930,7 @@ flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_bac
     // initialize excluders
     libflist_create_excluders_append("\\.pyc$");
     libflist_create_excluders_append(".*__pycache__");
+    libflist_create_excluders_append("/dev");
 
     if(!(globaldata.rootdir = dirnode_create("", "")))
         return NULL;
