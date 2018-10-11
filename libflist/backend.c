@@ -178,8 +178,10 @@ flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_c
         free(key);
     }
 
-    if(!(value = db->get(db, chunk->id.data, chunk->id.length)))
+    if(!(value = db->get(db, chunk->id.data, chunk->id.length))) {
+        libflist_set_error("key not found on the backend");
         return NULL;
+    }
 
     chunk->encrypted.data = (uint8_t *) value->data;
     chunk->encrypted.length = value->length;
