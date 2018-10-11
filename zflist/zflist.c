@@ -157,8 +157,8 @@ static int flister_list(char *workspace) {
 
     // if json flag is set, ensure we output
     // json format listing
-    if(settings.json)
-        settings.list = LIST_JSON;
+    // if(settings.json)
+    //    settings.list = LIST_JSON;
 
     if(!libflist_archive_extract(settings.archive, workspace)) {
         warnp("libflist_archive_extract");

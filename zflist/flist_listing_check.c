@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <jansson.h>
 #include "libflist.h"
 #include "flist_walker.h"
 #include "zflist.h"
+
+extern zflist_settings_t settings;
 
 typedef struct flist_check_t {
     flist_backend_t *backend;
@@ -71,7 +74,7 @@ int flist_check(walker_t *walker, directory_t *root) {
 
                 // integrity check is done inside the download function
                 if(!libflist_backend_download_chunk(checker->backend, chunk)) {
-                    fprintf(stderr, "[-] could not download file: %s\n", libflist_strerror());
+                    debug("[-] could not download file: %s\n", libflist_strerror());
                     checker->stats.failure += 1;
                 }
 
@@ -110,15 +113,33 @@ void flist_check_done(walker_t *walker) {
     flist_check_t *checker = (flist_check_t *) walker->userptr;
     flist_stats_t *stats = &checker->stats;
 
-    printf("[+]\n");
-    printf("[+] flist integrity check summary:\n");
-    printf("[+]   flist: regular  : %lu\n", stats->regular);
-    printf("[+]   flist: symlink  : %lu\n", stats->symlink);
-    printf("[+]   flist: directory: %lu\n", stats->directory);
-    printf("[+]   flist: special  : %lu\n", stats->special);
-    printf("[+]   flist: failure  : %lu\n", stats->failure);
-    printf("[+]   flist: size read: %.2f MB\n", (stats->size / (1024 * 1024.0)));
-    printf("[+]\n");
+    if(settings.json) {
+        json_t *root = json_object();
+
+        json_object_set_new(root, "regular", json_integer(stats->regular));
+        json_object_set_new(root, "symlink", json_integer(stats->symlink));
+        json_object_set_new(root, "directory", json_integer(stats->directory));
+        json_object_set_new(root, "special", json_integer(stats->special));
+        json_object_set_new(root, "failure", json_integer(stats->failure));
+
+
+        char *output = json_dumps(root, 0);
+        json_decref(root);
+
+        puts(output);
+        free(output);
+
+    } else {
+        printf("[+]\n");
+        printf("[+] flist integrity check summary:\n");
+        printf("[+]   flist: regular  : %lu\n", stats->regular);
+        printf("[+]   flist: symlink  : %lu\n", stats->symlink);
+        printf("[+]   flist: directory: %lu\n", stats->directory);
+        printf("[+]   flist: special  : %lu\n", stats->special);
+        printf("[+]   flist: failure  : %lu\n", stats->failure);
+        printf("[+]   flist: size read: %.2f MB\n", (stats->size / (1024 * 1024.0)));
+        printf("[+]\n");
+    }
 
     libflist_backend_free(checker->backend);
     free(checker);
