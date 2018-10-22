@@ -679,7 +679,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
 
     if(S_ISFIFO(sb->st_mode) || S_ISSOCK(sb->st_mode)) {
         inode->type = INODE_SPECIAL;
-        inode->sdata = "(nothing)";
+        inode->sdata = strdup("(nothing)");
     }
 
     if(S_ISLNK(sb->st_mode)) {
