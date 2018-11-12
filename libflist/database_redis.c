@@ -181,7 +181,7 @@ static flist_db_t *database_redis_init() {
     return database_redis_init_global(db);
 }
 
-static int database_redis_set_namespace(database_redis_t *db, char *namespace, char *password) {
+static int database_redis_set_namespace(database_redis_t *db, char *namespace, char *password, char *token) {
     redisReply *reply;
 
     if(!(reply = redisCommand(db->redis, "INFO")))
@@ -200,6 +200,13 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         db->internal_set = database_redis_set_zdb;
 
         debug("[+] database: zero-db detected, selecting namespace\n");
+        if(token) {
+            debug("[+] database: authenticating token\n");
+
+            if(!(reply = redisCommand(db->redis, "AUTH %s", token)))
+                return 1;
+        }
+
         if(password) {
             debug("[+] database: authenticating using password\n");
 
@@ -232,7 +239,7 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
 
 }
 
-flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, char *password) {
+flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, char *password, char *token) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -245,12 +252,12 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, ch
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace, password);
+    database_redis_set_namespace(handler, namespace, password, token);
 
     return db;
 }
 
-flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password) {
+flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password, char *token) {
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
@@ -263,7 +270,7 @@ flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *pas
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace, password);
+    database_redis_set_namespace(handler, namespace, password, token);
 
     return db;
 }

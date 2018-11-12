@@ -317,8 +317,8 @@
     //
     // database_redis.c
     //
-    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password);
-    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password);
+    flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password, char *token);
+    flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password, char *token);
 
     //
     // database_sqlite.c

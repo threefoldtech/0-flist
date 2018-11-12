@@ -20,6 +20,7 @@ static struct option long_options[] = {
     {"archive",  required_argument, 0, 'a'},
     {"backend",  required_argument, 0, 'b'},
     {"password", required_argument, 0, 'x'},
+    {"token"   , required_argument, 0, 't'},
     {"merge",    required_argument, 0, 'm'},
     {"ramdisk",  no_argument,       0, 'r'},
     {"json",     no_argument,       0, 'j'},
@@ -56,7 +57,8 @@ int usage(char *basename) {
 
     fprintf(stderr, "  --create <root>       create an archive from <root> directory\n\n");
     fprintf(stderr, "  --backend <host:port> upload/download files from archive, on this backend\n");
-    fprintf(stderr, "  --password <pwd>      password for default namespace (for protected mode)\n\n");
+    fprintf(stderr, "  --password <pwd>      backend namespace password (protected mode)\n");
+    fprintf(stderr, "  --token <jwt>         gateway token (gateway upload)\n\n");
 
     fprintf(stderr, "  --list       list archive content\n");
     fprintf(stderr, "  --action        action to do while listing archive:\n");
@@ -115,7 +117,10 @@ static int flister_create(char *workspace) {
 
         debug("[+] initializing backend\n");
 
-        if(!(backdb = libflist_db_redis_init_tcp(settings.backendhost, settings.backendport, "default", settings.bpass))) {
+        // shortcut
+        zflist_settings_t *s = &settings;
+
+        if(!(backdb = libflist_db_redis_init_tcp(s->backendhost, s->backendport, "default", s->bpass, s->token))) {
             fprintf(stderr, "[-] backend: %s\n", libflist_strerror());
             return 1;
         }
@@ -371,6 +376,11 @@ int main(int argc, char *argv[]) {
 
             case 'x': {
                 settings.bpass = optarg;
+                break;
+            }
+
+            case 't': {
+                settings.token = optarg;
                 break;
             }
 
