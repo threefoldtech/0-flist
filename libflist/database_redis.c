@@ -190,9 +190,14 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
     if(reply->len == 0)
         return 1;
 
-    if(strncmp(reply->str, "0-db server", 11) == 0) {
+    if(strstr("0-db (zdb)", reply->str) == 0) {
         // this is a zero-db server
         freeReplyObject(reply);
+
+        // linking to zdb settings
+        db->namespace = NULL;
+        db->internal_get = database_redis_get_zdb;
+        db->internal_set = database_redis_set_zdb;
 
         debug("[+] database: zero-db detected, selecting namespace\n");
         if(password) {
@@ -211,11 +216,6 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
             freeReplyObject(reply);
             return 1;
         }
-
-        // linking to zdb settings
-        db->namespace = NULL;
-        db->internal_get = database_redis_get_zdb;
-        db->internal_set = database_redis_set_zdb;
 
     } else {
         // this is a redis-compatible server
