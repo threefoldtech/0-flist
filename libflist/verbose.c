@@ -42,9 +42,6 @@ void *libflist_set_error(const char *format, ...) {
 }
 
 void *libflist_errp(const char *str) {
-    if(!libflist_debug_flag)
-        return NULL;
-
     libflist_set_error("%s: %s", str, strerror(errno));
     return NULL;
 }
