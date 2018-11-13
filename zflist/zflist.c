@@ -10,6 +10,7 @@
 #include "libflist.h"
 #include "zflist.h"
 #include "flist_listing.h"
+#include "flist_upload.h"
 
 zflist_settings_t settings;
 
@@ -20,7 +21,8 @@ static struct option long_options[] = {
     {"archive",  required_argument, 0, 'a'},
     {"backend",  required_argument, 0, 'b'},
     {"password", required_argument, 0, 'x'},
-    {"token"   , required_argument, 0, 't'},
+    {"token",    required_argument, 0, 't'},
+    {"upload",   optional_argument, 0, 'u'},
     {"merge",    required_argument, 0, 'm'},
     {"ramdisk",  no_argument,       0, 'r'},
     {"json",     no_argument,       0, 'j'},
@@ -58,7 +60,8 @@ int usage(char *basename) {
     fprintf(stderr, "  --create <root>       create an archive from <root> directory\n\n");
     fprintf(stderr, "  --backend <host:port> upload/download files from archive, on this backend\n");
     fprintf(stderr, "  --password <pwd>      backend namespace password (protected mode)\n");
-    fprintf(stderr, "  --token <jwt>         gateway token (gateway upload)\n\n");
+    fprintf(stderr, "  --token <jwt>         gateway token (gateway upload)\n");
+    fprintf(stderr, "  --upload [website]    upload the flist (using --token) on the hub\n\n");
 
     fprintf(stderr, "  --list       list archive content\n");
     fprintf(stderr, "  --action        action to do while listing archive:\n");
@@ -153,6 +156,13 @@ static int flister_create(char *workspace) {
     // removing possible already existing db
     unlink(settings.archive);
     libflist_archive_create(settings.archive, workspace);
+
+    if(settings.upload && settings.token) {
+        debug("[+] uploading flist to the hub: %s\n", settings.upload);
+
+        if(flist_upload(settings.archive, settings.upload, settings.token))
+            fprintf(stderr, "[-] could not upload the flist\n");
+    }
 
     return 0;
 }
@@ -381,6 +391,14 @@ int main(int argc, char *argv[]) {
 
             case 't': {
                 settings.token = optarg;
+                break;
+            }
+
+            case 'u': {
+                if(!optarg)
+                    optarg = "https://hub.grid.tf/api/flist/me/upload-flist";
+
+                settings.upload = optarg;
                 break;
             }
 

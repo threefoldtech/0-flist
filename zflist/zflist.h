@@ -40,6 +40,7 @@
         int backendport;     // backend port
         char *bpass;         // backend password
         char *token;         // 0-hub gateway jwt token
+        char *upload;        // upload endpoint
 
         int json;            // json output flag
         char *targetfile;    // specific target file (see cat action)
