@@ -8,7 +8,7 @@ dependencies() {
 
     apt-get install -y build-essential git libsnappy-dev libz-dev \
         libtar-dev libb2-dev autoconf libtool libjansson-dev \
-        libhiredis-dev libsqlite3-dev
+        libhiredis-dev libsqlite3-dev libcurl-dev
 }
 
 capnp() {
