@@ -10,12 +10,12 @@ all: $(EXEC)
 
 # embedded with debug
 embedded: CFLAGS += -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
-embedded: LDFLAGS += -g ../libflist/libflist.a -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lcurl -lhiredis -fopenmp -lsqlite3
+embedded: LDFLAGS += -g ../libflist/libflist.a -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lcurl -lssl -lcrypto -lhiredis -fopenmp -lsqlite3
 embedded: $(EXEC)
 
 # embeded, static without debug
 production: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
-production: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
+production: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lssl -lcrypto -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 production: $(EXEC)
 
 # shared without debug
@@ -25,7 +25,7 @@ release: $(EXEC)
 
 # embedded with libraries static linked (except libc)
 s-embedded: CFLAGS += -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
-s-embedded: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
+s-embedded: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lssl -lcrypto -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 s-embedded: $(EXEC)
 
 # using CXX for snappy in static
