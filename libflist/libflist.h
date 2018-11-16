@@ -230,6 +230,11 @@
     } flist_chunks_t;
 
 
+    typedef struct flist_merge_t {
+        size_t length;
+        char **sources;
+
+    } flist_merge_t;
 
     //
     // ----------------------
@@ -242,7 +247,10 @@
 
     // initialize a backend
 
-    int flist_merger(flist_db_t *database, void *merge);
+    int libflist_merge_list_init(flist_merge_t *merge);
+    int libflist_merge_list_append(flist_merge_t *merge, char *path);
+    int libflist_merge_list_free(flist_merge_t *merge);
+    int libflist_merge(flist_db_t *database, flist_merge_t *merge);
 
 
     // hashing

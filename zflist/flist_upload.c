@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
+#include "libflist.h"
 #include "zflist.h"
 
 size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {

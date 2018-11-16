@@ -23,12 +23,6 @@
 
     } list_mode_t;
 
-    typedef struct merge_list_t {
-        size_t length;
-        char **sources;
-
-    } merge_list_t;
-
     typedef struct zflist_settings_t {
         int ramdisk;       // do we extract to ramdisk
         char *archive;     // required input/output archive
@@ -46,7 +40,7 @@
         char *targetfile;    // specific target file (see cat action)
         char *outputfile;    // specific output file (see cat action)
         list_mode_t list;    // list view mode
-        merge_list_t merge;  // list of merging flists
+        flist_merge_t merge; // list of merging flists
 
     } zflist_settings_t;
 #endif

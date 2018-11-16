@@ -64,7 +64,10 @@ int usage(char *basename) {
     fprintf(stderr, "  --upload [website]    upload the flist (using --token) on the hub\n\n");
 
     fprintf(stderr, "  --list       list archive content\n");
-    fprintf(stderr, "  --action        action to do while listing archive:\n");
+    fprintf(stderr, "  --merge      do a merge and add argument to merge list\n");
+    fprintf(stderr, "               the --archive will be the result of the merge\n");
+    fprintf(stderr, "               merge are done in the order of arguments\n");
+    fprintf(stderr, "  --action     action to do while listing archive:\n");
     fprintf(stderr, "                    ls      show kind of 'ls -al' contents (default)\n");
     fprintf(stderr, "                    tree    show contents in a tree view\n");
     fprintf(stderr, "                    dump    debug dump of contents\n");
@@ -200,7 +203,7 @@ static int flister_merge(char *workspace) {
     database->create(database);
 
     // building database
-    flist_merger(database, &settings.merge);
+    libflist_merge(database, &settings.merge);
 
     // closing database before archiving
     debug("[+] closing database\n");
@@ -284,6 +287,7 @@ int main(int argc, char *argv[]) {
 
     // reset settings
     memset(&settings, 0, sizeof(zflist_settings_t));
+    libflist_merge_list_init(&settings.merge);
 
     // initializing default settings
     settings.list = LIST_DISABLED;
@@ -361,14 +365,7 @@ int main(int argc, char *argv[]) {
             }
 
             case 'm': {
-                // shortcut
-                merge_list_t *m = &settings.merge;
-
-                m->length += 1;
-                if(!(m->sources = (char **) realloc(m->sources, m->length * sizeof(char *))))
-                    diep("merge realloc");
-
-                m->sources[m->length - 1] = optarg;
+                libflist_merge_list_append(&settings.merge, optarg);
                 break;
             }
 
@@ -419,6 +416,21 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if(settings.list && settings.create) {
+        fprintf(stderr, "[-] cannot create and list on the same time\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(settings.list && settings.merge.sources) {
+        fprintf(stderr, "[-] cannot list and merge on the same time\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(settings.create && settings.merge.sources) {
+        fprintf(stderr, "[-] cannot create and merge on the same time\n");
+        exit(EXIT_FAILURE);
+    }
+
     // archive is required
     if(!settings.archive)
         usage(argv[0]);
@@ -429,7 +441,7 @@ int main(int argc, char *argv[]) {
     // cleaning
     free(settings.archive);
     free(settings.backendhost);
-    free(settings.merge.sources);
+    libflist_merge_list_free(&settings.merge);
 
     return value;
 }

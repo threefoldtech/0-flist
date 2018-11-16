@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <jansson.h>
-#include "zflist.h"
 #include "libflist.h"
+#include "zflist.h"
 #include "flist_listing.h"
 #include "flist_walker.h"
 
