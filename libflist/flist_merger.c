@@ -10,7 +10,9 @@
 
 // database is target output archive
 dirnode_t *libflist_merge(dirnode_t *fulltree, dirnode_t *source) {
+    (void) fulltree;
 
+    libflist_dirnode_dumps(source);
     return 0;
 }
 
