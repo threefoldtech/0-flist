@@ -5,15 +5,11 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "libflist.h"
+#include "verbose.h"
 #include "database.h"
 
 // database is target output archive
-int libflist_merge(flist_db_t *database, flist_merge_t *merge) {
-    (void) database;
-
-    for(size_t i = 0; i < merge->length; i++) {
-        debug("[+] merging source: %s\n", merge->sources[i]);
-    }
+dirnode_t *libflist_merge(dirnode_t *fulltree, dirnode_t *source) {
 
     return 0;
 }

@@ -247,10 +247,6 @@
 
     // initialize a backend
 
-    int libflist_merge_list_init(flist_merge_t *merge);
-    int libflist_merge_list_append(flist_merge_t *merge, char *path);
-    int libflist_merge_list_free(flist_merge_t *merge);
-    int libflist_merge(flist_db_t *database, flist_merge_t *merge);
 
 
     // hashing
@@ -351,4 +347,12 @@
     void libflist_create_excluders_free();
 
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
+
+    //
+    // flist_merger.c
+    //
+    int libflist_merge_list_init(flist_merge_t *merge);
+    int libflist_merge_list_append(flist_merge_t *merge, char *path);
+    int libflist_merge_list_free(flist_merge_t *merge);
+    dirnode_t *libflist_merge(dirnode_t *fulltree, dirnode_t *source);
 #endif

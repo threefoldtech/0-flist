@@ -197,17 +197,49 @@ static int flister_list(char *workspace) {
 }
 
 static int flister_merge(char *workspace) {
+    flist_merge_t *merge = &settings.merge;
     int value = 0;
+    char *intermediate;
 
-    flist_db_t *database = libflist_db_sqlite_init(workspace);
-    database->create(database);
+    flist_db_t *finaldb = libflist_db_sqlite_init(workspace);
+    finaldb->create(finaldb);
 
-    // building database
-    libflist_merge(database, &settings.merge);
+    dirnode_t *fulltree = NULL;
+
+    for(size_t i = 0; i < merge->length; i++) {
+        debug("[+] merging source: %s\n", merge->sources[i]);
+
+        // create a temporary directory for this source
+        if(!(intermediate = libflist_workspace_create()))
+            diep("intermediate workspace_create");
+
+        // extract this source flist
+        if(!libflist_archive_extract(merge->sources[i], intermediate)) {
+            warnp("intermediate libflist_archive_extract");
+            return 1;
+        }
+
+        // load source database
+        flist_db_t *database = libflist_db_sqlite_init(intermediate);
+        database->open(database);
+
+        // merging this source
+        dirnode_t *tree = libflist_directory_get_recursive(database, "/");
+        libflist_merge(fulltree, tree);
+
+        // closing source database
+        database->close(database);
+
+        // cleaning source temporary directory
+        if(!libflist_workspace_destroy(intermediate))
+            diep("workspace_destroy");
+
+        free(intermediate);
+    }
 
     // closing database before archiving
     debug("[+] closing database\n");
-    database->close(database);
+    finaldb->close(finaldb);
 
     // removing possible already existing db
     unlink(settings.archive);
