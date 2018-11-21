@@ -232,6 +232,8 @@ static int flister_merge(char *workspace) {
         dirnode_t *tree = libflist_directory_get_recursive(database, "/");
         libflist_merge(fulltree, tree);
 
+        fulltree = tree;
+
         // closing source database
         database->close(database);
 
@@ -241,6 +243,9 @@ static int flister_merge(char *workspace) {
 
         free(intermediate);
     }
+
+    // writing merged database
+    libflist_dirnode_commit(fulltree, finaldb, fulltree, NULL);
 
     // closing database before archiving
     debug("[+] closing database\n");

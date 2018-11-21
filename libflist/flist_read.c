@@ -192,6 +192,16 @@ int flist_fileindex_from_name(directory_t *direntry, char *filename) {
     return -1;
 }
 
+// populate an acl object from a racl pointer
+flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src) {
+    dst->uname = src->uname;
+    dst->gname = src->gname;
+    dst->mode = src->mode;
+    dst->key = libflist_inode_acl_key(dst);
+
+    return src;
+}
+
 inode_t *flist_itementry_to_inode(flist_db_t *database, directory_t *direntry, int fileindex) {
     inode_t *target;
     Inode_ptr inodep;
@@ -214,6 +224,11 @@ inode_t *flist_itementry_to_inode(flist_db_t *database, directory_t *direntry, i
     target->modification = inode.modificationTime;
 
     if(!(target->racl = libflist_get_permissions(database, inode.aclkey.str))) {
+        inode_free(target);
+        return NULL;
+    }
+
+    if(!(libflist_racl_to_acl(&target->acl, target->racl))) {
         inode_free(target);
         return NULL;
     }
@@ -264,9 +279,12 @@ dirnode_t *flist_directory_to_dirnode(flist_db_t *database, directory_t *direntr
     // setting directory metadata
     dirnode->fullpath = strdup(direntry->dir.location.str);
     dirnode->name = strdup(direntry->dir.name.str);
+    dirnode->hashkey = libflist_path_key(dirnode->fullpath);
     dirnode->creation = direntry->dir.creationTime;
     dirnode->modification = direntry->dir.modificationTime;
     dirnode->racl = libflist_get_permissions(database, direntry->dir.aclkey.str);
+
+    libflist_racl_to_acl(&dirnode->acl, dirnode->racl);
 
     // iterating over the full contents
     // and add each inode to the inode list of this directory

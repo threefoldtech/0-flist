@@ -137,7 +137,7 @@ static flist_write_global_t globaldata = {
 //
 //
 
-char *inode_acl_key(acl_t *acl) {
+char *libflist_inode_acl_key(acl_t *acl) {
     char *key;
     char strmode[32];
 
@@ -204,7 +204,7 @@ acl_t inode_acl(const struct stat *sb) {
     acl.mode = sb->st_mode;
     acl.uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
     acl.gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
-    acl.key = inode_acl_key(&acl);
+    acl.key = libflist_inode_acl_key(&acl);
 
     return acl;
 }
@@ -455,7 +455,7 @@ static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t l
 
 // flist_json_t jsonresponse = {0};
 
-void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend) {
+void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -595,7 +595,7 @@ void dirnode_tree_capn(dirnode_t *root, flist_db_t *database, dirnode_t *parent,
 
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        dirnode_tree_capn(subdir, database, root, backend);
+        libflist_dirnode_commit(subdir, database, root, backend);
 }
 
 //
@@ -917,7 +917,7 @@ flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_bac
 
     debug("[+] =========================================\n");
     debug("[+] building capnp from memory tree\n");
-    dirnode_tree_capn(globaldata.rootdir, database, globaldata.rootdir, backend);
+    libflist_dirnode_commit(globaldata.rootdir, database, globaldata.rootdir, backend);
 
     debug("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(globaldata.rootdir);

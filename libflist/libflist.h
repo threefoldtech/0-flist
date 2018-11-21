@@ -346,6 +346,9 @@
     int libflist_create_excluders_append(char *regex);
     void libflist_create_excluders_free();
 
+    void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
+    char *libflist_inode_acl_key(acl_t *acl);
+
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
     //
