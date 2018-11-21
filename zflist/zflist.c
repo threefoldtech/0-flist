@@ -201,11 +201,6 @@ static int flister_merge(char *workspace) {
     int value = 0;
     char *intermediate;
 
-    #ifndef FLIST_DEBUG
-    fprintf(stderr, "[-] merging not yet available in release\n");
-    return 1;
-    #endif
-
     flist_db_t *finaldb = libflist_db_sqlite_init(workspace);
     finaldb->create(finaldb);
 
