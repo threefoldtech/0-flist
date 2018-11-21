@@ -263,7 +263,9 @@ inode_t *flist_itementry_to_inode(flist_db_t *database, directory_t *direntry, i
 
             target->type = INODE_SPECIAL;
             target->stype = special.type;
-            // inode->sdata = strdup(special.data.
+
+            capn_data capdata = capn_get_data(special.data.p, 0);
+            target->sdata = strndup(capdata.p.data, capdata.p.len);
             break;
     }
 
