@@ -357,7 +357,7 @@
     int libflist_merge_list_init(flist_merge_t *merge);
     int libflist_merge_list_append(flist_merge_t *merge, char *path);
     int libflist_merge_list_free(flist_merge_t *merge);
-    dirnode_t *libflist_merge(dirnode_t *fulltree, dirnode_t *source);
+    dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source);
 
     //
     // flist_dumps.c

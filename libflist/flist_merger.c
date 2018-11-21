@@ -9,10 +9,22 @@
 #include "database.h"
 
 // database is target output archive
-dirnode_t *libflist_merge(dirnode_t *fulltree, dirnode_t *source) {
-    (void) fulltree;
-
+// fulltree is a pointer of pointer, in case when the fulltree is NULL,
+// we replace it with the new source, as first source
+dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source) {
     libflist_dirnode_dumps(source);
+
+    // if fulltree is NULL, this is the first
+    // merging, we just returns the original dirnode tree
+    // as the source one
+    if(*fulltree == NULL) {
+        debug("[+] merger: first flist, just installing this one as tree\n");
+        *fulltree = source;
+        return 0;
+    }
+
+    // merging source into fulltree
+
     return 0;
 }
 

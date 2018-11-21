@@ -230,9 +230,7 @@ static int flister_merge(char *workspace) {
 
         // merging this source
         dirnode_t *tree = libflist_directory_get_recursive(database, "/");
-        libflist_merge(fulltree, tree);
-
-        fulltree = tree;
+        libflist_merge(&fulltree, tree);
 
         // closing source database
         database->close(database);
