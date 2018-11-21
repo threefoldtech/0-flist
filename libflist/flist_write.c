@@ -267,9 +267,7 @@ void inode_free(inode_t *inode) {
     free(inode);
 }
 
-dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
-    inode->next = NULL;
-
+dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode) {
     if(!root->inode_list)
         root->inode_list = inode;
 
@@ -282,9 +280,12 @@ dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
     return root;
 }
 
-dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
-    dir->next = NULL;
+dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
+    inode->next = NULL;
+    return dirnode_lazy_appends_inode(root, inode);
+}
 
+dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     if(!root->dir_list)
         root->dir_list = dir;
 
@@ -297,7 +298,27 @@ dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     return root;
 }
 
-static dirnode_t *dirnode_search(dirnode_t *root, char *dirname) {
+dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
+    dir->next = NULL;
+    return dirnode_lazy_appends_dirnode(root, dir);
+}
+
+inode_t *libflist_inode_search(dirnode_t *root, char *inodename) {
+    // inodes list empty (no list already set)
+    if(!root->inode_list)
+        return NULL;
+
+    // iterating over inodes
+    for(inode_t *source = root->inode_list; source; source = source->next) {
+        if(strcmp(source->name, inodename) == 0)
+            return source;
+    }
+
+    // inode not found
+    return NULL;
+}
+
+dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname) {
     // directory empty (no list already set)
     if(!root->dir_list)
         return NULL;
@@ -322,7 +343,7 @@ static dirnode_t *dirnode_lookup_step(dirnode_t *root, char *token, char *incrpa
 
     // looking for that directory
     // if it doesn't exists, create a new one
-    if(!(subdir = dirnode_search(root, token))) {
+    if(!(subdir = libflist_dirnode_search(root, token))) {
         if(!(subdir = dirnode_create(incrpath, token)))
             return NULL;
 
@@ -385,6 +406,34 @@ static void dirnode_tree_free(dirnode_t *root) {
 
     dirnode_free(root);
 }
+
+
+// WARNING: FIXME - duplication just copy everything and cut next pointer
+//                  THIS IS NOT A REAL DUPLICATION
+dirnode_t *dirnode_lazy_duplicate(dirnode_t *source) {
+    dirnode_t *copy;
+
+    if(!(copy = malloc(sizeof(dirnode_t))))
+        return libflist_diep("malloc");
+
+    memcpy(copy, source, sizeof(dirnode_t));
+    copy->next = NULL;
+
+    return copy;
+}
+
+inode_t *inode_lazy_duplicate(inode_t *source) {
+    inode_t *copy;
+
+    if(!(copy = malloc(sizeof(inode_t))))
+        return libflist_diep("malloc");
+
+    memcpy(copy, source, sizeof(inode_t));
+    copy->next = NULL;
+
+    return copy;
+}
+
 
 //
 // WARNING: this code uses 'ftw', which is by design, not thread safe
@@ -537,29 +586,47 @@ void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *p
             };
 
             // upload non-empty files
-            if(inode->size && backend) {
+            if(inode->size && (backend || inode->chunks)) {
                 flist_chunks_t *chunks;
 
-                if(!(chunks = libflist_backend_upload_inode(backend, root->fullpath, inode->name))) {
-                    globaldata.stats.failure += 1;
-                    continue;
+                // chunks needs to be computed
+                if(backend) {
+                    if(!(chunks = libflist_backend_upload_inode(backend, root->fullpath, inode->name))) {
+                        globaldata.stats.failure += 1;
+                        continue;
+                    }
+
+                    f.blocks = new_FileBlock_list(cs, chunks->length);
+
+                    for(size_t i = 0; i < chunks->length; i++) {
+                        struct FileBlock block;
+                        flist_chunk_t *chk = chunks->chunks[i];
+
+                        block.hash.p = capn_databinary(cs, (char *) chk->id.data, chk->id.length);
+                        block.key.p = capn_databinary(cs, (char *) chk->cipher.data, chk->cipher.length);
+
+                        set_FileBlock(&block, f.blocks, i);
+                    }
+
+                    // now it's put on the capnp struct
+                    // we don't need the chunks anymore
+                    libflist_backend_chunks_free(chunks);
                 }
 
-                f.blocks = new_FileBlock_list(cs, chunks->length);
+                // chunks filled by read functions
+                if(inode->chunks) {
+                    f.blocks = new_FileBlock_list(cs, inode->chunks->size);
 
-                for(size_t i = 0; i < chunks->length; i++) {
-                    struct FileBlock block;
-                    flist_chunk_t *chk = chunks->chunks[i];
+                    for(size_t i = 0; i < inode->chunks->size; i++) {
+                        struct FileBlock block;
+                        inode_chunk_t *chk = &inode->chunks->list[i];
 
-                    block.hash.p = capn_databinary(cs, (char *) chk->id.data, chk->id.length);
-                    block.key.p = capn_databinary(cs, (char *) chk->cipher.data, chk->cipher.length);
+                        block.hash.p = capn_databinary(cs, (char *) chk->entryid, chk->entrylen);
+                        block.key.p = capn_databinary(cs, (char *) chk->decipher, chk->decipherlen);
 
-                    set_FileBlock(&block, f.blocks, i);
+                        set_FileBlock(&block, f.blocks, i);
+                    }
                 }
-
-                // now it's put on the capnp struct
-                // we don't need the chunks anymore
-                libflist_backend_chunks_free(chunks);
             }
 
             target.attributes.file = new_File(cs);

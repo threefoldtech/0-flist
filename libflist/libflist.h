@@ -269,8 +269,13 @@
     int flist_walk(flist_db_t *database);
 
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+    dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
+
+    dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
     dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
 
+    dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
+    inode_t *inode_lazy_duplicate(inode_t *source);
 
     //
     // --------------------------------------------------
@@ -345,6 +350,9 @@
     //
     int libflist_create_excluders_append(char *regex);
     void libflist_create_excluders_free();
+
+    dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
+    inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
 
     void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
     char *libflist_inode_acl_key(acl_t *acl);
