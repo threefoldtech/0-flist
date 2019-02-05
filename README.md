@@ -80,3 +80,7 @@ Command line options:
   --ramdisk    extract archive to tmpfs
   --help       shows this help message
 ```
+
+# Repository Owner
+- [Maxime Daniel](https://github.com/maxux), Telegram: [@maxux](http://t.me/maxux)
+
