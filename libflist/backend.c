@@ -88,6 +88,11 @@ void upload_flush(flist_backend_t *context) {
 #endif
 }
 
+int libflist_backend_exists(flist_backend_t *context, flist_chunk_t *chunk) {
+    flist_db_t *db = context->database;
+    return db->exists(db, chunk->id.data, chunk->id.length);
+}
+
 int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk) {
     flist_db_t *db = context->database;
 
@@ -128,6 +133,12 @@ flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *fil
 
         chunks->chunks[i] = chunk;
         chunks->upsize += chunk->encrypted.length;
+
+        // check if chunk is already on the backend
+        if(libflist_backend_exists(context, chunk)) {
+            debug("[+] processing: chunk already on the backend, skipping\n");
+            continue;
+        }
 
         // hiredis upload
         if(libflist_backend_upload_chunk(context, chunk)) {

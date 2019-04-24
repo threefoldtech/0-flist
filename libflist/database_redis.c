@@ -134,7 +134,10 @@ static int database_redis_exists(flist_db_t *database, uint8_t *key, size_t keyl
     int retval = 0;
 
     value_t *value = database_redis_get(database, key, keylen);
-    if(value && value->data)
+    if(!value)
+        return 0;
+
+    if(value->data)
         retval = 1;
 
     database_redis_clean(value);
