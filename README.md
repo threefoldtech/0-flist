@@ -49,6 +49,16 @@ build-essential libsnappy-dev libz-dev libtar-dev libb2-dev libjansson-dev libhi
 ```
 You will need to compile `c-capnp` yourself, see autobuild directory.
 
+# Notes
+## Merge priority
+When merging multiple flist together, the order of `--merge` argument is important.
+All files are proceed one by one from left to right. When file collision occures (same filename is present is multiple flist),
+the first file found is the one used on the final archive.
+
+Example: `zflist --archive target.flist --merge first.flist --merge second.flist`
+
+If `/bin/ls` is on both flist, the file from `first.flist` will be found `target.flist`
+
 # Usage
 ```
 Usage: ./zflist [options]
@@ -63,9 +73,15 @@ Command line options:
   --create <root>       create an archive from <root> directory
 
   --backend <host:port> upload/download files from archive, on this backend
+  --password <pwd>      backend namespace password (protected mode)
+  --token <jwt>         gateway token (gateway upload)
+  --upload [website]    upload the flist (using --token) on the hub
 
   --list       list archive content
-  --action        action to do while listing archive:
+  --merge      do a merge and add argument to merge list
+               the --archive will be the result of the merge
+               merge are done in the order of arguments
+  --action     action to do while listing archive:
                     ls      show kind of 'ls -al' contents (default)
                     tree    show contents in a tree view
                     dump    debug dump of contents
