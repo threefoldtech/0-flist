@@ -20,8 +20,13 @@ production: $(EXEC)
 
 # shared without debug
 release: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
-release: LDFLAGS += -pthread -L../libflist -lflist -ltar -lrt -lb2 -lcapnp_c -lz -lsnappy -ljansson -l0stor -lhiredis -lcurl -fopenmp -lsqlite3
+release: LDFLAGS += -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3 -L../libflist -lflist
 release: $(EXEC)
+
+# static libflist, shared all others, without debug
+sl-release: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
+sl-release: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -Wl,-Bdynamic -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3
+sl-release: $(EXEC)
 
 # embedded with libraries static linked (except libc)
 s-embedded: CFLAGS += -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
