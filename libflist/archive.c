@@ -70,6 +70,7 @@ char *libflist_archive_extract(char *filename, char *target) {
 
     tar_close(th);
     free(destination);
+    unlink(destination);
 
     return filename;
 }
