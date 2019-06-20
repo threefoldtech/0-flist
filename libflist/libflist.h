@@ -279,6 +279,10 @@
     dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
     inode_t *inode_lazy_duplicate(inode_t *source);
 
+    flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey);
+    flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src);
+    void inode_acl_persist(flist_db_t *database, acl_t *acl);
+
     //
     // --------------------------------------------------
     // at that point, function are reviewed and handle
