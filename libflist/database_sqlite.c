@@ -48,6 +48,7 @@ static int database_sqlite_optimize(flist_db_t *database) {
     // and memory usage
     char *select_query = "SELECT value FROM entries WHERE key = ?1";
     char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
+    char *delete_query = "DELETE FROM entries WHERE key = ?1";
 
     if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
         libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
@@ -58,6 +59,12 @@ static int database_sqlite_optimize(flist_db_t *database) {
         libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
         return 1;
     }
+
+    if(sqlite3_prepare_v2(db->db, delete_query, -1, &db->delete, 0) != SQLITE_OK) {
+        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
 
     return 0;
 }
@@ -178,6 +185,27 @@ static int database_sqlite_sset(flist_db_t *database, char *key, uint8_t *payloa
     return database_sqlite_set(database, (uint8_t *) key, strlen(key), payload, length);
 }
 
+static int database_sqlite_del(flist_db_t *database, uint8_t *key, size_t keylen) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
+    sqlite3_reset(db->delete);
+    sqlite3_bind_text(db->delete, 1, (char *) key, keylen, SQLITE_STATIC);
+
+    if(sqlite3_step(db->delete) != SQLITE_DONE) {
+        libflist_set_error("del: sqlite3_step: %s", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
+    db->updated = 1;
+
+    return 0;
+}
+
+static int database_sqlite_sdel(flist_db_t *database, char *key) {
+    return database_sqlite_del(database, (uint8_t *) key, strlen(key));
+}
+
+
 // poor implementation of exists
 static int database_sqlite_exists(flist_db_t *database, uint8_t *key, size_t keylen) {
     int retval = 0;
@@ -234,10 +262,12 @@ flist_db_t *libflist_db_sqlite_init(char *rootpath) {
     db->close = database_sqlite_close;
     db->get = database_sqlite_get;
     db->set = database_sqlite_set;
+    db->del = database_sqlite_del;
     db->exists = database_sqlite_exists;
     db->clean = database_sqlite_clean;
     db->sset = database_sqlite_sset;
     db->sget = database_sqlite_sget;
+    db->sdel = database_sqlite_sdel;
     db->sexists = database_sqlite_sexists;
 
     return db;

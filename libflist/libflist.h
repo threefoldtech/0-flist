@@ -155,10 +155,12 @@
 
         value_t* (*get)(struct flist_db_t *db, uint8_t *key, size_t keylen);
         int (*set)(struct flist_db_t *db, uint8_t *key, size_t keylen, uint8_t *data, size_t datalen);
+        int (*del)(struct flist_db_t *db, uint8_t *key, size_t keylen);
         int (*exists)(struct flist_db_t *db, uint8_t *key, size_t keylen);
 
         value_t* (*sget)(struct flist_db_t *db, char *key);
         int (*sset)(struct flist_db_t *db, char *key, uint8_t *data, size_t datalen);
+        int (*sdel)(struct flist_db_t *db, char *key);
         int (*sexists)(struct flist_db_t *db, char *key);
 
         void (*clean)(value_t *value);

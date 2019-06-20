@@ -11,6 +11,7 @@
         int updated;
         sqlite3_stmt *select;
         sqlite3_stmt *insert;
+        sqlite3_stmt *delete;
 
     } database_sqlite_t;
 
