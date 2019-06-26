@@ -158,13 +158,13 @@ flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) 
     flist_acl_t *acl;
 
     if(strlen(aclkey) == 0) {
-        debug("[-] get_permissions: empty acl key, cannot load it\n");
+        debug("[-] libflist: get_permissions: empty acl key, cannot load it\n");
         return NULL;
     }
 
     value_t *rawdata = database->sget(database, (char *) aclkey);
     if(!rawdata->data) {
-        debug("[-] get_permissions: acl key <%s> not found\n", aclkey);
+        debug("[-] libflist: get_permissions: acl key <%s> not found\n", aclkey);
         return NULL;
     }
 
@@ -178,7 +178,7 @@ flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) 
 
     struct capn permsctx;
     if(capn_init_mem(&permsctx, (unsigned char *) rawdata->data, rawdata->length, 0)) {
-        debug("[-] capnp: init error\n");
+        debug("[-] libflist: capnp: init error\n");
         return NULL;
     }
 
