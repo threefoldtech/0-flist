@@ -27,15 +27,17 @@ directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath
     // reading capnp message from database
     dir->value = database->sget(database, key);
 
+    // FIXME: memory leak
     if(!dir->value->data) {
-        debug("[-] directory: key [%s, %s] not found\n", key, fullpath);
+        debug("[-] libflist: directory: key [%s, %s] not found\n", key, fullpath);
         return NULL;
     }
 
     // build capn context
     if(capn_init_mem(&dir->ctx, (unsigned char *) dir->value->data, dir->value->length, 0)) {
-        debug("[-] directory: capnp: init error\n");
+        debug("[-] libflist: directory: capnp: init error\n");
         database->clean(dir->value);
+        // FIXME: memory leak
         return NULL;
     }
 
