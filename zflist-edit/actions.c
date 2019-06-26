@@ -80,6 +80,13 @@ static capn_text chars_to_text(const char *chars) {
     };
 }
 
+static flist_db_t *zf_init(char *mountpoint) {
+    flist_db_t *database = libflist_db_sqlite_init(mountpoint);
+    database->open(database);
+
+    return database;
+}
+
 
 int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
     if(argc != 3) {
