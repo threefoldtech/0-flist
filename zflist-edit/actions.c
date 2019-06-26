@@ -89,77 +89,44 @@ static flist_db_t *zf_init(char *mountpoint) {
 
 
 int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
+#if 0
     if(argc != 3) {
-        fprintf(stderr, "[-] action: open: missing mode or filename\n");
+        fprintf(stderr, "[-] action: chmod: missing mode or filename\n");
         return 1;
     }
 
     debug("[+] action: chmod: setting mode %s on %s\n", argv[1], argv[2]);
 
     int newmode = strtol(argv[1], NULL, 8);
-    char *dirpath = strdup(argv[2]);
-    int isdir = 1;
-    directory_t *dir;
-    flist_db_t *database = libflist_db_sqlite_init(settings->mnt);
-    database->open(database);
+    char *dirpath = dirname(strdup(argv[2]));
+    char *filename = basename(argv[2]);
 
-    char *key = libflist_path_key(dirpath);
-    debug("[+] action: chmod: trying to open: %s\n", dirpath);
+    flist_db_t *database = zf_init(settings->mnt);
+    dirnode_t *dirnode;
+    inode_t *inode;
 
-    if(!(dir = flist_directory_get(database, key, dirpath))) {
-        debug("[-] action: chmod: could not open the directory, trying parent\n");
-
-        dirpath = dirname(dirpath);
-        key = libflist_path_key(dirpath);
-
-        // target is maybe a file, not a directory
-        isdir = 0;
-
-        if(!(dir = flist_directory_get(database, key, dirpath))) {
-            fprintf(stderr, "[-] action: chmod: no such file or directory\n");
-            return 1;
-        }
-    }
-
-    debug("[+] action: chmod: we found something (isdir: %d)\n", isdir);
-
-    // FIXME
-    if(isdir == 1) {
-        fprintf(stderr, "not supported yet\n");
+    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+        debug("[-] action: chmod: could not open the parent directory\n");
         return 1;
     }
 
-    Inode_ptr inodep;
-    struct Inode inode;
+    if(!(inode = libflist_inode_from_name(dirnode, filename))) {
+        debug("[-] action: chmod: could not find requested file\n");
+        return 1;
+    }
 
-    // iterating over the whole directory
-    // contents
-    for(int i = 0; i < capn_len(dir->dir.contents); i++) {
-        // reading the next entry
-        inodep.p = capn_getp(dir->dir.contents.p, i, 1);
-        read_Inode(&inode, inodep);
+    printf("[+] action: chmod: current mode: 0o%o\n", inode->acl.mode);
 
-        char temp[2048];
-        snprintf(temp, sizeof(temp), "%s/%s", dirpath, inode.name.str);
+    // remove 9 last bits and set new last 9 bits
+    uint32_t cleared = inode->acl.mode & 0xfffffe00;
+    inode->acl.mode = cleared | newmode;
 
-        if(strcmp(temp, argv[2]) != 0) {
-            printf("skipping file %s\n", temp);
-            continue;
-        }
+    printf("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
 
-        printf("[+] action: chmod: we found the file\n");
-
-        // FIXME: SUPPORT DIRECTORY
-        flist_acl_t *acl = libflist_get_permissions(database, inode.aclkey.str);
-
-        printf("[+] action: chmod: current mode: 0o%o\n", acl->mode);
-
-        // remove 9 last bits and set new last 9 bits
-        uint32_t cleared = acl->mode & 0xfffffe00;
-        acl->mode = cleared | newmode;
-
-        printf("[+] action: chmod: new mode: 0o%o\n", acl->mode);
-
+    //
+    // FIXME
+    //
+    {
         acl_t nacl;
         libflist_racl_to_acl(&nacl, acl);
 
@@ -192,6 +159,7 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
 
     database->close(database);
     free(dirpath);
+#endif
 
     return 0;
 }
