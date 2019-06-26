@@ -390,3 +390,48 @@ dirnode_t *libflist_directory_get_recursive(flist_db_t *database, char *path) {
 
     return root;
 }
+
+//
+// remove an inode into a directory
+//
+dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target) {
+    // looking for the previous entry
+    inode_t *prev = NULL;
+    inode_t *inode = root->inode_list;
+
+    while(inode && inode != target) {
+        prev = inode;
+        inode = inode->next;
+    }
+
+    // inode not found on that directory
+    if(!inode)
+        return NULL;
+
+    // our item is the first item
+    if(!prev) {
+        root->inode_list = target->next;
+
+    } else {
+        // skipping our inode
+        prev->next = target->next;
+    }
+
+    // updating contents counter
+    root->inode_length -= 1;
+
+    // our inode is the latest on the list
+    // updating pointer
+    if(root->inode_last == target) {
+        // our inode was the single one
+        // on that directory
+        if(!prev) {
+            root->inode_last = NULL;
+            return root;
+        }
+
+        root->inode_last = prev;
+    }
+
+    return root;
+}
