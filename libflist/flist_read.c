@@ -70,20 +70,9 @@ static char *flist_inode_fullpath(directory_t *directory, struct Inode *inode) {
 //
 char *libflist_path_key(char *path) {
     uint8_t hash[KEYLENGTH];
-    size_t length;
 
-    // remove leading slash
-    if(path[0] == '/')
-        path = path + 1;
-
-    length = strlen(path);
-
-    // remove trailing slash
-    if(path[length - 1] == '/')
-        length -= 1;
-
-    if(blake2b(hash, path, "", KEYLENGTH, length, 0) < 0) {
-        debug("[-] blake2 error\n");
+    if(blake2b(hash, path, "", KEYLENGTH, strlen(path), 0) < 0) {
+        debug("[-] libflist: blake2 error\n");
         return NULL;
     }
 
