@@ -110,44 +110,12 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
     // remove 9 last bits and set new last 9 bits
     uint32_t cleared = inode->acl.mode & 0xfffffe00;
     inode->acl.mode = cleared | newmode;
+    libflist_inode_acl_commit(inode);
 
     printf("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
 
-    //
-    // FIXME: re-introduce save
-    //
-    #if 0
-    {
-        acl_t nacl;
-        libflist_racl_to_acl(&nacl, acl);
-
-        inode_acl_persist(database, &nacl);
-
-        inode.aclkey = chars_to_text(nacl.key);
-        set_Inode(&inode, dir->dir.contents, i);
-
-        // commit into db
-        unsigned char *buffer = malloc(8 * 512 * 1024); // FIXME
-        write_Dir(&dir->dir, dir->dirp);
-
-        if(capn_setp(capn_root(&dir->ctx), 0, dir->dirp.p))
-            dies("capnp setp failed");
-
-        int sz = capn_write_mem(&dir->ctx, buffer, 8 * 512 * 1024, 0); // FIXME
-
-        // commit this object into the database
-        debug("[+] removing old db key: %s\n", key);
-        if(database->sdel(database, key))
-            dies(libflist_strerror());
-
-        debug("[+] writing into db: %s (%d bytes)\n", key, sz);
-        if(database->sset(database, key, buffer, sz))
-            dies(libflist_strerror());
-
-        free(buffer);
-        break;
-    }
-    #endif
+    dirnode_t *parent = libflist_directory_get_parent(database, dirnode);
+    libflist_dirnode_commit(dirnode, database, parent, NULL);
 
     database->close(database);
     free(dirpath);
@@ -191,7 +159,8 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
     printf("[+] action: rm: file removed\n");
     printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
-    // FIXME: save
+    dirnode_t *parent = libflist_directory_get_parent(database, dirnode);
+    libflist_dirnode_commit(dirnode, database, parent, NULL);
 
     database->close(database);
     free(dirpath);
