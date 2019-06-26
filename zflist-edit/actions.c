@@ -71,15 +71,6 @@ int zf_commit(int argc, char *argv[], zfe_settings_t *settings) {
     return 0;
 }
 
-// FIXME
-static capn_text chars_to_text(const char *chars) {
-    return (capn_text) {
-        .len = (int) strlen(chars),
-        .str = chars,
-        .seg = NULL,
-    };
-}
-
 static flist_db_t *zf_init(char *mountpoint) {
     flist_db_t *database = libflist_db_sqlite_init(mountpoint);
     database->open(database);
@@ -190,7 +181,7 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
     }
 
     printf("[+] action: rm: file found (size: %lu bytes)\n", inode->size);
-    printf("[+] action: rm: files in the directory: %d\n", dirnode->inode_length);
+    printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     if(!libflist_directory_rm_inode(dirnode, inode)) {
         printf("[-] action: rm: something went wrong when removing the file\n");
@@ -198,7 +189,7 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
     }
 
     printf("[+] action: rm: file removed\n");
-    printf("[+] action: rm: files in the directory: %d\n", dirnode->inode_length);
+    printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     // FIXME: save
 
