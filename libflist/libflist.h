@@ -287,6 +287,7 @@
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
     dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
     dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root);
+    acl_t *libflist_inode_acl_commit(inode_t *inode);
 
     //
     // --------------------------------------------------

@@ -164,6 +164,10 @@ char *libflist_inode_acl_key(acl_t *acl) {
     return hashkey;
 }
 
+acl_t *libflist_inode_acl_commit(inode_t *inode) {
+    inode->acl.key = libflist_inode_acl_key(&inode->acl);
+    return &inode->acl;
+}
 
 static char *uidstr(struct passwd *passwd, uid_t uid) {
     char *target;
