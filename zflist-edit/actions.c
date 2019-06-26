@@ -89,7 +89,6 @@ static flist_db_t *zf_init(char *mountpoint) {
 
 
 int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
-#if 0
     if(argc != 3) {
         fprintf(stderr, "[-] action: chmod: missing mode or filename\n");
         return 1;
@@ -106,12 +105,12 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
     inode_t *inode;
 
     if(!(dirnode = libflist_directory_get(database, dirpath))) {
-        debug("[-] action: chmod: could not open the parent directory\n");
+        debug("[-] action: chmod: no such parent directory\n");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        debug("[-] action: chmod: could not find requested file\n");
+        debug("[-] action: chmod: no such file\n");
         return 1;
     }
 
@@ -124,8 +123,9 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
     printf("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
 
     //
-    // FIXME
+    // FIXME: re-introduce save
     //
+    #if 0
     {
         acl_t nacl;
         libflist_racl_to_acl(&nacl, acl);
@@ -156,10 +156,10 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
         free(buffer);
         break;
     }
+    #endif
 
     database->close(database);
     free(dirpath);
-#endif
 
     return 0;
 }
