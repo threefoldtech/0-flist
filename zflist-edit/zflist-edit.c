@@ -30,6 +30,7 @@ void dies(const char *str) {
 zf_cmds_t zf_commands[] = {
     {.name = "open",   .callback = zf_open,   .help = "open an flist to enable editing"},
     {.name = "chmod",  .callback = zf_chmod,  .help = "change mode of a file (like chmod command)"},
+    {.name = "rm",     .callback = zf_rm,     .help = "remove a file (not a directory)"},
     {.name = "commit", .callback = zf_commit, .help = "close an flist and commit changes"},
 };
 

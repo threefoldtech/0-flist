@@ -163,3 +163,49 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
 
     return 0;
 }
+
+int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
+    if(argc != 2) {
+        fprintf(stderr, "[-] action: rm: missing filename\n");
+        return 1;
+    }
+
+    char *dirpath = dirname(strdup(argv[1]));
+    char *filename = basename(argv[1]);
+
+    debug("[+] action: rm: removing <%s> from <%s>\n", filename, dirpath);
+
+    flist_db_t *database = zf_init(settings->mnt);
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+        debug("[-] action: rm: no such directory (file parent directory)\n");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_name(dirnode, filename))) {
+        debug("[-] action: rm: no such file\n");
+        return 1;
+    }
+
+    printf("[+] action: rm: file found (size: %lu bytes)\n", inode->size);
+    printf("[+] action: rm: files in the directory: %d\n", dirnode->inode_length);
+
+    if(!libflist_directory_rm_inode(dirnode, inode)) {
+        printf("[-] action: rm: something went wrong when removing the file\n");
+        return 1;
+    }
+
+    printf("[+] action: rm: file removed\n");
+    printf("[+] action: rm: files in the directory: %d\n", dirnode->inode_length);
+
+    // FIXME: save
+
+    database->close(database);
+    free(dirpath);
+
+    return 0;
+}
+
+

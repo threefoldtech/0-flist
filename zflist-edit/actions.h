@@ -6,4 +6,5 @@
     int zf_commit(int argc, char *argv[], zfe_settings_t *settings);
 
     int zf_chmod(int argc, char *argv[], zfe_settings_t *settings);
+    int zf_rm(int argc, char *argv[], zfe_settings_t *settings);
 #endif
