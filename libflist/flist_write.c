@@ -659,6 +659,11 @@ void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *p
 
     // commit this object into the database
     debug("[+] writing into db: %s\n", root->hashkey);
+    if(database->sexists(database, root->hashkey)) {
+        if(database->sdel(database, root->hashkey))
+            dies("key exists, deleting: database error");
+    }
+
     if(database->sset(database, root->hashkey, buffer, sz))
         dies("database error");
 
