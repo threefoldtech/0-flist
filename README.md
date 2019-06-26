@@ -17,6 +17,10 @@ on runtime to enable or not debug output).
 Please note this library is in a early stage and was a fully static binary in a first step. Strip is not
 complete right now.
 
+Development note:
+- `flist_xxx` functions are internal functions
+- `libflist_xxx` functions are public functions
+
 # zflist
 Command line utility which use `libflist` to list, create and query a flist file.
 
