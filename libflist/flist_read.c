@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <blake2.h>
+#include <libgen.h>
 #include "libflist.h"
 #include "verbose.h"
 
@@ -434,4 +435,15 @@ dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target) {
     }
 
     return root;
+}
+
+dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root) {
+    discard char *copypath = strdup(root->fullpath);
+    char *parent = dirname(copypath);
+
+    // no parent
+    if(strcmp(parent, copypath) == 0)
+        return root;
+
+    return libflist_directory_get(database, copypath);
 }
