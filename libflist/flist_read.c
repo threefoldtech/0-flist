@@ -9,6 +9,12 @@
 
 #define KEYLENGTH 16
 
+#define discard __attribute__((cleanup(__cleanup_free)))
+
+static void __cleanup_free(void *p) {
+    free(* (void **) p);
+}
+
 //
 // directory object reader
 //
@@ -314,7 +320,7 @@ dirnode_t *flist_directory_to_dirnode(flist_db_t *database, directory_t *direntr
 // convert an internal capnp object
 // directory into a public directory object
 dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
-    char *cleanpath = NULL;
+    discard char *cleanpath = NULL;
 
     // we use strict convention to store
     // entry on the database since the id is a hash of
@@ -329,13 +335,13 @@ dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
     if(!(cleanpath = flist_clean_path(path)))
         return NULL;
 
-    debug("[+] directory get: clean path: <%s> -> <%s>\n", path, cleanpath);
+    debug("[+] libflist: directory get: clean path: <%s> -> <%s>\n", path, cleanpath);
 
     // converting this directory string into a directory
     // hash by the internal way used everywhere, this will
     // give the key required to find entry on the database
-    char *key = libflist_path_key(cleanpath);
-    debug("[+] directory get: entry key: <%s>\n", key);
+    discard char *key = libflist_path_key(cleanpath);
+    debug("[+] libflist: directory get: entry key: <%s>\n", key);
 
     // requesting the directory object from the database
     // the object in the database is packed, this function will
@@ -357,8 +363,6 @@ dirnode_t *libflist_directory_get(flist_db_t *database, char *path) {
     // cleaning temporary string allocated
     // by internal functions and not needed objects anymore
     flist_directory_close(database, direntry);
-    free(cleanpath);
-    free(key);
 
     return contents;
 }
