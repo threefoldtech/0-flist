@@ -32,6 +32,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "ls",       .callback = zf_ls,       .help = "list the content of a directory"},
     {.name = "chmod",    .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},
     {.name = "rm",       .callback = zf_rm,       .help = "remove a file (not a directory)"},
+    {.name = "metadata", .callback = zf_metadata, .help = "get or set metadata"},
     {.name = "commit",   .callback = zf_commit,   .help = "close an flist and commit changes"},
 };
 
