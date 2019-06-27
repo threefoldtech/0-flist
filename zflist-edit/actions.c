@@ -168,4 +168,55 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
     return 0;
 }
 
+static char zf_ls_inode_type(inode_t *inode) {
+    char *slayout = "sbcf?";
+    char *rlayout = "d-l.";
+
+    // FIXME: overflow possible
+    if(inode->type == INODE_SPECIAL)
+        return slayout[inode->stype];
+
+    return rlayout[inode->type];
+}
+
+static void zf_ls_inode_perm(inode_t *inode) {
+    char *layout = "rwxrwxrwx";
+
+    // foreach permissions bits, checking
+    for(int mask = 1 << 8; mask; mask >>= 1) {
+        printf("%c", (inode->acl.mode & mask) ? *layout : '-');
+        layout += 1;
+    }
+}
+
+int zf_ls(int argc, char *argv[], zfe_settings_t *settings) {
+    if(argc != 2) {
+        fprintf(stderr, "[-] action: ls: missing directory\n");
+        return 1;
+    }
+
+    char *dirpath = argv[1];
+    debug("[+] action: ls: listing <%s>\n", dirpath);
+
+    flist_db_t *database = zf_init(settings->mnt);
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+        debug("[-] action: ls: no such directory (file parent directory)\n");
+        return 1;
+    }
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        printf("%c", zf_ls_inode_type(inode));
+        zf_ls_inode_perm(inode);
+
+        printf(" %-8s %-8s  ", inode->acl.uname, inode->acl.gname);
+        printf(" %8lu ", inode->size);
+        printf(" %s\n", inode->name);
+    }
+
+    database->close(database);
+
+    return 0;
+}
 

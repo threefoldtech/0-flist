@@ -15,6 +15,7 @@
 
     #include <stdint.h>
     #include <time.h>
+    #include <jansson.h>
 
     typedef struct acl_t {
         char *uname;     // username (user id if not found)
