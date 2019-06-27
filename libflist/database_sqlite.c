@@ -11,20 +11,29 @@
 #include "database_sqlite.h"
 
 static int database_sqlite_build(database_sqlite_t *db) {
-    char *query = "CREATE TABLE entries (key VARCHAR(64) PRIMARY KEY, value BLOB);";
+    char *queries[] = {
+        "CREATE TABLE IF NOT EXISTS entries (key VARCHAR(64) PRIMARY KEY, value BLOB);",
+        "CREATE TABLE IF NOT EXISTS metadata (key VARCHAR(64) PRIMARY KEY, value TEXT);",
+    };
+
+    //
+    // entries table
+    //
     value_t value;
 
-    if(sqlite3_prepare_v2(db->db, query, -1, (sqlite3_stmt **) &value.handler, NULL) != SQLITE_OK) {
-        libflist_set_error("create: sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
-        return 1;
-    }
+    for(size_t i = 0; i < sizeof(queries) / sizeof(char *); i++) {
+        if(sqlite3_prepare_v2(db->db, queries[i], -1, (sqlite3_stmt **) &value.handler, NULL) != SQLITE_OK) {
+            libflist_set_error("create: sqlite3_prepare_v2: %s: %s", queries[i], sqlite3_errmsg(db->db));
+            return 1;
+        }
 
-    if(sqlite3_step(value.handler) != SQLITE_DONE) {
-        libflist_set_error("create: sqlite3_step: %s", sqlite3_errmsg(db->db));
-        return 1;
-    }
+        if(sqlite3_step(value.handler) != SQLITE_DONE) {
+            libflist_set_error("create: sqlite3_step: %s: %s", queries[i], sqlite3_errmsg(db->db));
+            return 1;
+        }
 
-    sqlite3_finalize(value.handler);
+        sqlite3_finalize(value.handler);
+    }
 
     // if the database is opened in creation mode
     // it's probably to do motification
@@ -37,6 +46,11 @@ static int database_sqlite_build(database_sqlite_t *db) {
     return 0;
 }
 
+struct __stmtop {
+    char *query;
+    sqlite3_stmt **target;
+};
+
 static int database_sqlite_optimize(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
@@ -46,25 +60,20 @@ static int database_sqlite_optimize(flist_db_t *database) {
     // we only do the same GET and the same SET/INSERT all the time
     // reusing the same prepared statement improve hugely performances
     // and memory usage
-    char *select_query = "SELECT value FROM entries WHERE key = ?1";
-    char *insert_query = "INSERT INTO entries (key, value) VALUES (?1, ?2)";
-    char *delete_query = "DELETE FROM entries WHERE key = ?1";
+    struct __stmtop stmts[] = {
+        {.target = &db->select, .query = "SELECT value FROM entries WHERE key = ?1"},
+        {.target = &db->insert, .query = "INSERT INTO entries (key, value) VALUES (?1, ?2)"},
+        {.target = &db->delete, .query = "DELETE FROM entries WHERE key = ?1"},
+        {.target = &db->mdget,  .query = "SELECT value FROM metadata WHERE key = ?1"},
+        {.target = &db->mdset,  .query = "REPLACE INTO metadata (key, value) VALUES (?1, ?2)"},
+    };
 
-    if(sqlite3_prepare_v2(db->db, select_query, -1, &db->select, 0) != SQLITE_OK) {
-        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
-        return 1;
+    for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++) {
+        if(sqlite3_prepare_v2(db->db, stmts[i].query, -1, stmts[i].target, 0) != SQLITE_OK) {
+            libflist_set_error("sqlite3_prepare_v2: %s: %s", stmts[i].query, sqlite3_errmsg(db->db));
+            return 1;
+        }
     }
-
-    if(sqlite3_prepare_v2(db->db, insert_query, -1, &db->insert, 0) != SQLITE_OK) {
-        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
-        return 1;
-    }
-
-    if(sqlite3_prepare_v2(db->db, delete_query, -1, &db->delete, 0) != SQLITE_OK) {
-        libflist_set_error("sqlite3_prepare_v2: %s", sqlite3_errmsg(db->db));
-        return 1;
-    }
-
 
     return 0;
 }
@@ -80,16 +89,6 @@ static database_sqlite_t *database_sqlite_root_init(flist_db_t *database) {
     return db;
 }
 
-static flist_db_t *database_sqlite_open(flist_db_t *database) {
-    database->handler = database_sqlite_root_init(database);
-    database_sqlite_t *db = (database_sqlite_t *) database->handler;
-
-    if(db->select == NULL)
-        database_sqlite_optimize(database);
-
-    return database;
-}
-
 static flist_db_t *database_sqlite_create(flist_db_t *database) {
     database->handler = database_sqlite_root_init(database);
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
@@ -101,6 +100,11 @@ static flist_db_t *database_sqlite_create(flist_db_t *database) {
         database_sqlite_optimize(database);
 
     return database;
+}
+
+static flist_db_t *database_sqlite_open(flist_db_t *database) {
+    // we always create table if they doesn't exists now
+    return database_sqlite_create(database);
 }
 
 static void database_sqlite_close(flist_db_t *database) {
@@ -205,6 +209,57 @@ static int database_sqlite_sdel(flist_db_t *database, char *key) {
     return database_sqlite_del(database, (uint8_t *) key, strlen(key));
 }
 
+//
+// metadata
+//
+static value_t *database_sqlite_mdget(flist_db_t *database, char *key) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+    size_t keylen = strlen(key);
+    value_t *value;
+
+    if(!(value = calloc(1, sizeof(value_t)))) {
+        diep("malloc");
+        return NULL;
+    }
+
+    sqlite3_reset(db->mdget);
+    sqlite3_bind_text(db->mdget, 1, key, keylen, SQLITE_STATIC);
+
+    int data = sqlite3_step(db->mdget);
+
+    if(data == SQLITE_DONE)
+        return value;
+
+    if(data == SQLITE_ROW) {
+        value->data = (void *) sqlite3_column_text(db->mdget, 0);
+        value->length = sqlite3_column_bytes(db->mdget, 0);
+        return value;
+    }
+
+    libflist_set_error("get: sqlite3_step: %s", sqlite3_errmsg(db->db));
+    return value;
+}
+
+static int database_sqlite_mdset(flist_db_t *database, char *key, char *payload) {
+    size_t keylen = strlen(key);
+    size_t length = strlen(payload);
+
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
+    sqlite3_reset(db->mdset);
+    sqlite3_bind_text(db->mdset, 1, key, keylen, SQLITE_STATIC);
+    sqlite3_bind_text(db->mdset, 2, payload, length, SQLITE_STATIC);
+
+    if(sqlite3_step(db->mdset) != SQLITE_DONE) {
+        libflist_set_error("mdset: sqlite3_step: %s", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
+    db->updated = 1;
+
+    return 0;
+}
+
 
 // poor implementation of exists
 static int database_sqlite_exists(flist_db_t *database, uint8_t *key, size_t keylen) {
@@ -269,6 +324,8 @@ flist_db_t *libflist_db_sqlite_init(char *rootpath) {
     db->sget = database_sqlite_sget;
     db->sdel = database_sqlite_sdel;
     db->sexists = database_sqlite_sexists;
+    db->mdget = database_sqlite_mdget;
+    db->mdset = database_sqlite_mdset;
 
     return db;
 }

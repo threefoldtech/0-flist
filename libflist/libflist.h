@@ -163,6 +163,9 @@
         int (*sdel)(struct flist_db_t *db, char *key);
         int (*sexists)(struct flist_db_t *db, char *key);
 
+        value_t* (*mdget)(struct flist_db_t *db, char *key);
+        int (*mdset)(struct flist_db_t *db, char *key, char *data);
+
         void (*clean)(value_t *value);
 
     } flist_db_t;
