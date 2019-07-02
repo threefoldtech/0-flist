@@ -441,9 +441,9 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
         return 1;
     }
 
-    if(!unset && !target) {
-        fprintf(stderr, "[-] action metadata: missing target path\n");
-        return 1;
+    if(!target) {
+        debug("[-] action: metadata: volume: target not set, copying host\n");
+        target = host;
     }
 
     json_t *root = zf_metadata_fetch(cb, "volume", json_object);
