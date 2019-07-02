@@ -28,6 +28,7 @@ int zf_metadata_set_backend(int argc, char *argv[], zfe_settings_t *settings) {
     json_t *root = json_object();
     int option_index = 0;
     int reset = 0;
+    int failed = 0;
 
     char *host = "hub.grid.tf";
     int port = 9900;
@@ -85,8 +86,14 @@ int zf_metadata_set_backend(int argc, char *argv[], zfe_settings_t *settings) {
     }
 
     if(reset) {
-        printf("[+] action: metadata: removing backend metadata\n");
-        //
+        debug("[+] action: metadata: removing backend metadata\n");
+
+        if(!libflist_metadata_remove(database, "backend")) {
+            fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
+            return 1;
+        }
+
+        database->close(database);
         return 0;
     }
 
@@ -95,18 +102,18 @@ int zf_metadata_set_backend(int argc, char *argv[], zfe_settings_t *settings) {
 
     char *value = json_dumps(root, 0);
 
-    printf("[+] action: metadata: setting up backend\n");
-    printf("[+] action: metadata: %s\n", value);
+    debug("[+] action: metadata: setting up backend\n");
+    debug("[+] action: metadata: %s\n", value);
 
-    if(database->mdset(database, "backend", value)) {
-        printf("[-] action: metadata: %s\n", libflist_strerror());
-        exit(EXIT_FAILURE);
+    if(!libflist_metadata_set(database, "backend", value)) {
+        fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
+        failed = 1;
     }
 
     database->close(database);
     free(value);
 
-    return 0;
+    return failed;
 }
 
 static struct option entry_long_options[] = {
@@ -150,8 +157,14 @@ int zf_metadata_set_entry(int argc, char *argv[], zfe_settings_t *settings) {
     }
 
     if(reset) {
-        printf("[+] action: metadata: removing entrypoint metadata\n");
-        //
+        debug("[+] action: metadata: removing entrypoint metadata\n");
+
+        if(!libflist_metadata_remove(database, "entrypoint")) {
+            fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
+            return 1;
+        }
+
+        database->close(database);
         return 0;
     }
 
