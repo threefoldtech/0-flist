@@ -166,6 +166,7 @@
 
         value_t* (*mdget)(struct flist_db_t *db, char *key);
         int (*mdset)(struct flist_db_t *db, char *key, char *data);
+        int (*mddel)(struct flist_db_t *db, char *key);
 
         void (*clean)(value_t *value);
 

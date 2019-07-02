@@ -66,6 +66,7 @@ static int database_sqlite_optimize(flist_db_t *database) {
         {.target = &db->delete, .query = "DELETE FROM entries WHERE key = ?1"},
         {.target = &db->mdget,  .query = "SELECT value FROM metadata WHERE key = ?1"},
         {.target = &db->mdset,  .query = "REPLACE INTO metadata (key, value) VALUES (?1, ?2)"},
+        {.target = &db->mddel,  .query = "DELETE FROM metadata (key) VALUES (?1)"},
     };
 
     for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++) {
@@ -115,8 +116,19 @@ static void database_sqlite_close(flist_db_t *database) {
         sqlite3_exec(db->db, "VACUUM;", NULL, NULL, NULL);
     }
 
+    sqlite3_stmt *stmts[] = {
+        db->select,
+        db->insert,
+        db->delete,
+        db->mdget,
+        db->mdset,
+        db->mddel,
+    };
+
+    for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++)
+        sqlite3_finalize(stmts[i]);
+
     // closing prepared statements
-    sqlite3_finalize(db->select);
     sqlite3_finalize(db->insert);
 
     // closing database
@@ -260,6 +272,25 @@ static int database_sqlite_mdset(flist_db_t *database, char *key, char *payload)
     return 0;
 }
 
+static int database_sqlite_mddel(flist_db_t *database, char *key) {
+    size_t keylen = strlen(key);
+
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+
+    sqlite3_reset(db->mddel);
+    sqlite3_bind_text(db->mddel, 1, key, keylen, SQLITE_STATIC);
+
+    if(sqlite3_step(db->mddel) != SQLITE_DONE) {
+        libflist_set_error("mddel: sqlite3_step: %s", sqlite3_errmsg(db->db));
+        return 1;
+    }
+
+    db->updated = 1;
+
+    return 0;
+}
+
+
 
 // poor implementation of exists
 static int database_sqlite_exists(flist_db_t *database, uint8_t *key, size_t keylen) {
@@ -326,6 +357,7 @@ flist_db_t *libflist_db_sqlite_init(char *rootpath) {
     db->sexists = database_sqlite_sexists;
     db->mdget = database_sqlite_mdget;
     db->mdset = database_sqlite_mdset;
+    db->mddel = database_sqlite_mddel;
 
     return db;
 }
