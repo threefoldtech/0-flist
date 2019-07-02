@@ -222,9 +222,16 @@ int zf_metadata(int argc, char *argv[], zfe_settings_t *settings) {
     if(argc == 2)
         return zf_metadata_get(argc, argv, settings);
 
+    // skipping first argument
+    argc -= 1;
+    argv += 1;
+
     // setting metadata
-    if(strcmp(argv[1], "backend") == 0)
+    if(strcmp(argv[0], "backend") == 0)
         return zf_metadata_set_backend(argc, argv, settings);
+
+    else if(strcmp(argv[0], "entrypoint") == 0)
+        return zf_metadata_set_entry(argc, argv, settings);
 
     debug("[-] action: metadata: unknown metadata name\n");
     return 1;
