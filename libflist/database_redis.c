@@ -148,6 +148,31 @@ static int database_redis_sexists(flist_db_t *database, char *key) {
     return database_redis_exists(database, (uint8_t *) key, strlen(key));
 }
 
+static value_t *database_redis_mdget(flist_db_t *database, char *key) {
+    (void) database;
+    (void) key;
+
+    debug("[-] libflist: database_redis_mdget: not implemented\n");
+    return NULL;
+}
+
+static int database_redis_mdset(flist_db_t *database, char *key, char *payload) {
+    (void) database;
+    (void) key;
+    (void) payload;
+
+    debug("[-] libflist: database_redis_mdset: not implemented\n");
+    return 1;
+}
+
+static int database_redis_mddel(flist_db_t *database, char *key) {
+    (void) database;
+    (void) key;
+
+    debug("[-] libflist: database_redis_mddel: not implemented\n");
+    return 1;
+}
+
 static flist_db_t *database_redis_init_global(flist_db_t *db) {
     // setting global db
     db->type = "REDIS";
@@ -163,6 +188,9 @@ static flist_db_t *database_redis_init_global(flist_db_t *db) {
     db->sget = database_redis_sget;
     db->sset = database_redis_sset;
     db->sexists = database_redis_sexists;
+    db->mdget = database_redis_mdget;
+    db->mdset = database_redis_mdset;
+    db->mddel = database_redis_mddel;
 
     return db;
 }
