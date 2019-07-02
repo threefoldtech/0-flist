@@ -388,4 +388,11 @@
     //
     void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir);
     void libflist_dirnode_dumps(dirnode_t *root);
+
+    //
+    // metadata.c
+    //
+    int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload);
+    char *libflist_metadata_get(flist_db_t *database, char *metadata);
+
 #endif
