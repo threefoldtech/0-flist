@@ -7,6 +7,8 @@
         #define debug(...) ((void)0)
     #endif
 
+    #define discard __attribute__((cleanup(__cleanup_free)))
+
     void warnp(const char *str);
     void diep(const char *str);
     void dies(const char *str);
@@ -21,12 +23,20 @@
 
     } zfe_settings_t;
 
+    typedef struct zf_callback_t {
+        int argc;
+        zfe_settings_t *settings;
+        flist_db_t *database;
+        char **argv;
+
+    } zf_callback_t;
+
     typedef struct zf_cmds_t {
-        char *name;
-        int (*callback)(int argc, char *argv[], zfe_settings_t *settings);
-        char *help;
+        char *name;  // command name
+        int (*callback)(zf_callback_t *cb);
+        char *help;  // help message
+        int db;      // does the callback need the db
 
     } zf_cmds_t;
-
 
 #endif

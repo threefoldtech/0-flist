@@ -23,18 +23,16 @@ static struct option backend_long_options[] = {
     {0, 0, 0, 0}
 };
 
-int zf_metadata_set_backend(int argc, char *argv[], zfe_settings_t *settings) {
-    flist_db_t *database = zf_init(settings->mnt);
+int zf_metadata_set_backend(zf_callback_t *cb) {
     json_t *root = json_object();
     int option_index = 0;
     int reset = 0;
-    int failed = 0;
 
     char *host = "hub.grid.tf";
     int port = 9900;
 
     while(1) {
-        int i = getopt_long_only(argc, argv, "", backend_long_options, &option_index);
+        int i = getopt_long_only(cb->argc, cb->argv, "", backend_long_options, &option_index);
 
         if(i == -1)
             break;
@@ -88,32 +86,28 @@ int zf_metadata_set_backend(int argc, char *argv[], zfe_settings_t *settings) {
     if(reset) {
         debug("[+] action: metadata: removing backend metadata\n");
 
-        if(!libflist_metadata_remove(database, "backend")) {
+        if(!libflist_metadata_remove(cb->database, "backend")) {
             fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
             return 1;
         }
 
-        database->close(database);
         return 0;
     }
 
     json_object_set(root, "host", json_string(host));
     json_object_set(root, "port", json_integer(port));
 
-    char *value = json_dumps(root, 0);
+    discard char *value = json_dumps(root, 0);
 
     debug("[+] action: metadata: setting up backend\n");
     debug("[+] action: metadata: %s\n", value);
 
-    if(!libflist_metadata_set(database, "backend", value)) {
+    if(!libflist_metadata_set(cb->database, "backend", value)) {
         fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
-        failed = 1;
+        return 1;
     }
 
-    database->close(database);
-    free(value);
-
-    return failed;
+    return 0;
 }
 
 static struct option entry_long_options[] = {
@@ -122,14 +116,13 @@ static struct option entry_long_options[] = {
     {0, 0, 0, 0}
 };
 
-int zf_metadata_set_entry(int argc, char *argv[], zfe_settings_t *settings) {
-    flist_db_t *database = zf_init(settings->mnt);
+int zf_metadata_set_entry(zf_callback_t *cb) {
     json_t *root = json_array();
     int option_index = 0;
     int reset = 0;
 
     while(1) {
-        int i = getopt_long_only(argc, argv, "", entry_long_options, &option_index);
+        int i = getopt_long_only(cb->argc, cb->argv, "", entry_long_options, &option_index);
 
         if(i == -1)
             break;
@@ -159,47 +152,42 @@ int zf_metadata_set_entry(int argc, char *argv[], zfe_settings_t *settings) {
     if(reset) {
         debug("[+] action: metadata: removing entrypoint metadata\n");
 
-        if(!libflist_metadata_remove(database, "entrypoint")) {
+        if(!libflist_metadata_remove(cb->database, "entrypoint")) {
             fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
             return 1;
         }
 
-        database->close(database);
         return 0;
     }
 
-    for(; optind < argc; optind++)
-        json_array_append_new(root, json_string(argv[optind]));
+    for(; optind < cb->argc; optind++)
+        json_array_append_new(root, json_string(cb->argv[optind]));
 
-    char *value = json_dumps(root, 0);
+    discard char *value = json_dumps(root, 0);
 
     debug("[+] action: metadata: setting up entrypoint\n");
     debug("[+] action: metadata: %s\n", value);
 
-    if(database->mdset(database, "entrypoint", value)) {
+    if(!libflist_metadata_set(cb->database, "entrypoint", value)) {
         printf("[-] action: metadata: %s\n", libflist_strerror());
-        exit(EXIT_FAILURE);
+        return 1;
     }
-
-    database->close(database);
-    free(value);
 
     return 0;
 }
 
 
-int zf_metadata_get(int argc, char *argv[], zfe_settings_t *settings) {
-    flist_db_t *database = zf_init(settings->mnt);
+int zf_metadata_get(zf_callback_t *cb) {
     char *value;
-    (void) argc;
 
-    if(!(value = libflist_metadata_get(database, argv[1]))) {
+    if(!(value = libflist_metadata_get(cb->database, cb->argv[1]))) {
         debug("[-] action: metadata: get: metadata not found\n");
         return 1;
     }
 
-    debug("[+] action: metadata: value for <%s>\n", argv[1]);
+    debug("[+] action: metadata: value for <%s>\n", cb->argv[1]);
     printf("%s\n", value);
+
     return 0;
 }
 

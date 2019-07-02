@@ -4,8 +4,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include "libflist.h"
 #include "zflist-edit.h"
 #include "actions.h"
+#include "tools.h"
 
 zfe_settings_t settings;
 
@@ -28,12 +30,12 @@ void dies(const char *str) {
 // commands list
 //
 zf_cmds_t zf_commands[] = {
-    {.name = "open",     .callback = zf_open,     .help = "open an flist to enable editing"},
-    {.name = "ls",       .callback = zf_ls,       .help = "list the content of a directory"},
-    {.name = "chmod",    .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},
-    {.name = "rm",       .callback = zf_rm,       .help = "remove a file (not a directory)"},
-    {.name = "metadata", .callback = zf_metadata, .help = "get or set metadata"},
-    {.name = "commit",   .callback = zf_commit,   .help = "close an flist and commit changes"},
+    {.name = "open",     .db = 0, .callback = zf_open,     .help = "open an flist to enable editing"},
+    {.name = "ls",       .db = 1, .callback = zf_ls,       .help = "list the content of a directory"},
+    {.name = "chmod",    .db = 1, .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},
+    {.name = "rm",       .db = 1, .callback = zf_rm,       .help = "remove a file (not a directory)"},
+    {.name = "metadata", .db = 1, .callback = zf_metadata, .help = "get or set metadata"},
+    {.name = "commit",   .db = 0, .callback = zf_commit,   .help = "close an flist and commit changes"},
 };
 
 int usage(char *basename) {
@@ -55,6 +57,29 @@ int usage(char *basename) {
         fprintf(stderr, "  %-15s %s\n", zf_commands[i].name, zf_commands[i].help);
 
     exit(EXIT_FAILURE);
+}
+
+int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings) {
+    zf_callback_t cb = {
+        .argc = argc,
+        .argv = argv,
+        .settings = settings,
+        .database = NULL,
+    };
+
+    // open database (if used)
+    if(cmd->db)
+        cb.database = zf_init(settings->mnt);
+
+    // call the callback
+    debug("[+] system: callback found for command: %s\n", cmd->name);
+    int value = cmd->callback(&cb);
+
+    // commit database (if used)
+    if(cmd->db)
+        cb.database->close(cb.database);
+
+    return value;
 }
 
 int main(int argc, char *argv[]) {
@@ -96,7 +121,7 @@ int main(int argc, char *argv[]) {
     // for matching command
     for(unsigned int i = 0; i < sizeof(zf_commands) / sizeof(zf_cmds_t); i++)
         if(strcasecmp(zf_commands[i].name, action) == 0)
-            value = zf_commands[i].callback(nargc, nargv, &settings);
+            value = zf_callback(&zf_commands[i], nargc, nargv, &settings);
 
     if(value == -1) {
         fprintf(stderr, "Unknown action '%s'\n", action);

@@ -18,35 +18,35 @@
 //
 // open
 //
-int zf_open(int argc, char *argv[], zfe_settings_t *settings) {
+int zf_open(zf_callback_t *cb) {
     char temp[2048];
 
     // checking if arguments are set
-    if(argc != 2) {
+    if(cb->argc != 2) {
         fprintf(stderr, "[-] action: open: missing filename\n");
         return 1;
     }
 
     // creating mountpoint directory (if not exists)
-    if(!dir_exists(settings->mnt)) {
-        debug("[+] action: open: creating mountpoint: <%s>\n", settings->mnt);
+    if(!dir_exists(cb->settings->mnt)) {
+        debug("[+] action: open: creating mountpoint: <%s>\n", cb->settings->mnt);
 
-        if(dir_create(settings->mnt) < 0)
-            diep(settings->mnt);
+        if(dir_create(cb->settings->mnt) < 0)
+            diep(cb->settings->mnt);
     }
 
     // checking if the mountpoint doesn't contains already
     // an flist database
-    snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", settings->mnt);
+    snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", cb->settings->mnt);
     if(file_exists(temp)) {
         fprintf(stderr, "[-] action: open: mountpoint already contains an open flist\n");
         return 1;
     }
 
-    char *filename = argv[1];
+    char *filename = cb->argv[1];
     printf("[+] action: open: opening file <%s>\n", filename);
 
-    if(!libflist_archive_extract(filename, settings->mnt)) {
+    if(!libflist_archive_extract(filename, cb->settings->mnt)) {
         warnp("libflist_archive_extract");
         return 1;
     }
@@ -58,20 +58,20 @@ int zf_open(int argc, char *argv[], zfe_settings_t *settings) {
 //
 // commit
 //
-int zf_commit(int argc, char *argv[], zfe_settings_t *settings) {
-    if(argc != 2) {
+int zf_commit(zf_callback_t *cb) {
+    if(cb->argc != 2) {
         fprintf(stderr, "[-] action: open: missing filename\n");
         return 1;
     }
 
-    char *filename = argv[1];
+    char *filename = cb->argv[1];
     printf("[+] action: commit: creating <%s>\n", filename);
 
     // removing possible already existing db
     unlink(filename);
 
     // create flist
-    if(!libflist_archive_create(filename, settings->mnt)) {
+    if(!libflist_archive_create(filename, cb->settings->mnt)) {
         fprintf(stderr, "[-] action: commit: could not create flist\n");
         return 1;
     }
@@ -83,23 +83,22 @@ int zf_commit(int argc, char *argv[], zfe_settings_t *settings) {
 //
 // chmod
 //
-int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
-    if(argc != 3) {
+int zf_chmod(zf_callback_t *cb) {
+    if(cb->argc != 3) {
         fprintf(stderr, "[-] action: chmod: missing mode or filename\n");
         return 1;
     }
 
-    debug("[+] action: chmod: setting mode %s on %s\n", argv[1], argv[2]);
+    debug("[+] action: chmod: setting mode %s on %s\n", cb->argv[1], cb->argv[2]);
 
-    int newmode = strtol(argv[1], NULL, 8);
-    char *dirpath = dirname(strdup(argv[2]));
-    char *filename = basename(argv[2]);
+    int newmode = strtol(cb->argv[1], NULL, 8);
+    discard char *dirpath = dirname(strdup(cb->argv[2]));
+    char *filename = basename(cb->argv[2]);
 
-    flist_db_t *database = zf_init(settings->mnt);
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+    if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
         debug("[-] action: chmod: no such parent directory\n");
         return 1;
     }
@@ -118,11 +117,8 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
 
     printf("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
 
-    dirnode_t *parent = libflist_directory_get_parent(database, dirnode);
-    libflist_dirnode_commit(dirnode, database, parent, NULL);
-
-    database->close(database);
-    free(dirpath);
+    dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
+    libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
 
     return 0;
 }
@@ -130,22 +126,21 @@ int zf_chmod(int argc, char *argv[], zfe_settings_t *settings) {
 //
 // rm
 //
-int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
-    if(argc != 2) {
+int zf_rm(zf_callback_t *cb) {
+    if(cb->argc != 2) {
         fprintf(stderr, "[-] action: rm: missing filename\n");
         return 1;
     }
 
-    char *dirpath = dirname(strdup(argv[1]));
-    char *filename = basename(argv[1]);
+    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    char *filename = basename(cb->argv[1]);
 
     debug("[+] action: rm: removing <%s> from <%s>\n", filename, dirpath);
 
-    flist_db_t *database = zf_init(settings->mnt);
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+    if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
         debug("[-] action: rm: no such directory (file parent directory)\n");
         return 1;
     }
@@ -166,11 +161,8 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
     printf("[+] action: rm: file removed\n");
     printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
-    dirnode_t *parent = libflist_directory_get_parent(database, dirnode);
-    libflist_dirnode_commit(dirnode, database, parent, NULL);
-
-    database->close(database);
-    free(dirpath);
+    dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
+    libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
 
     return 0;
 }
@@ -178,19 +170,18 @@ int zf_rm(int argc, char *argv[], zfe_settings_t *settings) {
 //
 // ls
 //
-int zf_ls(int argc, char *argv[], zfe_settings_t *settings) {
-    if(argc != 2) {
+int zf_ls(zf_callback_t *cb) {
+    if(cb->argc != 2) {
         fprintf(stderr, "[-] action: ls: missing directory\n");
         return 1;
     }
 
-    char *dirpath = argv[1];
+    char *dirpath = cb->argv[1];
     debug("[+] action: ls: listing <%s>\n", dirpath);
 
-    flist_db_t *database = zf_init(settings->mnt);
     dirnode_t *dirnode;
 
-    if(!(dirnode = libflist_directory_get(database, dirpath))) {
+    if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
         debug("[-] action: ls: no such directory (file parent directory)\n");
         return 1;
     }
@@ -204,34 +195,32 @@ int zf_ls(int argc, char *argv[], zfe_settings_t *settings) {
         printf(" %s\n", inode->name);
     }
 
-    database->close(database);
-
     return 0;
 }
 
 //
 // metadata
 //
-int zf_metadata(int argc, char *argv[], zfe_settings_t *settings) {
-    if(argc < 2) {
+int zf_metadata(zf_callback_t *cb) {
+    if(cb->argc < 2) {
         fprintf(stderr, "[-] action: metadata: missing metadata name\n");
         return 1;
     }
 
     // fetching metadata from database
-    if(argc == 2)
-        return zf_metadata_get(argc, argv, settings);
+    if(cb->argc == 2)
+        return zf_metadata_get(cb);
 
     // skipping first argument
-    argc -= 1;
-    argv += 1;
+    cb->argc -= 1;
+    cb->argv += 1;
 
     // setting metadata
-    if(strcmp(argv[0], "backend") == 0)
-        return zf_metadata_set_backend(argc, argv, settings);
+    if(strcmp(cb->argv[0], "backend") == 0)
+        return zf_metadata_set_backend(cb);
 
-    else if(strcmp(argv[0], "entrypoint") == 0)
-        return zf_metadata_set_entry(argc, argv, settings);
+    else if(strcmp(cb->argv[0], "entrypoint") == 0)
+        return zf_metadata_set_entry(cb);
 
     debug("[-] action: metadata: unknown metadata name\n");
     return 1;

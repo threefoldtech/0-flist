@@ -8,9 +8,16 @@
 #include <libgen.h>
 #include <getopt.h>
 #include "libflist.h"
+#include "zflist-edit.h"
 #include "tools.h"
 
+void __cleanup_free(void *p) {
+    free(* (void **) p);
+}
+
 flist_db_t *zf_init(char *mountpoint) {
+    debug("[+] database: opening the flist database\n");
+
     flist_db_t *database = libflist_db_sqlite_init(mountpoint);
     database->open(database);
 

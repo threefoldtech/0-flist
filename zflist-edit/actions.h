@@ -2,11 +2,11 @@
     #define ZFLISTEDIT_ACTIONS_H
 
 
-    int zf_open(int argc, char *argv[], zfe_settings_t *settings);
-    int zf_commit(int argc, char *argv[], zfe_settings_t *settings);
+    int zf_open(zf_callback_t *cb);
+    int zf_commit(zf_callback_t *cb);
 
-    int zf_chmod(int argc, char *argv[], zfe_settings_t *settings);
-    int zf_rm(int argc, char *argv[], zfe_settings_t *settings);
-    int zf_ls(int argc, char *argv[], zfe_settings_t *settings);
-    int zf_metadata(int argc, char *argv[], zfe_settings_t *settings);
+    int zf_chmod(zf_callback_t *cb);
+    int zf_rm(zf_callback_t *cb);
+    int zf_ls(zf_callback_t *cb);
+    int zf_metadata(zf_callback_t *cb);
 #endif
