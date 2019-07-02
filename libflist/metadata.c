@@ -13,6 +13,7 @@ int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload) {
         return 0;
     }
 
+    debug("[-] libflist: metadata: <%s> set into database\n", metadata);
     return 1;
 }
 
@@ -20,7 +21,7 @@ char *libflist_metadata_get(flist_db_t *database, char *metadata) {
     value_t *rawdata = database->mdget(database, metadata);
 
     if(!rawdata->data) {
-        debug("[-] action: metadata: get: metadata not found\n");
+        debug("[-] libflist: metadata: get: metadata not found\n");
         free(rawdata);
         return NULL;
     }
@@ -40,5 +41,6 @@ int libflist_metadata_remove(flist_db_t *database, char *metadata) {
         return 0;
     }
 
+    debug("[-] libflist: metadata: <%s> deleted\n", metadata);
     return 1;
 }
