@@ -222,7 +222,30 @@ int zf_metadata(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "entrypoint") == 0)
         return zf_metadata_set_entry(cb);
 
-    debug("[-] action: metadata: unknown metadata name\n");
+    else if(strcmp(cb->argv[0], "environ") == 0)
+        return zf_metadata_set_environ(cb);
+
+    else if(strcmp(cb->argv[0], "port") == 0)
+        return zf_metadata_set_port(cb);
+
+    else if(strcmp(cb->argv[0], "volume") == 0)
+        return zf_metadata_set_volume(cb);
+
+    fprintf(stderr, "[-] action: metadata: unknown metadata name\n");
+    return 1;
+}
+
+//
+// cat
+//
+int zf_cat(zf_callback_t *cb) {
+    if(cb->argc < 2) {
+        fprintf(stderr, "[-] action: metadata: missing filename\n");
+        return 1;
+    }
+
+    // fetching backend
+
     return 1;
 }
 

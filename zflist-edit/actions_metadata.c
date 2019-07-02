@@ -12,6 +12,44 @@
 #include "zflist-edit.h"
 #include "tools.h"
 
+//
+// helpers
+//
+static int zf_metadata_reset(zf_callback_t *cb, char *key) {
+    debug("[+] action: metadata: removing metadata: %s\n", key);
+
+    if(!libflist_metadata_remove(cb->database, key)) {
+        fprintf(stderr, "[-] action: metadata: %s: %s\n", key, libflist_strerror());
+        return 1;
+    }
+
+    return 0;
+}
+
+//
+// getter
+//
+int zf_metadata_get(zf_callback_t *cb) {
+    char *value;
+
+    if(!(value = libflist_metadata_get(cb->database, cb->argv[1]))) {
+        debug("[-] action: metadata: get: metadata not found\n");
+        return 1;
+    }
+
+    debug("[+] action: metadata: value for <%s>\n", cb->argv[1]);
+    printf("%s\n", value);
+
+    return 0;
+}
+
+//
+// setters
+//
+
+//
+// backend
+//
 static struct option backend_long_options[] = {
     {"host",      required_argument, 0, 'h'},
     {"port",      required_argument, 0, 'p'},
@@ -79,20 +117,12 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
 
             case '?':
             default:
-               exit(EXIT_FAILURE);
+               return 1;
         }
     }
 
-    if(reset) {
-        debug("[+] action: metadata: removing backend metadata\n");
-
-        if(!libflist_metadata_remove(cb->database, "backend")) {
-            fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
-            return 1;
-        }
-
-        return 0;
-    }
+    if(reset)
+        return zf_metadata_reset(cb, "backend");
 
     json_object_set(root, "host", json_string(host));
     json_object_set(root, "port", json_integer(port));
@@ -110,6 +140,9 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
     return 0;
 }
 
+//
+// entry point
+//
 static struct option entry_long_options[] = {
     {"reset",  no_argument, 0, 'r'},
     {"help",   no_argument, 0, 'h'},
@@ -145,20 +178,12 @@ int zf_metadata_set_entry(zf_callback_t *cb) {
 
             case '?':
             default:
-               exit(EXIT_FAILURE);
+               return 1;
         }
     }
 
-    if(reset) {
-        debug("[+] action: metadata: removing entrypoint metadata\n");
-
-        if(!libflist_metadata_remove(cb->database, "entrypoint")) {
-            fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
-            return 1;
-        }
-
-        return 0;
-    }
+    if(reset)
+        return zf_metadata_reset(cb, "entrypoint");
 
     for(; optind < cb->argc; optind++)
         json_array_append_new(root, json_string(cb->argv[optind]));
@@ -169,25 +194,30 @@ int zf_metadata_set_entry(zf_callback_t *cb) {
     debug("[+] action: metadata: %s\n", value);
 
     if(!libflist_metadata_set(cb->database, "entrypoint", value)) {
-        printf("[-] action: metadata: %s\n", libflist_strerror());
+        fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
         return 1;
     }
 
     return 0;
 }
 
-
-int zf_metadata_get(zf_callback_t *cb) {
-    char *value;
-
-    if(!(value = libflist_metadata_get(cb->database, cb->argv[1]))) {
-        debug("[-] action: metadata: get: metadata not found\n");
-        return 1;
-    }
-
-    debug("[+] action: metadata: value for <%s>\n", cb->argv[1]);
-    printf("%s\n", value);
-
-    return 0;
+//
+// environment variables
+//
+int zf_metadata_set_environ(zf_callback_t *cb) {
+    // not implemented
+    return cb->argc;
 }
+
+int zf_metadata_set_port(zf_callback_t *cb) {
+    // not implemented
+    return cb->argc;
+}
+
+int zf_metadata_set_volume(zf_callback_t *cb) {
+    // not implemented
+    return cb->argc;
+}
+
+
 
