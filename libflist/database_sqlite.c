@@ -54,6 +54,7 @@ struct __stmtop {
 static int database_sqlite_optimize(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
+    debug("[+] libflist: sqlite: optimizing performances\n");
     // pre-compute query
     // preparing statements we will reuse all the way
     // since we only do like key-value store with the database
@@ -66,10 +67,12 @@ static int database_sqlite_optimize(flist_db_t *database) {
         {.target = &db->delete, .query = "DELETE FROM entries WHERE key = ?1"},
         {.target = &db->mdget,  .query = "SELECT value FROM metadata WHERE key = ?1"},
         {.target = &db->mdset,  .query = "REPLACE INTO metadata (key, value) VALUES (?1, ?2)"},
-        {.target = &db->mddel,  .query = "DELETE FROM metadata (key) VALUES (?1)"},
+        {.target = &db->mddel,  .query = "DELETE FROM metadata WHERE key = ?1"},
     };
 
     for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++) {
+        debug("[+] libflist: sqlite: preparing: %s\n", stmts[i].query);
+
         if(sqlite3_prepare_v2(db->db, stmts[i].query, -1, stmts[i].target, 0) != SQLITE_OK) {
             libflist_set_error("sqlite3_prepare_v2: %s: %s", stmts[i].query, sqlite3_errmsg(db->db));
             return 1;
@@ -112,24 +115,21 @@ static void database_sqlite_close(flist_db_t *database) {
     database_sqlite_t *db = (database_sqlite_t *) database->handler;
 
     if(db->updated) {
+        debug("[+] libflist: sqlite: committing and compacting\n");
+
         sqlite3_exec(db->db, "END TRANSACTION;", NULL, NULL, NULL);
         sqlite3_exec(db->db, "VACUUM;", NULL, NULL, NULL);
     }
 
     sqlite3_stmt *stmts[] = {
-        db->select,
-        db->insert,
-        db->delete,
-        db->mdget,
-        db->mdset,
-        db->mddel,
+        db->select, db->insert, db->delete,
+        db->mdget, db->mdset, db->mddel,
     };
 
-    for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++)
-        sqlite3_finalize(stmts[i]);
+    debug("[+] libflist: sqlite: cleaning context\n");
 
-    // closing prepared statements
-    sqlite3_finalize(db->insert);
+    for(size_t i = 0; i < sizeof(stmts) / sizeof(sqlite3_stmt *); i++)
+        sqlite3_finalize(stmts[i]);
 
     // closing database
     sqlite3_close(db->db);
