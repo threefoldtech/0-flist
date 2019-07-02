@@ -13,7 +13,7 @@ int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload) {
         return 0;
     }
 
-    debug("[-] libflist: metadata: <%s> set into database\n", metadata);
+    debug("[+] libflist: metadata: <%s> set into database\n", metadata);
     return 1;
 }
 
@@ -41,6 +41,6 @@ int libflist_metadata_remove(flist_db_t *database, char *metadata) {
         return 0;
     }
 
-    debug("[-] libflist: metadata: <%s> deleted\n", metadata);
+    debug("[+] libflist: metadata: <%s> deleted\n", metadata);
     return 1;
 }
