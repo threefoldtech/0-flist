@@ -44,7 +44,7 @@ int zf_open(zf_callback_t *cb) {
     }
 
     char *filename = cb->argv[1];
-    printf("[+] action: open: opening file <%s>\n", filename);
+    debug("[+] action: open: opening file <%s>\n", filename);
 
     if(!libflist_archive_extract(filename, cb->settings->mnt)) {
         warnp("libflist_archive_extract");
@@ -65,7 +65,7 @@ int zf_commit(zf_callback_t *cb) {
     }
 
     char *filename = cb->argv[1];
-    printf("[+] action: commit: creating <%s>\n", filename);
+    debug("[+] action: commit: creating <%s>\n", filename);
 
     // removing possible already existing db
     unlink(filename);
@@ -99,23 +99,23 @@ int zf_chmod(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
-        debug("[-] action: chmod: no such parent directory\n");
+        fprintf(stderr, "[-] action: chmod: no such parent directory\n");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        debug("[-] action: chmod: no such file\n");
+        fprintf(stderr, "[-] action: chmod: no such file\n");
         return 1;
     }
 
-    printf("[+] action: chmod: current mode: 0o%o\n", inode->acl.mode);
+    debug("[+] action: chmod: current mode: 0o%o\n", inode->acl.mode);
 
     // remove 9 last bits and set new last 9 bits
     uint32_t cleared = inode->acl.mode & 0xfffffe00;
     inode->acl.mode = cleared | newmode;
     libflist_inode_acl_commit(inode);
 
-    printf("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
+    debug("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
 
     dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
     libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
@@ -141,25 +141,25 @@ int zf_rm(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
-        debug("[-] action: rm: no such directory (file parent directory)\n");
+        fprintf(stderr, "[-] action: rm: no such directory (file parent directory)\n");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        debug("[-] action: rm: no such file\n");
+        fprintf(stderr, "[-] action: rm: no such file\n");
         return 1;
     }
 
-    printf("[+] action: rm: file found (size: %lu bytes)\n", inode->size);
-    printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
+    debug("[+] action: rm: file found (size: %lu bytes)\n", inode->size);
+    debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     if(!libflist_directory_rm_inode(dirnode, inode)) {
-        printf("[-] action: rm: something went wrong when removing the file\n");
+        fprintf(stderr, "[-] action: rm: something went wrong when removing the file\n");
         return 1;
     }
 
-    printf("[+] action: rm: file removed\n");
-    printf("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
+    debug("[+] action: rm: file removed\n");
+    debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
     libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
@@ -182,7 +182,7 @@ int zf_ls(zf_callback_t *cb) {
     dirnode_t *dirnode;
 
     if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
-        debug("[-] action: ls: no such directory (file parent directory)\n");
+        fprintf(stderr, "[-] action: ls: no such directory (file parent directory)\n");
         return 1;
     }
 
