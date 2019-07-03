@@ -13,6 +13,10 @@
 #include "tools.h"
 
 //
+// FIXME: json stuff should be on the library
+//
+
+//
 // helpers
 //
 static int zf_metadata_reset(zf_callback_t *cb, char *key) {
