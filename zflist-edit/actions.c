@@ -240,7 +240,7 @@ int zf_metadata(zf_callback_t *cb) {
 //
 int zf_cat(zf_callback_t *cb) {
     if(cb->argc < 2) {
-        fprintf(stderr, "[-] action: metadata: missing filename\n");
+        fprintf(stderr, "[-] action: cat: missing filename\n");
         return 1;
     }
 
