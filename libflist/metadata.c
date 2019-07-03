@@ -44,3 +44,34 @@ int libflist_metadata_remove(flist_db_t *database, char *metadata) {
     debug("[+] libflist: metadata: <%s> deleted\n", metadata);
     return 1;
 }
+
+flist_db_t *libflist_metadata_backend_database(flist_db_t *database) {
+    flist_db_t *backdb;
+
+    // fetching backend from metadata
+    char *value;
+
+    if(!(value = libflist_metadata_get(database, "backend"))) {
+        debug("[-] libflist: backend database: metadata not found\n");
+        return NULL;
+    }
+
+    debug("[+] libflist: metadata: raw backend: %s\n", value);
+
+    json_error_t error;
+    json_t *backend = json_loads(value, 0, &error);
+
+    char *host = (char *) json_string_value(json_object_get(backend, "host"));
+    char *namespace = (char *) json_string_value(json_object_get(backend, "namespace"));
+    char *password = (char *) json_string_value(json_object_get(backend, "password"));
+    int port = json_integer_value(json_object_get(backend, "port"));
+
+    if(!(backdb = libflist_db_redis_init_tcp(host, port, namespace, password, NULL))) {
+        json_decref(backend);
+        return NULL;
+    }
+
+    json_decref(backend);
+
+    return backdb;
+}

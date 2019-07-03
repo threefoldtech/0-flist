@@ -396,5 +396,6 @@
     int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload);
     int libflist_metadata_remove(flist_db_t *database, char *metadata);
     char *libflist_metadata_get(flist_db_t *database, char *metadata);
+    flist_db_t *libflist_metadata_backend_database(flist_db_t *database);
 
 #endif
