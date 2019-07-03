@@ -26,8 +26,8 @@ char *libflist_metadata_get(flist_db_t *database, char *metadata) {
         return NULL;
     }
 
-    printf("[+] libflist: metadata: value for <%s>\n", metadata);
-    printf("[+] %s\n", rawdata->data);
+    debug("[+] libflist: metadata: value for <%s>\n", metadata);
+    debug("[+] %s\n", rawdata->data);
 
     char *value = rawdata->data;
     free(rawdata);
