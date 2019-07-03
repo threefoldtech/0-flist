@@ -370,6 +370,7 @@
 
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
+    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent);
 
     void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
     char *libflist_inode_acl_key(acl_t *acl);

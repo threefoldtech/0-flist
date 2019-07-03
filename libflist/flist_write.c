@@ -732,6 +732,29 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     return inode;
 }
 
+inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent) {
+    struct stat sb;
+    char *localdup = NULL;
+    inode_t *inode = NULL;
+
+    if(stat(localpath, &sb) < 0) {
+        warnp(localpath);
+        return NULL;
+    }
+
+    if(!(localdup = strdup(localpath)))
+        diep("strdup");
+
+    char *filename = basename(localdup);
+
+    if(!(inode = flist_process_file(filename, &sb, localpath, parent)))
+        return NULL;
+
+    free(localdup);
+
+    return inode;
+}
+
 static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
     debug("[+] fixing root directory: %s\n", root->fullpath);
 
