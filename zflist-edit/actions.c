@@ -244,9 +244,46 @@ int zf_cat(zf_callback_t *cb) {
         return 1;
     }
 
-    // fetching backend
+    flist_db_t *backdb;
 
-    return 1;
+    if(!(backdb = libflist_metadata_backend_database(cb->database))) {
+        fprintf(stderr, "[-] action: cat: backend: %s\n", libflist_strerror());
+        return 1;
+    }
+
+    flist_backend_t *backend = libflist_backend_init(backdb, "/");
+
+    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    char *filename = basename(cb->argv[1]);
+
+    debug("[+] action: cat: looking for: %s in %s\n", filename, dirpath);
+
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
+        fprintf(stderr, "[-] action: cat: no such parent directory\n");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_name(dirnode, filename))) {
+        fprintf(stderr, "[-] action: cat: no such file\n");
+        return 1;
+    }
+
+    for(size_t i = 0; i < inode->chunks->size; i++) {
+        inode_chunk_t *ichunk = &inode->chunks->list[i];
+        flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
+
+        if(!libflist_backend_download_chunk(backend, chunk)) {
+            fprintf(stderr, "[-] could not download file: %s\n", libflist_strerror());
+            return 1;
+        }
+
+        printf("%.*s\n", (int) chunk->plain.length, chunk->plain.data);
+        libflist_chunk_free(chunk);
+    }
+
+    return 0;
 }
-
 
