@@ -9,5 +9,6 @@
     int zf_rm(zf_callback_t *cb);
     int zf_ls(zf_callback_t *cb);
     int zf_cat(zf_callback_t *cb);
+    int zf_put(zf_callback_t *cb);
     int zf_metadata(zf_callback_t *cb);
 #endif

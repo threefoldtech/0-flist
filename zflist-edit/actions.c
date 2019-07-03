@@ -287,3 +287,46 @@ int zf_cat(zf_callback_t *cb) {
     return 0;
 }
 
+int zf_put(zf_callback_t *cb) {
+    if(cb->argc < 3) {
+        fprintf(stderr, "[-] action: put: host file or target destination\n");
+        return 1;
+    }
+
+    flist_db_t *backdb;
+
+    if(!(backdb = libflist_metadata_backend_database(cb->database))) {
+        fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
+        return 1;
+    }
+
+    // flist_backend_t *backend = libflist_backend_init(backdb, "/");
+
+    char *localfile = cb->argv[1];
+    discard char *dirpath = dirname(strdup(cb->argv[2]));
+
+    debug("[+] action: put: looking for directory: %s\n", dirpath);
+
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    if(!(dirnode = libflist_directory_get(cb->database, dirpath))) {
+        fprintf(stderr, "[-] action: put: no such parent directory\n");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_localfile(localfile, dirnode))) {
+        fprintf(stderr, "[-] action: cat: could not load local file\n");
+        return 1;
+    }
+
+    // append inode to that directory
+    dirnode_appends_inode(dirnode, inode);
+
+    // commit
+    dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
+    libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
+
+    return 0;
+}
+
