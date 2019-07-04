@@ -32,6 +32,7 @@ void dies(const char *str) {
 zf_cmds_t zf_commands[] = {
     {.name = "open",     .db = 0, .callback = zf_open,     .help = "open an flist to enable editing"},
     {.name = "ls",       .db = 1, .callback = zf_ls,       .help = "list the content of a directory"},
+    {.name = "stat",     .db = 1, .callback = zf_stat,     .help = "dump inode full metadata"},
     {.name = "cat",      .db = 1, .callback = zf_cat,      .help = "print file contents (backend metadata required)"},
     {.name = "put",      .db = 1, .callback = zf_put,      .help = "insert local file into the flist"},
     {.name = "chmod",    .db = 1, .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},

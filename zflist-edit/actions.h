@@ -10,6 +10,7 @@
     int zf_rmdir(zf_callback_t *cb);
     int zf_mkdir(zf_callback_t *cb);
     int zf_ls(zf_callback_t *cb);
+    int zf_stat(zf_callback_t *cb);
     int zf_cat(zf_callback_t *cb);
     int zf_put(zf_callback_t *cb);
     int zf_metadata(zf_callback_t *cb);

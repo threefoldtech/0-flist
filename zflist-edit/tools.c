@@ -45,3 +45,43 @@ void zf_ls_inode_perm(inode_t *inode) {
     }
 }
 
+int zf_stat_inode(inode_t *inode) {
+    printf("  File: /%s\n", inode->fullpath[0] == '/' ? inode->fullpath + 1 : inode->fullpath);
+    printf("  Size: %lu bytes\n", inode->size);
+
+    printf("Access: (%o/%c", inode->acl.mode, zf_ls_inode_type(inode));
+    zf_ls_inode_perm(inode);
+
+    printf(")  UID: %s, GID: %s\n", inode->acl.uname, inode->acl.gname);
+
+    printf("Access: %lu\n", inode->modification);
+    printf("Create: %lu\n", inode->creation);
+
+    if(inode->type == INODE_LINK)
+        printf("Target: %s\n", inode->link);
+
+    if(inode->type == INODE_SPECIAL)
+        printf("Device: %s\n", inode->sdata);
+
+    printf("Chunks: ");
+
+    if(!inode->chunks) {
+        printf("(empty set)\n");
+        return 0;
+    }
+
+    for(size_t i = 0; i < inode->chunks->size; i++) {
+        inode_chunk_t *ichunk = &inode->chunks->list[i];
+
+        if(i > 0)
+            printf("        ");
+
+        discard char *hashstr = libflist_hashhex((unsigned char *) ichunk->entryid, ichunk->entrylen);
+        discard char *keystr = libflist_hashhex((unsigned char *) ichunk->decipher, ichunk->decipherlen);
+
+        printf("key: %s, decipher: %s\n", hashstr, keystr);
+
+    }
+
+    return 0;
+}

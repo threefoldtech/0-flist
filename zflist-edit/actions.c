@@ -294,6 +294,38 @@ int zf_ls(zf_callback_t *cb) {
 }
 
 //
+// stat
+//
+int zf_stat(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        fprintf(stderr, "[-] action: stat: missing filename or directory\n");
+        return 1;
+    }
+
+    char *target = cb->argv[1];
+    discard char *targetcpy = strdup(cb->argv[1]);
+    char *parentdir = dirname(targetcpy);
+    char *filename = basename(target);
+
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    // let's fetch parent directory and looking if inode exists inside
+    if(!(dirnode = libflist_directory_get(cb->database, parentdir))) {
+        fprintf(stderr, "[-] action: stat: no parent directory found\n");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_name(dirnode, filename))) {
+        fprintf(stderr, "[-] action: stat: no such file or directory\n");
+        return 1;
+    }
+
+    // we found the inode
+    return zf_stat_inode(inode);
+}
+
+//
 // metadata
 //
 int zf_metadata(zf_callback_t *cb) {
@@ -382,6 +414,9 @@ int zf_cat(zf_callback_t *cb) {
     return 0;
 }
 
+//
+// put
+//
 int zf_put(zf_callback_t *cb) {
     if(cb->argc < 3) {
         fprintf(stderr, "[-] action: put: host file or target destination\n");
