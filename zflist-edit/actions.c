@@ -168,6 +168,61 @@ int zf_rm(zf_callback_t *cb) {
 }
 
 //
+// rmdir
+// warning: this remove directory and all subdirectories (recursive)
+//
+int zf_rmdir(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        fprintf(stderr, "[-] action: rmdir: missing directory\n");
+        return 1;
+    }
+
+    char *dirpath = cb->argv[1];
+
+    if(strcmp(dirpath, "/") == 0) {
+        fprintf(stderr, "[-] action: rmdir: cannot remove root directory\n");
+        return 1;
+    }
+
+    debug("[+] action: rmdir: removing recursively <%s>\n", dirpath);
+
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_directory_get_recursive(cb->database, dirpath))) {
+        fprintf(stderr, "[-] action: rmdir: no such directory\n");
+        return 1;
+    }
+
+    // fetching parent of this directory
+    dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
+    debug("[+] action: rmdir: directory found, parent: %s\n", parent->fullpath);
+
+    // removing all subdirectories
+    if(libflist_directory_rm_recursively(cb->database, dirnode) != 0) {
+        fprintf(stderr, "[-] action: rmdir: could not remove directories: %s\n", libflist_strerror());
+        return 1;
+    }
+
+    // all subdirectories removed
+    // looking for directory inode inside the parent now
+    debug("[+] action: rmdir: all subdirectories removed, removing directory from parent\n");
+    inode_t *inode = libflist_inode_search(parent, basename(dirnode->fullpath));
+
+    // removing inode from the parent directory
+    if(!libflist_directory_rm_inode(parent, inode)) {
+        fprintf(stderr, "[-] action: rm: something went wrong when removing the file\n");
+        return 1;
+    }
+
+    // commit changes in the parent (and parent of the parent)
+    dirnode_t *pparent = libflist_directory_get_parent(cb->database, parent);
+    libflist_dirnode_commit(parent, cb->database, pparent, NULL);
+
+    return 0;
+}
+
+
+//
 // ls
 //
 int zf_ls(zf_callback_t *cb) {
