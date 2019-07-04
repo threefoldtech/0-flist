@@ -5,7 +5,7 @@
 #include <stdarg.h>
 #include "verbose.h"
 
-char libflist_internal_error[1024] = {0};
+char libflist_internal_error[1024] = "Success";
 
 // global static flag to enable or disable
 // debug message on the whole library
