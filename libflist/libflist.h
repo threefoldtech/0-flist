@@ -285,6 +285,7 @@
     inode_t *inode_lazy_duplicate(inode_t *source);
 
     flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey);
+    flist_acl_t *libflist_mk_permissions(char *uname, char *gname, int mode);
     flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src);
     void inode_acl_persist(flist_db_t *database, acl_t *acl);
 
@@ -359,6 +360,8 @@
     //
     // flist_read.c
     //
+    inode_t *libflist_directory_create(dirnode_t *parent, char *name);
+
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
     dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root);
     acl_t *libflist_inode_acl_commit(inode_t *inode);
@@ -372,6 +375,7 @@
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
     inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent);
+    inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
 
     dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
     int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);

@@ -13,4 +13,5 @@
 
     } excluders_t;
 
+    inode_t *flist_inode_mkdir(char *name, dirnode_t *parent);
 #endif

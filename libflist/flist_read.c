@@ -146,6 +146,19 @@ void inode_chunks_free(inode_t *inode) {
 //
 // public helpers
 //
+flist_acl_t *libflist_mk_permissions(char *uname, char *gname, int mode) {
+    flist_acl_t *acl;
+
+    if(!(acl = malloc(sizeof(flist_acl_t))))
+        return NULL;
+
+    acl->uname = strdup(uname);
+    acl->gname = strdup(gname);
+    acl->mode = mode;
+
+    return acl;
+}
+
 flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey) {
     flist_acl_t *acl;
 
@@ -316,6 +329,35 @@ dirnode_t *flist_directory_to_dirnode(flist_db_t *database, directory_t *direntr
     }
 
     return dirnode;
+}
+
+dirnode_t *flist_directory_from_inode(inode_t *inode) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
+        return NULL;
+
+    // setting directory metadata
+    dirnode->fullpath = strdup(inode->fullpath);
+    dirnode->name = strdup(inode->name);
+    dirnode->hashkey = libflist_path_key(inode->fullpath);
+    dirnode->creation = inode->creation;
+    dirnode->modification = inode->modification;
+    dirnode->racl = inode->racl;
+
+    libflist_racl_to_acl(&dirnode->acl, dirnode->racl);
+
+    return dirnode;
+}
+
+inode_t *libflist_directory_create(dirnode_t *parent, char *name) {
+    inode_t *inode = libflist_inode_mkdir(name, parent);
+    dirnode_appends_inode(parent, inode);
+
+    dirnode_t *dirnode = flist_directory_from_inode(inode);
+    dirnode_appends_dirnode(parent, dirnode);
+
+    return inode;
 }
 
 // convert an internal capnp object

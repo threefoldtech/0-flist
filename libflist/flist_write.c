@@ -202,16 +202,28 @@ static char *gidstr(struct group *group, gid_t gid) {
     return strdup(group->gr_name);
 }
 
-acl_t inode_acl(const struct stat *sb) {
+acl_t inode_acl_new(char *uname, char *gname, int mode) {
     acl_t acl;
 
-    acl.mode = sb->st_mode;
-    acl.uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
-    acl.gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
+    acl.mode = mode;
+    acl.uname = strdup(uname);
+    acl.gname = strdup(gname);
     acl.key = libflist_inode_acl_key(&acl);
 
     return acl;
 }
+
+acl_t inode_acl(const struct stat *sb) {
+    char *uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
+    char *gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
+    acl_t acl = inode_acl_new(uname, gname, sb->st_mode);
+
+    free(uname);
+    free(gname);
+
+    return acl;
+}
+
 
 void inode_acl_free(acl_t *acl) {
     free(acl->uname);
@@ -746,7 +758,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     inode_t *inode;
 
     char vpath[PATH_MAX];
-    sprintf(vpath, "%s/%s", parent->fullpath, iname);
+    snprintf(vpath, sizeof(vpath), "%s/%s", parent->fullpath, iname);
 
     // override virtual path with only the
     // inode name, if parent have no path
@@ -793,6 +805,34 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     if(S_ISREG(sb->st_mode)) {
         inode->type = INODE_FILE;
     }
+
+    return inode;
+}
+
+inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
+    inode_t *inode;
+    char vpath[PATH_MAX];
+
+    snprintf(vpath, sizeof(vpath), "%s/%s", parent->fullpath, name);
+
+    // see flist_process_file
+    if(strlen(parent->fullpath) == 0)
+        sprintf(vpath, "%s", name);
+
+    if(!(inode = inode_create(name, 4096, vpath)))
+        return NULL;
+
+    inode->creation = time(NULL);
+    inode->modification = time(NULL);
+    inode->racl = libflist_mk_permissions("root", "root", 0755);
+
+    if(!(libflist_racl_to_acl(&inode->acl, inode->racl))) {
+        inode_free(inode);
+        return NULL;
+    }
+
+    inode->type = INODE_DIRECTORY;
+    inode->subdirkey = libflist_path_key(vpath);
 
     return inode;
 }
