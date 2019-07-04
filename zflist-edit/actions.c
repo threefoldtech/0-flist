@@ -221,6 +221,46 @@ int zf_rmdir(zf_callback_t *cb) {
     return 0;
 }
 
+//
+// mkdir
+//
+int zf_mkdir(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        fprintf(stderr, "[-] action: mkdir: missing directory\n");
+        return 1;
+    }
+
+    dirnode_t *dirnode;
+    inode_t *newdir;
+
+    char *dirpath = cb->argv[1];
+    discard char *dirpathcpy = strdup(cb->argv[1]);
+    char *parent = dirname(dirpathcpy);
+    char *dirname = basename(dirpath);
+
+    if((dirnode = libflist_directory_get(cb->database, dirpath))) {
+        fprintf(stderr, "[-] action: mkdir: cannot create directory, already exists\n");
+        return 1;
+    }
+
+    if(!(dirnode = libflist_directory_get(cb->database, parent))) {
+        fprintf(stderr, "[-] action: mkdir: parent directory doesn't exists\n");
+        return 1;
+    }
+
+    debug("[+] action: mkdir: creating <%s> inside <%s>\n", basename(dirpath), parent);
+
+    if(!(newdir = libflist_directory_create(dirnode, dirname))) {
+        fprintf(stderr, "[-] action: mkdir: could not create new directory\n");
+        return 1;
+    }
+
+    // commit changes in the parent
+    dirnode_t *dparent = libflist_directory_get_parent(cb->database, dirnode);
+    libflist_dirnode_commit(dirnode, cb->database, dparent, NULL);
+
+    return 0;
+}
 
 //
 // ls

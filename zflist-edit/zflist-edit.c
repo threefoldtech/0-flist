@@ -37,6 +37,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "chmod",    .db = 1, .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},
     {.name = "rm",       .db = 1, .callback = zf_rm,       .help = "remove a file (not a directory)"},
     {.name = "rmdir",    .db = 1, .callback = zf_rmdir,    .help = "remove a directory (recursively)"},
+    {.name = "mkdir",    .db = 1, .callback = zf_mkdir,    .help = "create an empty directory (non-recursive)"},
     {.name = "metadata", .db = 1, .callback = zf_metadata, .help = "get or set metadata"},
     {.name = "commit",   .db = 0, .callback = zf_commit,   .help = "close an flist and commit changes"},
 };

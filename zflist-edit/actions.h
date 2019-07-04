@@ -8,6 +8,7 @@
     int zf_chmod(zf_callback_t *cb);
     int zf_rm(zf_callback_t *cb);
     int zf_rmdir(zf_callback_t *cb);
+    int zf_mkdir(zf_callback_t *cb);
     int zf_ls(zf_callback_t *cb);
     int zf_cat(zf_callback_t *cb);
     int zf_put(zf_callback_t *cb);
