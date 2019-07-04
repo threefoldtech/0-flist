@@ -483,6 +483,25 @@ dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target) {
     return root;
 }
 
+// remove all subdirectories from a directory, and so on for all childs
+// we assume dirnode was not fetch using _get_recursive for performance
+int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode) {
+    for(dirnode_t *subdir = dirnode->dir_list; subdir; subdir = subdir->next) {
+        debug("[+] libflist: rm: recursively: walking inside: %s\n", subdir->fullpath);
+        libflist_directory_rm_recursively(database, subdir);
+
+        // at this point, we know all subdirectories inside
+        // this directory are removed already, we can safely remove
+        // entry from database
+        debug("[+] libflist: rm: recursively: removing %s [%s]\n", subdir->fullpath, subdir->hashkey);
+        database->sdel(database, subdir->hashkey);
+    }
+
+    // removing self directory from database
+    database->sdel(database, dirnode->hashkey);
+
+    return 0;
+}
 
 
 //

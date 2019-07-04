@@ -288,12 +288,6 @@
     flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src);
     void inode_acl_persist(flist_db_t *database, acl_t *acl);
 
-    // CLEAN ME
-    inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
-    dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
-    dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root);
-    acl_t *libflist_inode_acl_commit(inode_t *inode);
-
     //
     // --------------------------------------------------
     // at that point, function are reviewed and handle
@@ -363,6 +357,13 @@
     void libflist_chunk_free(flist_chunk_t *chunk);
 
     //
+    // flist_read.c
+    //
+    inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
+    dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root);
+    acl_t *libflist_inode_acl_commit(inode_t *inode);
+
+    //
     // flist_write.c
     //
     int libflist_create_excluders_append(char *regex);
@@ -371,6 +372,9 @@
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
     inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent);
+
+    dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
+    int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
 
     void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
     char *libflist_inode_acl_key(acl_t *acl);
