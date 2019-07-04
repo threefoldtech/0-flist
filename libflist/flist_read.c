@@ -397,7 +397,7 @@ dirnode_t *libflist_directory_get_parent(flist_db_t *database, dirnode_t *root) 
     char *parent = dirname(copypath);
 
     // no parent
-    if(strcmp(parent, copypath) == 0)
+    if(strcmp(parent, root->fullpath) == 0)
         return root;
 
     return libflist_directory_get(database, copypath);
