@@ -809,6 +809,9 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
 
     if(S_ISREG(sb->st_mode)) {
         inode->type = INODE_FILE;
+
+        // computing chunks
+        inode->chunks = libflist_chunks_compute((char *) realpath);
     }
 
     return inode;

@@ -457,16 +457,18 @@ int zf_cat(zf_callback_t *cb) {
 //
 int zf_put(zf_callback_t *cb) {
     if(cb->argc < 3) {
-        fprintf(stderr, "[-] action: put: host file or target destination\n");
+        fprintf(stderr, "[-] action: put: missing host file or target destination\n");
         return 1;
     }
 
+    /*
     flist_db_t *backdb;
 
     if(!(backdb = libflist_metadata_backend_database(cb->database))) {
         fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
         return 1;
     }
+    */
 
     // flist_backend_t *backend = libflist_backend_init(backdb, "/");
 

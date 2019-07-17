@@ -349,6 +349,8 @@
     //
     // zero_chunk.c
     //
+    inode_chunks_t *libflist_chunks_compute(char *localfile);
+
     uint8_t *libflist_chunk_hash(const void *buffer, size_t length);
 
     flist_chunk_t *libflist_chunk_new(uint8_t *hash, uint8_t *key, void *data, size_t length);
