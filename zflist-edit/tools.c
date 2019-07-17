@@ -15,7 +15,7 @@ void __cleanup_free(void *p) {
     free(* (void **) p);
 }
 
-flist_db_t *zf_init(char *mountpoint) {
+flist_db_t *zf_internal_init(char *mountpoint) {
     debug("[+] database: opening the flist database\n");
 
     flist_db_t *database = libflist_db_sqlite_init(mountpoint);
@@ -65,7 +65,7 @@ int zf_stat_inode(inode_t *inode) {
 
     printf("Chunks: ");
 
-    if(!inode->chunks) {
+    if(!inode->chunks || inode->chunks->size == 0) {
         printf("(empty set)\n");
         return 0;
     }

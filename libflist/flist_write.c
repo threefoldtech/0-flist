@@ -247,8 +247,13 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = libflist_path_key(directory->fullpath);
+    directory->acl = inode_acl_new("root", "root", 0755);
 
     return directory;
+}
+
+dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
+    return dirnode_create(fullpath, name);
 }
 
 void dirnode_free(dirnode_t *directory) {
@@ -813,11 +818,11 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
     inode_t *inode;
     char vpath[PATH_MAX];
 
-    snprintf(vpath, sizeof(vpath), "%s/%s", parent->fullpath, name);
+    sprintf(vpath, "%s", name);
 
-    // see flist_process_file
-    if(strlen(parent->fullpath) == 0)
-        sprintf(vpath, "%s", name);
+    // support no-parent (mkdir /) or when parent is /
+    if(parent && strlen(parent->fullpath) > 0)
+        snprintf(vpath, sizeof(vpath), "%s/%s", parent->fullpath, name);
 
     if(!(inode = inode_create(name, 4096, vpath)))
         return NULL;

@@ -3,6 +3,7 @@
 
 
     int zf_open(zf_callback_t *cb);
+    int zf_init(zf_callback_t *cb);
     int zf_commit(zf_callback_t *cb);
 
     int zf_chmod(zf_callback_t *cb);

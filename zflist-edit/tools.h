@@ -4,7 +4,7 @@
     // automatic cleanup
     void __cleanup_free(void *p);
 
-    flist_db_t *zf_init(char *mountpoint);
+    flist_db_t *zf_internal_init(char *mountpoint);
 
     char zf_ls_inode_type(inode_t *inode);
     void zf_ls_inode_perm(inode_t *inode);

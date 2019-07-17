@@ -56,6 +56,44 @@ int zf_open(zf_callback_t *cb) {
 }
 
 //
+// init
+//
+int zf_init(zf_callback_t *cb) {
+    char temp[2048];
+
+    // creating mountpoint directory (if not exists)
+    if(!dir_exists(cb->settings->mnt)) {
+        debug("[+] action: init: creating mountpoint: <%s>\n", cb->settings->mnt);
+
+        if(dir_create(cb->settings->mnt) < 0)
+            diep(cb->settings->mnt);
+    }
+
+    // checking if the mountpoint doesn't contains already
+    // an flist database
+    snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", cb->settings->mnt);
+    if(file_exists(temp)) {
+        fprintf(stderr, "[-] action: init: mountpoint already contains an open flist\n");
+        return 1;
+    }
+
+    debug("[+] action: creating the flist database\n");
+    flist_db_t *database = libflist_db_sqlite_init(cb->settings->mnt);
+    database->open(database);
+
+    // initialize root directory
+    dirnode_t *root = libflist_internal_dirnode_create("", "");
+    libflist_dirnode_commit(root, database, root, NULL);
+
+    // commit changes
+    database->close(database);
+
+    debug("[+] action: init: flist initialized\n");
+    return 0;
+}
+
+
+//
 // commit
 //
 int zf_commit(zf_callback_t *cb) {

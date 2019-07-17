@@ -31,6 +31,7 @@ void dies(const char *str) {
 //
 zf_cmds_t zf_commands[] = {
     {.name = "open",     .db = 0, .callback = zf_open,     .help = "open an flist to enable editing"},
+    {.name = "init",     .db = 0, .callback = zf_init,     .help = "initialize an empty flist to enable editing"},
     {.name = "ls",       .db = 1, .callback = zf_ls,       .help = "list the content of a directory"},
     {.name = "stat",     .db = 1, .callback = zf_stat,     .help = "dump inode full metadata"},
     {.name = "cat",      .db = 1, .callback = zf_cat,      .help = "print file contents (backend metadata required)"},
@@ -74,7 +75,7 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     // open database (if used)
     if(cmd->db)
-        cb.database = zf_init(settings->mnt);
+        cb.database = zf_internal_init(settings->mnt);
 
     // call the callback
     debug("[+] system: callback found for command: %s\n", cmd->name);

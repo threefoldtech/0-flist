@@ -385,6 +385,8 @@
 
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
+    dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name);
+
     //
     // flist_merger.c
     //
