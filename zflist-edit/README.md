@@ -3,9 +3,51 @@
 This is the main command line tool to use when you want to create/update an flist. It's a central point
 where you can do everything you want.
 
+# Motivation
+
 # Actions
 
+Creating or modifying an flist can require a lot of flexibility. This tool try to keep the usual
+command line tools and do the same action on the flist contents, with some extras. Here are the list
+of actions possible:
 
+- open
+- init
+- ls
+- stat
+- cat
+- put
+- chmod
+- rm
+- rmdir
+- mkdir
+- metadata
+- commit
+
+In order to use this tool, you need to at least `open` (an existing) or `init` (create) an flist. When you're
+done with the changes, you `commit` changes to a new flist.
+
+## open
+
+## init
+
+## ls
+
+## stat
+
+## put
+
+## chmod
+
+## rm
+
+## rmdir
+
+## mkdir
+
+## metadata
+
+## commit
 
 # Metadata
 
@@ -55,7 +97,9 @@ Note: your environment can require extra information.
 ## Volumes
 
 When your environment needs extra persistant mountpoint, this metadata become really useful.
-
+You can specify a list of mountpoint your flist needs to have, in order to works properly
+(eg: `/data` to get persistant data). You can optionnaly specify where on the host you expect to find
+this mountpoint, but this is not needed.
 
 ## Readme
 
