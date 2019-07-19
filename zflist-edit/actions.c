@@ -396,6 +396,9 @@ int zf_metadata(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "volume") == 0)
         return zf_metadata_set_volume(cb);
 
+    else if(strcmp(cb->argv[0], "readme") == 0)
+        return zf_metadata_set_readme(cb);
+
     fprintf(stderr, "[-] action: metadata: unknown metadata name\n");
     return 1;
 }

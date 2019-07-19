@@ -464,5 +464,122 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
     return zf_metadata_apply(cb, "volume", root);
 }
 
+//
+// readme
+//
+static struct option readme_long_options[] = {
+    {"license", required_argument, 0, 'l'},
+    {"edit",    no_argument,       0, 'e'},
+    {"reset",   no_argument,       0, 'r'},
+    {"help",    no_argument,       0, 'h'},
+    {0, 0, 0, 0}
+};
+
+static char *zf_metadata_edit_readme(const char *original) {
+    // generate a temporary file
+    char template[] = "/tmp/zflistXXXXXX";
+    char fname[1024];
+    char *readmeval;
+
+    // open the temporary file
+    strcpy(fname, template);
+    int fd = mkstemp(fname);
+
+    debug("[+] action: metadata: temporary file: %s\n", fname);
+
+    if(original) {
+        // copying original contents into
+        // the new temporary file
+        size_t sl = strlen(original);
+
+        if(write(fd, original, sl) != (ssize_t) sl)
+            diep(fname);
+    }
+
+    // starting interactive editor
+    char tmpcmd[2048];
+    sprintf(tmpcmd, "$EDITOR %s", fname);
+
+    if(system(tmpcmd) < 0)
+        diep(tmpcmd);
+
+    // fetching length of the new file
+    off_t length = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+
+    // allocating variable for it
+    if(!(readmeval = malloc(length)))
+        diep("malloc");
+
+    // reading new file
+    if(read(fd, readmeval, length) != length)
+        diep(fname);
+
+    // closing and cleaning
+    close(fd);
+    unlink(fname);
+
+    return readmeval;
+}
+
+int zf_metadata_set_readme(zf_callback_t *cb) {
+    int option_index = 0;
+    char *license = NULL;
+    char *newvalue = NULL;
+    const char *existing = NULL;
+    int edit = 0;
+
+    while(1) {
+        int i = getopt_long_only(cb->argc, cb->argv, "", readme_long_options, &option_index);
+
+        if(i == -1)
+            break;
+
+        switch(i) {
+            case 'r':
+                return zf_metadata_reset(cb, "readme");
+
+            case 'e':
+                edit = 1;
+                break;
+
+            case 'l':
+                license = optarg;
+                break;
+
+            case 'h':
+                printf("[+] action: metadata: arguments:\n");
+                printf("[+]   -l --license     set a specific license name\n");
+                printf("[+]   -r --reset       remove metadata (all volumes)\n");
+                printf("[+]   -h --help        show this message\n");
+                return 1;
+
+            case '?':
+            default:
+               return 1;
+        }
+    }
+
+    json_t *root = zf_metadata_fetch(cb, "readme", json_object);
+    json_t *readme;
+
+    if((readme = json_object_get(root, "readme")))
+        existing = json_string_value(readme);
+
+    if(existing)
+        debug("[+] action: metadata: existing readme found (%lu bytes)\n", strlen(existing));
+
+    if(edit)
+        newvalue = zf_metadata_edit_readme(existing);
+
+    if(license)
+        json_object_set(root, "license", json_string(license));
+
+    json_object_set(root, "readme", json_string(newvalue));
+    free(newvalue);
+
+    return zf_metadata_apply(cb, "readme", root);
+}
+
 
 
