@@ -476,6 +476,7 @@ int zf_put(zf_callback_t *cb) {
     // flist_backend_t *backend = libflist_backend_init(backdb, "/");
 
     char *localfile = cb->argv[1];
+    char *filename = basename(localfile);
     discard char *dirpath = dirname(strdup(cb->argv[2]));
 
     debug("[+] action: put: looking for directory: %s\n", dirpath);
@@ -488,8 +489,16 @@ int zf_put(zf_callback_t *cb) {
         return 1;
     }
 
+    if((inode = libflist_inode_from_name(dirnode, filename))) {
+        debug("[+] action: put: requested filename already exists, removing existing\n");
+        if(!libflist_directory_rm_inode(dirnode, inode)) {
+            fprintf(stderr, "[-] action: put: could not overwrite existing inode\n");
+            return 1;
+        }
+    }
+
     if(!(inode = libflist_inode_from_localfile(localfile, dirnode))) {
-        fprintf(stderr, "[-] action: cat: could not load local file\n");
+        fprintf(stderr, "[-] action: put: could not load local file\n");
         return 1;
     }
 
