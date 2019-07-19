@@ -547,6 +547,7 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
+                printf("[+]   -e --edit        edit the readme interactively\n");
                 printf("[+]   -l --license     set a specific license name\n");
                 printf("[+]   -r --reset       remove metadata (all volumes)\n");
                 printf("[+]   -h --help        show this message\n");
