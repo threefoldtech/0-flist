@@ -389,8 +389,8 @@ int zf_metadata_set_port(zf_callback_t *cb) {
 // volumes mountpoint
 //
 static struct option volume_long_options[] = {
-    {"host",   required_argument, 0, 'H'},
     {"target", required_argument, 0, 't'},
+    {"host",   required_argument, 0, 'H'},
     {"unset",  no_argument,       0, 'u'},
     {"reset",  no_argument,       0, 'r'},
     {"help",   no_argument,       0, 'h'},
@@ -427,8 +427,8 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -h --host        source file/directory on the host side\n");
                 printf("[+]   -t --target      target file/directory on the container\n");
+                printf("[+]   -h --host        source file/directory on the host side\n");
                 printf("[+]   -u --unset       remove the specified source point\n");
                 printf("[+]   -r --reset       remove metadata (all volumes)\n");
                 printf("[+]   -h --help        show this message\n");
@@ -440,25 +440,23 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
         }
     }
 
-    if(!host) {
-        fprintf(stderr, "[-] action metadata: missing host path\n");
-        return 1;
-    }
-
     if(!target) {
-        debug("[-] action: metadata: volume: target not set, copying host\n");
-        target = host;
+        fprintf(stderr, "[-] action metadata: missing target path\n");
+        return 1;
     }
 
     json_t *root = zf_metadata_fetch(cb, "volume", json_object);
 
     if(!unset) {
         json_t *item = json_object();
-        json_object_set(item, "target", json_string(target));
-        json_object_set_new(root, host, item);
+
+        if(host)
+            json_object_set(item, "host", json_string(host));
+
+        json_object_set_new(root, target, item);
 
     } else {
-        json_object_del(root, host);
+        json_object_del(root, target);
     }
 
     return zf_metadata_apply(cb, "volume", root);
@@ -580,6 +578,4 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
 
     return zf_metadata_apply(cb, "readme", root);
 }
-
-
 
