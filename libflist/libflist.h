@@ -243,6 +243,12 @@
 
     } flist_merge_t;
 
+    typedef struct flist_ctx_t {
+        flist_db_t *db;
+        flist_backend_t *backend;
+
+    } flist_ctx_t;
+
     //
     // ----------------------
     // welcome in the jungle
@@ -374,6 +380,8 @@
     int libflist_create_excluders_append(char *regex);
     void libflist_create_excluders_free();
 
+    flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
+
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
     inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent);
@@ -382,7 +390,7 @@
     dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
     int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
 
-    void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
+    void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
     char *libflist_inode_acl_key(acl_t *acl);
 
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);

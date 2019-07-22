@@ -22,7 +22,7 @@
 static int zf_metadata_reset(zf_callback_t *cb, char *key) {
     debug("[+] action: metadata: removing metadata: %s\n", key);
 
-    if(!libflist_metadata_remove(cb->database, key)) {
+    if(!libflist_metadata_remove(cb->ctx->db, key)) {
         fprintf(stderr, "[-] action: metadata: %s: %s\n", key, libflist_strerror());
         return 1;
     }
@@ -36,7 +36,7 @@ static int zf_metadata_apply(zf_callback_t *cb, char *metadata, json_t *object) 
     debug("[+] action: metadata: setting up: %s\n", metadata);
     debug("[+] action: metadata: %s\n", value);
 
-    if(!libflist_metadata_set(cb->database, metadata, value)) {
+    if(!libflist_metadata_set(cb->ctx->db, metadata, value)) {
         fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
         json_decref(object);
         return 1;
@@ -54,7 +54,7 @@ static json_t *zf_metadata_fetch(zf_callback_t *cb, char *metadata, json_t *(*in
     json_t *input;
     json_error_t error;
 
-    if(!(value = libflist_metadata_get(cb->database, metadata))) {
+    if(!(value = libflist_metadata_get(cb->ctx->db, metadata))) {
         debug("[-] action: metadata: get: initial metadata not found, initializing\n");
         return initial();
     }
@@ -77,7 +77,7 @@ static json_t *zf_metadata_fetch(zf_callback_t *cb, char *metadata, json_t *(*in
 int zf_metadata_get(zf_callback_t *cb) {
     char *value;
 
-    if(!(value = libflist_metadata_get(cb->database, cb->argv[1]))) {
+    if(!(value = libflist_metadata_get(cb->ctx->db, cb->argv[1]))) {
         debug("[-] action: metadata: get: metadata not found\n");
         return 1;
     }

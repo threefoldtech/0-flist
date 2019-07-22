@@ -26,7 +26,7 @@
     typedef struct zf_callback_t {
         int argc;
         zfe_settings_t *settings;
-        flist_db_t *database;
+        flist_ctx_t *ctx;
         char **argv;
 
     } zf_callback_t;

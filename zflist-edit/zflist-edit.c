@@ -70,12 +70,12 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .argc = argc,
         .argv = argv,
         .settings = settings,
-        .database = NULL,
+        .ctx = NULL,
     };
 
     // open database (if used)
     if(cmd->db)
-        cb.database = zf_internal_init(settings->mnt);
+        cb.ctx = zf_internal_init(settings->mnt);
 
     // call the callback
     debug("[+] system: callback found for command: %s\n", cmd->name);
@@ -83,7 +83,7 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     // commit database (if used)
     if(cmd->db)
-        cb.database->close(cb.database);
+        cb.ctx->db->close(cb.ctx->db);
 
     return value;
 }

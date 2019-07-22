@@ -15,13 +15,16 @@ void __cleanup_free(void *p) {
     free(* (void **) p);
 }
 
-flist_db_t *zf_internal_init(char *mountpoint) {
+flist_ctx_t *zf_internal_init(char *mountpoint) {
+    flist_ctx_t *ctx;
+    flist_db_t *database = libflist_db_sqlite_init(mountpoint);
+
     debug("[+] database: opening the flist database\n");
 
-    flist_db_t *database = libflist_db_sqlite_init(mountpoint);
-    database->open(database);
+    ctx = libflist_context_create(database, NULL);
+    ctx->db->open(ctx->db);
 
-    return database;
+    return ctx;
 }
 
 char zf_ls_inode_type(inode_t *inode) {

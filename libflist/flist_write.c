@@ -101,6 +101,24 @@ const char *inode_type_str[] = {
 //
 //
 
+flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend) {
+    flist_ctx_t *ctx;
+
+    if(!(ctx = malloc(sizeof(flist_ctx_t))))
+        diep("malloc");
+
+    ctx->db = db;
+    ctx->backend = backend;
+
+    return ctx;
+}
+
+void libflist_context_free(flist_ctx_t *ctx) {
+    // FIXME: close database
+    // FIXME: close backend
+    free(ctx);
+}
+
 typedef struct flist_write_global_t {
     char *root;
     flist_db_t *database;
@@ -590,7 +608,7 @@ static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t l
 
 // flist_json_t jsonresponse = {0};
 
-void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend) {
+void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -610,7 +628,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *p
         .creationTime = root->creation,
     };
 
-    inode_acl_persist(database, &root->acl);
+    inode_acl_persist(ctx->db, &root->acl);
 
     // populating contents
     int index = 0;
@@ -672,12 +690,12 @@ void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *p
             };
 
             // upload non-empty files
-            if(inode->size && (backend || inode->chunks)) {
+            if(inode->size && (ctx->backend || inode->chunks)) {
                 flist_chunks_t *chunks;
 
                 // chunks needs to be computed
-                if(backend) {
-                    if(!(chunks = libflist_backend_upload_inode(backend, root->fullpath, inode->name))) {
+                if(ctx->backend) {
+                    if(!(chunks = libflist_backend_upload_inode(ctx->backend, root->fullpath, inode->name))) {
                         globaldata.stats.failure += 1;
                         continue;
                     }
@@ -723,7 +741,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *p
         }
 
         set_Inode(&target, dir.contents, index);
-        inode_acl_persist(database, &inode->acl);
+        inode_acl_persist(ctx->db, &inode->acl);
     }
 
     // commit capnp object
@@ -1129,7 +1147,8 @@ flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_bac
 
     debug("[+] =========================================\n");
     debug("[+] building capnp from memory tree\n");
-    libflist_dirnode_commit(globaldata.rootdir, database, globaldata.rootdir, backend);
+    flist_ctx_t *ctx = libflist_context_create(database, backend);
+    libflist_dirnode_commit(globaldata.rootdir, ctx, globaldata.rootdir);
 
     debug("[+] recursivly freeing directory tree\n");
     dirnode_tree_free(globaldata.rootdir);
