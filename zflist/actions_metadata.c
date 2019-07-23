@@ -9,7 +9,7 @@
 #include <getopt.h>
 #include <capnp_c.h>
 #include "libflist.h"
-#include "zflist-edit.h"
+#include "zflist.h"
 #include "tools.h"
 
 //

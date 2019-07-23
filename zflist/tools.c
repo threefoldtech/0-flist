@@ -8,7 +8,7 @@
 #include <libgen.h>
 #include <getopt.h>
 #include "libflist.h"
-#include "zflist-edit.h"
+#include "zflist.h"
 #include "tools.h"
 
 void __cleanup_free(void *p) {
