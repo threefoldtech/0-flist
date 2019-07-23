@@ -466,28 +466,10 @@ int zf_put(zf_callback_t *cb) {
         return 1;
     }
 
-    //
     // looking for backend
-    //
-    flist_db_t *backdb = NULL;
-    char *envbackend;
+    zf_backend_detect(cb->ctx);
 
-    if((envbackend = getenv("UPLOADBACKEND"))) {
-        if(!(backdb = libflist_metadata_backend_database_json(envbackend))) {
-            fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
-            return 1;
-        }
-
-        cb->ctx->backend = libflist_backend_init(backdb, "/");
-
-    } else {
-        debug("[-] WARNING:\n");
-        debug("[-] WARNING: upload backend is not set\n");
-        debug("[-] WARNING: file won't be uploaded, but chunks\n");
-        debug("[-] WARNING: will be computed and stored\n");
-        debug("[-] WARNING:\n");
-    }
-
+    // building directories
     char *localfile = cb->argv[1];
     char *filename = basename(localfile);
     discard char *dirpath = dirname(strdup(cb->argv[2]));
@@ -543,3 +525,43 @@ int zf_put(zf_callback_t *cb) {
     return 0;
 }
 
+//
+// putdir
+//
+int zf_putdir(zf_callback_t *cb) {
+    if(cb->argc < 3) {
+        fprintf(stderr, "[-] action: putdir: missing host directory or target destination\n");
+        return 1;
+    }
+
+    // looking for backend
+    zf_backend_detect(cb->ctx);
+
+    // building directories
+    char *localdir = cb->argv[1];
+    char *destdir = cb->argv[2];
+
+    debug("[+] action: putdir: looking for directory: %s\n", destdir);
+
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    if(!(dirnode = libflist_directory_get(cb->ctx->db, destdir))) {
+        fprintf(stderr, "[-] action: putdir: no such parent directory\n");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_localdir(localdir, dirnode, cb->ctx))) {
+        fprintf(stderr, "[-] action: putdir: could not load local directory\n");
+        return 1;
+    }
+
+    // append directory inode to that directory
+    dirnode_appends_inode(dirnode, inode);
+
+    // commit
+    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    libflist_dirnode_commit(dirnode, cb->ctx, parent);
+
+    return 0;
+}

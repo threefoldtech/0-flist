@@ -387,6 +387,7 @@
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
     inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
+    inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx);
     inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
     inode_t *libflist_inode_rename(inode_t *inode, char *name);
 

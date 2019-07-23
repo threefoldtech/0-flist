@@ -88,3 +88,29 @@ int zf_stat_inode(inode_t *inode) {
 
     return 0;
 }
+
+// looking for global defined backend
+// and set context if possible
+flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
+    flist_db_t *backdb = NULL;
+    char *envbackend;
+
+    if(!(envbackend = getenv("UPLOADBACKEND"))) {
+        debug("[-] WARNING:\n");
+        debug("[-] WARNING: upload backend is not set and is requested\n");
+        debug("[-] WARNING: file won't be uploaded, but chunks\n");
+        debug("[-] WARNING: will be computed and stored\n");
+        debug("[-] WARNING:\n");
+        return NULL;
+   }
+
+    if(!(backdb = libflist_metadata_backend_database_json(envbackend))) {
+        fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
+        return NULL;
+    }
+
+    // updating context
+    ctx->backend = libflist_backend_init(backdb, "/");
+
+    return ctx;
+}
