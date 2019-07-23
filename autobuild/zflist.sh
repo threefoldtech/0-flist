@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-makeopts="-j 5"
+makeopts="-j 12"
 
 dependencies() {
     apt-get update
@@ -45,7 +45,7 @@ capnp() {
 }
 
 zeroflist() {
-    git clone -b development https://github.com/threefoldtech/0-flist
+    git clone -b development-v2 https://github.com/threefoldtech/0-flist
     pushd 0-flist
 
     pushd libflist
@@ -53,11 +53,11 @@ zeroflist() {
     popd
 
     pushd zflist
-    make production
+    # make production
     popd
 
-    cp zflist/zflist /tmp/zflist
-    strip -s /tmp/zflist
+    # cp zflist/zflist /tmp/zflist
+    # strip -s /tmp/zflist
 
     popd
 }
