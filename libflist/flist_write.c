@@ -932,9 +932,30 @@ static int fts_compare(const FTSENT **one, const FTSENT **two) {
     return (strcmp((*one)->fts_name, (*two)->fts_name));
 }
 
+static int dirnode_is_root(dirnode_t *dirnode) {
+    return (strlen(dirnode->fullpath) == 0);
+}
+
+static char *dirnode_virtual_path(dirnode_t *parent, char *target) {
+    char *vpath;
+
+    if(dirnode_is_root(parent)) {
+        if(asprintf(&vpath, "%s", target) < 0)
+            return NULL;
+
+        return vpath;
+    }
+
+    if(asprintf(&vpath, "/%s%s", parent->fullpath, target) < 0)
+        return NULL;
+
+    return vpath;
+}
+
 inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx) {
     struct stat sb;
 
+    debug("[+] libflist: adding <%s> into </%s>\n", localdir, parent->fullpath);
     if(stat(localdir, &sb) < 0) {
         warnp(localdir);
         return NULL;
@@ -952,50 +973,97 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
     char *ftsargv[2] = {localdir, NULL};
     char *tmpsrc = dirname(strdup(localdir));
     inode_t *inode = NULL;
-    dirnode_t *localparent = NULL;
+    dirnode_t *workingdir = parent;
 
-    if(!(fs = fts_open(ftsargv, FTS_COMFOLLOW | FTS_NOCHDIR, &fts_compare)))
+    //
+    // first pass:
+    //   creating all directories hierarchy
+    //
+    debug("[+] libflist: localdir: ---\n");
+    debug("[+] libflist: localdir: processing pass one\n");
+    debug("[+] libflist: localdir: ---\n");
+
+    if(!(fs = fts_open(ftsargv, FTS_NOCHDIR | FTS_NOSTAT | FTS_PHYSICAL, &fts_compare)))
         diep(localdir);
 
     while((fentry = fts_read(fs))) {
-        char *target = fentry->fts_path + strlen(tmpsrc);
-        char *targetparent = dirname(strdup(target));
+        if(fentry->fts_info != FTS_D)
+            continue;
 
-        debug("[+] libflist: processing: %s -> %s\n", fentry->fts_path, target);
+        char *vpath = dirnode_virtual_path(workingdir, fentry->fts_path + strlen(tmpsrc));
+        char *parentpath = dirname(strdup(vpath));
 
-        // we process a directory, let's set up everything
-        // needed to get a new directory
-        if(fentry->fts_info == FTS_D) {
-            debug("[+] libflist: local directory: switching to a new directory\n");
-            if(!localparent) {
-                localparent = parent;
+        debug("[+] libflist: local directory: adding: %s [%s]\n", fentry->fts_name, parentpath);
 
-            } else {
-                // dirnode_t *tmp = libflist_directory_get_parent(ctx->db, localparent);
-                libflist_dirnode_commit(localparent, ctx, localparent);
-                localparent = libflist_directory_get(ctx->db, targetparent);
-            }
-        }
+        // fetching parent directory
+        dirnode_t *localparent = libflist_directory_get(ctx->db, parentpath);
 
-        printf("INSERT %s INTO %s\n", fentry->fts_path, localparent->fullpath);
-
+        // adding this new directory
         if(!(inode = libflist_inode_from_localfile(fentry->fts_path, localparent, ctx))) {
             fprintf(stderr, "[-] libflist: local directory: could not create inode\n");
             return NULL;
         }
 
-        // not already existing
-        if(!libflist_inode_search(localparent, inode->name))
-            dirnode_appends_inode(localparent, inode);
+        // saving changes
+        dirnode_appends_inode(localparent, inode);
+        libflist_dirnode_commit(localparent, ctx, localparent);
 
-        // now directory is created, let's select it
-        if(fentry->fts_info == FTS_D)
-            localparent = libflist_directory_get(ctx->db, target);
-
-        free(targetparent);
+        free(vpath);
     }
 
     fts_close(fs);
+
+    //
+    // second pass:
+    //   processing all files
+    //
+    debug("[+] libflist: localdir: ---\n");
+    debug("[+] libflist: localdir: processing pass two\n");
+    debug("[+] libflist: localdir: ---\n");
+
+    if(!(fs = fts_open(ftsargv, FTS_NOCHDIR | FTS_NOSTAT | FTS_PHYSICAL, &fts_compare)))
+        diep(localdir);
+
+    // reset working directory
+    workingdir = parent;
+
+    while((fentry = fts_read(fs))) {
+        char *target = dirnode_virtual_path(parent, fentry->fts_path + strlen(tmpsrc));
+
+        debug("[+] libflist: processing: %s -> %s\n", fentry->fts_path, target);
+
+        if(fentry->fts_info == FTS_D) {
+            // pre-order directory, let's load the new directory
+            // and keep track of the previous (insde 'next' field)
+            debug("[+] libflist: switching to virtual directory: %s\n", target);
+
+            dirnode_t *newdir = libflist_directory_get(ctx->db, target);
+            newdir->next = workingdir;
+            workingdir = newdir;
+            continue;
+        }
+
+        if(fentry->fts_info == FTS_DP) {
+            // post-order directory, let's commit it's contents
+            // and reload previous directory
+            debug("[+] libflist: commiting: %s\n", workingdir->fullpath);
+
+            libflist_dirnode_commit(workingdir, ctx, workingdir->next);
+            workingdir = workingdir->next;
+            continue;
+        }
+
+        if(!(inode = libflist_inode_from_localfile(fentry->fts_path, workingdir, ctx))) {
+            fprintf(stderr, "[-] libflist: local directory: could not create inode\n");
+            return NULL;
+        }
+
+        dirnode_appends_inode(workingdir, inode);
+    }
+
+    fts_close(fs);
+
+    // cleaning
     free(tmpsrc);
 
     return inode;

@@ -556,12 +556,7 @@ int zf_putdir(zf_callback_t *cb) {
         return 1;
     }
 
-    // append directory inode to that directory
-    dirnode_appends_inode(dirnode, inode);
-
-    // commit
-    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
-    libflist_dirnode_commit(dirnode, cb->ctx, parent);
+    // nothing more to do
 
     return 0;
 }
