@@ -45,21 +45,10 @@ int libflist_metadata_remove(flist_db_t *database, char *metadata) {
     return 1;
 }
 
-flist_db_t *libflist_metadata_backend_database(flist_db_t *database) {
+flist_db_t *libflist_metadata_backend_database_json(char *input) {
     flist_db_t *backdb;
-
-    // fetching backend from metadata
-    char *value;
-
-    if(!(value = libflist_metadata_get(database, "backend"))) {
-        debug("[-] libflist: backend database: metadata not found\n");
-        return NULL;
-    }
-
-    debug("[+] libflist: metadata: raw backend: %s\n", value);
-
     json_error_t error;
-    json_t *backend = json_loads(value, 0, &error);
+    json_t *backend = json_loads(input, 0, &error);
 
     char *host = (char *) json_string_value(json_object_get(backend, "host"));
     char *namespace = (char *) json_string_value(json_object_get(backend, "namespace"));
@@ -74,4 +63,18 @@ flist_db_t *libflist_metadata_backend_database(flist_db_t *database) {
     json_decref(backend);
 
     return backdb;
+}
+
+flist_db_t *libflist_metadata_backend_database(flist_db_t *database) {
+    // fetching backend from metadata
+    char *value;
+
+    if(!(value = libflist_metadata_get(database, "backend"))) {
+        debug("[-] libflist: backend database: metadata not found\n");
+        return NULL;
+    }
+
+    debug("[+] libflist: metadata: raw backend: %s\n", value);
+
+    return libflist_metadata_backend_database_json(value);
 }
