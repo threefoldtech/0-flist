@@ -270,6 +270,31 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
     return directory;
 }
 
+static dirnode_t *dirnode_create_from_stat(dirnode_t *parent, const char *name, const struct stat *sb) {
+    char *fullpath;
+    dirnode_t *root;
+
+    if(strlen(parent->fullpath) == 0) {
+        if(!(fullpath = strdup(name)))
+            diep("strdup");
+
+    } else {
+        if(asprintf(&fullpath, "%s/%s", parent->fullpath, name) < 0)
+            diep("asprintf");
+    }
+
+    if(!(root = dirnode_create(fullpath, (char *) name)))
+        return NULL;
+
+    root->creation = sb->st_ctime;
+    root->modification = sb->st_mtime;
+    root->acl = inode_acl(sb);
+
+    free(fullpath);
+
+    return root;
+}
+
 dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
     return dirnode_create(fullpath, name);
 }
@@ -805,6 +830,12 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
     if(S_ISDIR(sb->st_mode)) {
         inode->type = INODE_DIRECTORY;
         inode->subdirkey = libflist_path_key(vpath);
+
+        // create entry on the database
+        debug("[+] libflist: process file: creating new directory entry\n");
+        dirnode_t *newdir = dirnode_create_from_stat(parent, iname, sb);
+        dirnode_appends_dirnode(parent, newdir);
+        libflist_dirnode_commit(newdir, ctx, parent);
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {

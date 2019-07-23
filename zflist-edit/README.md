@@ -103,4 +103,4 @@ this mountpoint, but this is not needed.
 
 ## Readme
 
-You can provide an arbitraty text and licence to describe your flist.
+You can provide an arbitraty text and license name to describe your flist.

@@ -497,35 +497,48 @@ int zf_put(zf_callback_t *cb) {
     if(strcmp(targetname, "/") == 0 || strcmp(targetname, dirpath) == 0)
         targetname = filename;
 
-    debug("[+] action: put: looking for directory: %s\n", dirpath);
-
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
-        fprintf(stderr, "[-] action: put: no such parent directory\n");
-        return 1;
+    debug("[+] action: put: looking for directory: %s\n", cb->argv[2]);
+
+    if(!(dirnode = libflist_directory_get(cb->ctx->db, cb->argv[2]))) {
+        debug("[+] action: put: looking for directory: %s\n", dirpath);
+
+        if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+            fprintf(stderr, "[-] action: put: no such parent directory\n");
+            return 1;
+        }
     }
 
+    // if user specified a directory as destination, forcing filename
+    if(strcmp(targetname, dirnode->fullpath) == 0)
+        targetname = filename;
+
+    debug("[+] action: put: will put file in directory: %s\n", dirnode->fullpath);
+
     if((inode = libflist_inode_from_name(dirnode, targetname))) {
-        debug("[+] action: put: requested filename already exists, removing existing\n");
+        debug("[+] action: put: requested filename (%s) already exists, overwriting\n", targetname);
         if(!libflist_directory_rm_inode(dirnode, inode)) {
             fprintf(stderr, "[-] action: put: could not overwrite existing inode\n");
             return 1;
         }
     }
 
-    if(!(inode = libflist_inode_from_localfile(localfile, dirnode))) {
+    if(!(inode = libflist_inode_from_localfile(localfile, dirnode, cb->ctx))) {
         fprintf(stderr, "[-] action: put: could not load local file\n");
         return 1;
     }
+
+    // rename inode to target file
+    libflist_inode_rename(inode, targetname);
 
     // append inode to that directory
     dirnode_appends_inode(dirnode, inode);
 
     // commit
-    dirnode_t *parent = libflist_directory_get_parent(cb->database, dirnode);
-    libflist_dirnode_commit(dirnode, cb->database, parent, NULL);
+    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    libflist_dirnode_commit(dirnode, cb->ctx, parent);
 
     return 0;
 }
