@@ -230,6 +230,10 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         db->internal_get = database_redis_get_zdb;
         db->internal_set = database_redis_set_zdb;
 
+        // fallback to default namespace
+        if(namespace == NULL)
+            namespace = "default";
+
         debug("[+] database: zero-db detected, selecting namespace\n");
         if(token) {
             debug("[+] database: authenticating token\n");
