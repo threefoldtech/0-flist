@@ -691,8 +691,9 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
 
             // upload non-empty files
             if(inode->size && (ctx->backend || inode->chunks)) {
-                flist_chunks_t *chunks;
+                // flist_chunks_t *chunks;
 
+                /*
                 // chunks needs to be computed
                 if(ctx->backend) {
                     if(!(chunks = libflist_backend_upload_inode(ctx->backend, root->fullpath, inode->name))) {
@@ -716,6 +717,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
                     // we don't need the chunks anymore
                     libflist_backend_chunks_free(chunks);
                 }
+                */
 
                 // chunks filled by read functions
                 if(inode->chunks) {
@@ -759,25 +761,25 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
 
     // commit this object into the database
     debug("[+] writing into db: %s\n", root->hashkey);
-    if(database->sexists(database, root->hashkey)) {
-        if(database->sdel(database, root->hashkey))
+    if(ctx->db->sexists(ctx->db, root->hashkey)) {
+        if(ctx->db->sdel(ctx->db, root->hashkey))
             dies("key exists, deleting: database error");
     }
 
-    if(database->sset(database, root->hashkey, buffer, sz))
+    if(ctx->db->sset(ctx->db, root->hashkey, buffer, sz))
         dies("database error");
 
     free(buffer);
 
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        libflist_dirnode_commit(subdir, database, root, backend);
+        libflist_dirnode_commit(subdir, ctx, root);
 }
 
 //
 // walker
 //
-static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, dirnode_t *parent) {
+static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, dirnode_t *parent, flist_ctx_t *ctx) {
     inode_t *inode;
 
     char vpath[PATH_MAX];
@@ -829,7 +831,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
         inode->type = INODE_FILE;
 
         // computing chunks
-        inode->chunks = libflist_chunks_compute((char *) realpath);
+        inode->chunks = libflist_chunks_proceed((char *) realpath, ctx);
     }
 
     return inode;
@@ -863,7 +865,14 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
     return inode;
 }
 
-inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent) {
+inode_t *libflist_inode_rename(inode_t *inode, char *name) {
+    free(inode->name);
+    inode->name = strdup(name);
+
+    return inode;
+}
+
+inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx) {
     struct stat sb;
     char *localdup = NULL;
     inode_t *inode = NULL;
@@ -878,7 +887,7 @@ inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent) {
 
     char *filename = basename(localdup);
 
-    if(!(inode = flist_process_file(filename, &sb, localpath, parent)))
+    if(!(inode = flist_process_file(filename, &sb, localpath, parent, ctx)))
         return NULL;
 
     free(localdup);
@@ -1010,7 +1019,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
 
         // building the inode of this directory
         const char *itemname = fpath + ftwbuf->base;
-        inode_t *inode = flist_process_file(itemname, sb, fpath, parentnode);
+        inode_t *inode = flist_process_file(itemname, sb, fpath, parentnode, NULL);
         dirnode_appends_inode(parentnode, inode);
 
         // setting metadata of that directory
@@ -1045,7 +1054,7 @@ static int flist_create_cb(const char *fpath, const struct stat *sb, int typefla
     const char *itemname = fpath + ftwbuf->base;
     debug("[+] processing: %s [%s] (%lu)\n", itemname, fpath, sb->st_size);
 
-    inode_t *inode = flist_process_file(itemname, sb, fpath, globaldata.currentdir);
+    inode_t *inode = flist_process_file(itemname, sb, fpath, globaldata.currentdir, NULL);
     dirnode_appends_inode(globaldata.currentdir, inode);
 
     /*

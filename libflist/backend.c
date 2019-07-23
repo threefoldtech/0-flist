@@ -93,6 +93,7 @@ int libflist_backend_exists(flist_backend_t *context, flist_chunk_t *chunk) {
     return db->exists(db, chunk->id.data, chunk->id.length);
 }
 
+// upload a chunk on the backend
 int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk) {
     flist_db_t *db = context->database;
 
@@ -157,6 +158,26 @@ cleanup:
     buffer_free(buffer);
 
     return chunks;
+}
+
+// check if the chunk is already on the backend
+// if it's not on the backend, uploading it
+int libflist_backend_chunk_commit(flist_backend_t *context, flist_chunk_t *chunk) {
+    // check if chunk is already on the backend
+    if(libflist_backend_exists(context, chunk)) {
+        debug("[+] libflist: backend: chunk already on the backend, skipping\n");
+        return 0;
+    }
+
+    debug("[+] libflist: backend: uploading chunk (%lu bytes)\n", chunk->encrypted.length);
+
+    // backend upload
+    if(libflist_backend_upload_chunk(context, chunk)) {
+        debug("[-] libflist: backend: chunk: upload: %s\n", libflist_strerror());
+        return -1;
+    }
+
+    return 1;
 }
 
 void libflist_backend_chunks_free(flist_chunks_t *chunks) {

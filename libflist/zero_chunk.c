@@ -60,7 +60,7 @@ buffer_t *bufferize(char *filename) {
     if(file_load(filename, buffer) < 0)
         return NULL;
 
-    // file empty, nothing to do.
+    // file empty, nothing to do
     if(buffer->length == 0) {
         debug("[-] libflist: chunks: file is empty, nothing to do\n");
         free(buffer);
@@ -301,7 +301,9 @@ static uint8_t *buffer_duplicate(flist_buffer_t *input) {
     return copy;
 }
 
-inode_chunks_t *libflist_chunks_compute(char *localfile) {
+// compute file chunks, if context backend is specified (not NULL), committing
+// the chunk into the backend
+inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx) {
     buffer_t *buffer;
     inode_chunks_t *chunks;
     size_t totalsize = 0;
@@ -338,6 +340,14 @@ inode_chunks_t *libflist_chunks_compute(char *localfile) {
         ichunk->decipher = buffer_duplicate(&chunk->cipher);
         ichunk->decipherlen = chunk->cipher.length;
 
+        // if context is provided
+        // uploading this chunk
+        if(ctx && ctx->backend) {
+            if(libflist_backend_chunk_commit(ctx->backend, chunk) < 0) {
+                fprintf(stderr, "[-] libflist: chunk: could not upload this chunk\n");
+            }
+        }
+
         totalsize += chunk->encrypted.length;
 
         libflist_chunk_free(chunk);
@@ -351,3 +361,7 @@ inode_chunks_t *libflist_chunks_compute(char *localfile) {
     return chunks;
 }
 
+// compute file chunks, without uploading anything
+inode_chunks_t *libflist_chunks_compute(char *localfile) {
+    return libflist_chunks_proceed(localfile, NULL);
+}

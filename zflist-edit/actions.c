@@ -81,9 +81,11 @@ int zf_init(zf_callback_t *cb) {
     flist_db_t *database = libflist_db_sqlite_init(cb->settings->mnt);
     database->open(database);
 
+    flist_ctx_t *ctx = libflist_context_create(database, NULL);
+
     // initialize root directory
     dirnode_t *root = libflist_internal_dirnode_create("", "");
-    libflist_dirnode_commit(root, cb->ctx, root);
+    libflist_dirnode_commit(root, ctx, root);
 
     // commit changes
     database->close(database);
@@ -468,7 +470,6 @@ int zf_put(zf_callback_t *cb) {
     // looking for backend
     //
     flist_db_t *backdb = NULL;
-    flist_backend_t *backend = NULL;
     char *envbackend;
 
     if((envbackend = getenv("UPLOADBACKEND"))) {
@@ -477,7 +478,7 @@ int zf_put(zf_callback_t *cb) {
             return 1;
         }
 
-        backend = libflist_backend_init(backdb, "/");
+        cb->ctx->backend = libflist_backend_init(backdb, "/");
 
     } else {
         debug("[-] WARNING:\n");

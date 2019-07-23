@@ -327,6 +327,7 @@
     flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *filename);
     flist_chunks_t *libflist_backend_upload_inode(flist_backend_t *backend, char *path, char *filename);
     int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk);
+    int libflist_backend_chunk_commit(flist_backend_t *context, flist_chunk_t *chunk);
 
     flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_chunk_t *chunk);
 
@@ -356,6 +357,7 @@
     // zero_chunk.c
     //
     inode_chunks_t *libflist_chunks_compute(char *localfile);
+    inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx);
 
     uint8_t *libflist_chunk_hash(const void *buffer, size_t length);
 
@@ -384,8 +386,9 @@
 
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
-    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent);
+    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
     inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
+    inode_t *libflist_inode_rename(inode_t *inode, char *name);
 
     dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
     int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
