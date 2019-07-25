@@ -121,6 +121,7 @@ void libflist_context_free(flist_ctx_t *ctx) {
     free(ctx);
 }
 
+#if 0
 typedef struct flist_write_global_t {
     char *root;
     flist_db_t *database;
@@ -130,22 +131,9 @@ typedef struct flist_write_global_t {
     flist_stats_t stats;
 
 } flist_write_global_t;
+#endif
 
-// WARNING:
-//   we use nftw to walk over the filesystem
-//   this method doesn't allow to pass custom variable
-//   to the callback, we __need__ to use a global variable
-//   to reach data from the callback
-//
-//   this global variable (only accessible from this file) is
-//   there for that purpose **only**
-//
-//   THIS MAKE ANY CALL TO FLIST __CREATION__
-//   NOT THREADS SAFE
-//
-//   maybe for a next release, some lock will be added
-//   to ensure threads are not breaking but for now
-//   just assume all of this are NOT THREADS SAFE.
+#if 0
 static flist_write_global_t globaldata = {
     .root = NULL,
     .database = NULL,
@@ -153,6 +141,7 @@ static flist_write_global_t globaldata = {
     .rootdir = NULL,
     .currentdir = NULL,
 };
+#endif
 
 //
 //
@@ -571,192 +560,6 @@ int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode) 
     return 0;
 }
 
-
-//
-// WARNING: this code uses 'ftw', which is by design, not thread safe
-//          all functions used here need to be concidered as non-thread-safe
-//          be careful if you want to add threads on the layer
-//
-
-//
-// capnp dumper
-//
-
-// flist_json_t jsonresponse = {0};
-
-#if 0
-void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
-    struct capn c;
-    capn_init_malloc(&c);
-    capn_ptr cr = capn_root(&c);
-    struct capn_segment *cs = cr.seg;
-
-    debug("[+] populating directory: </%s>\n", root->fullpath);
-
-    // creating this directory entry
-    struct Dir dir = {
-        .name = chars_to_text(root->name),
-        .location = chars_to_text(root->fullpath),
-        .contents = new_Inode_list(cs, root->inode_length),
-        .parent = chars_to_text(parent->hashkey),
-        .size = 4096,
-        .aclkey = chars_to_text(root->acl.key),
-        .modificationTime = root->modification,
-        .creationTime = root->creation,
-    };
-
-    inode_acl_commit(ctx->db, &root->acl);
-
-    // populating contents
-    int index = 0;
-    for(inode_t *inode = root->inode_list; inode; inode = inode->next, index += 1) {
-        struct Inode target;
-
-        debug("[+]   populate inode: <%s>\n", inode->name);
-
-        target.name = chars_to_text(inode->name);
-        target.size = inode->size;
-        target.attributes_which = inode->type;
-        target.aclkey = chars_to_text(inode->acl.key);
-        target.modificationTime = inode->modification;
-        target.creationTime = inode->creation;
-
-        if(inode->type == INODE_DIRECTORY) {
-            struct SubDir sd = {
-                .key = chars_to_text(inode->subdirkey),
-            };
-
-            target.attributes.dir = new_SubDir(cs);
-            write_SubDir(&sd, target.attributes.dir);
-
-            globaldata.stats.directory += 1;
-        }
-
-        if(inode->type == INODE_LINK) {
-            struct Link l = {
-                .target = chars_to_text(inode->link),
-            };
-
-            target.attributes.link = new_Link(cs);
-            write_Link(&l, target.attributes.link);
-
-            globaldata.stats.symlink += 1;
-        }
-
-        if(inode->type == INODE_SPECIAL) {
-            struct Special sp = {
-                .type = inode->stype,
-            };
-
-            // see: https://github.com/opensourcerouting/c-capnproto/blob/master/lib/capnp_c.h#L196
-            sp.data.p = capn_datatext(cs, inode->sdata);
-
-            // capn_list8 data = capn_new_list8(cs, 1);
-            // capn_setv8(data, 0, (uint8_t *) inode->sdata, strlen(inode->sdata));
-            // sp.data.p = data.p;
-
-            target.attributes.special = new_Special(cs);
-            write_Special(&sp, target.attributes.special);
-
-            globaldata.stats.special += 1;
-        }
-
-        if(inode->type == INODE_FILE) {
-            struct File f = {
-                .blockSize = 128, // ignored, hardcoded value
-            };
-
-            // upload non-empty files
-            if(inode->size && (ctx->backend || inode->chunks)) {
-                // flist_chunks_t *chunks;
-
-                /*
-                // chunks needs to be computed
-                if(ctx->backend) {
-                    if(!(chunks = libflist_backend_upload_inode(ctx->backend, root->fullpath, inode->name))) {
-                        globaldata.stats.failure += 1;
-                        continue;
-                    }
-
-                    f.blocks = new_FileBlock_list(cs, chunks->length);
-
-                    for(size_t i = 0; i < chunks->length; i++) {
-                        struct FileBlock block;
-                        flist_chunk_t *chk = chunks->chunks[i];
-
-                        block.hash.p = capn_databinary(cs, (char *) chk->id.data, chk->id.length);
-                        block.key.p = capn_databinary(cs, (char *) chk->cipher.data, chk->cipher.length);
-
-                        set_FileBlock(&block, f.blocks, i);
-                    }
-
-                    // now it's put on the capnp struct
-                    // we don't need the chunks anymore
-                    libflist_backend_chunks_free(chunks);
-                }
-                */
-
-                // chunks filled by read functions
-                if(inode->chunks) {
-                    f.blocks = new_FileBlock_list(cs, inode->chunks->size);
-
-                    for(size_t i = 0; i < inode->chunks->size; i++) {
-                        struct FileBlock block;
-                        inode_chunk_t *chk = &inode->chunks->list[i];
-
-                        block.hash.p = capn_databinary(cs, (char *) chk->entryid, chk->entrylen);
-                        block.key.p = capn_databinary(cs, (char *) chk->decipher, chk->decipherlen);
-
-                        set_FileBlock(&block, f.blocks, i);
-                    }
-                }
-            }
-
-            target.attributes.file = new_File(cs);
-            write_File(&f, target.attributes.file);
-
-            globaldata.stats.regular += 1;
-            globaldata.stats.size += inode->size;
-        }
-
-        set_Inode(&target, dir.contents, index);
-        inode_acl_commit(ctx->db, &inode->acl);
-    }
-
-    // commit capnp object
-    unsigned char *buffer = malloc(8 * 512 * 1024); // FIXME
-
-    Dir_ptr dp = new_Dir(cs);
-    write_Dir(&dir, dp);
-
-
-    if(capn_setp(capn_root(&c), 0, dp.p))
-        dies("capnp setp failed");
-
-    int sz = capn_write_mem(&c, buffer, 8 * 512 * 1024, 0); // FIXME
-    capn_free(&c);
-
-    // commit this object into the database
-    debug("[+] writing into db: %s\n", root->hashkey);
-    if(ctx->db->sexists(ctx->db, root->hashkey)) {
-        if(ctx->db->sdel(ctx->db, root->hashkey))
-            dies("key exists, deleting: database error");
-    }
-
-    if(ctx->db->sset(ctx->db, root->hashkey, buffer, sz))
-        dies("database error");
-
-    free(buffer);
-
-    // walking over the sub-directories
-    for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        libflist_dirnode_commit(subdir, ctx, root);
-}
-#endif
-
-//
-// walker
-//
 static inode_t *flist_process_file(const char *iname, const struct stat *sb, const char *realpath, dirnode_t *parent, flist_ctx_t *ctx) {
     inode_t *inode;
 
@@ -836,15 +639,6 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
 
     inode->creation = time(NULL);
     inode->modification = time(NULL);
-    // inode->racl = libflist_mk_permissions("root", "root", 0755);
-
-    /*
-    if(!(libflist_racl_to_acl(&inode->acl, inode->racl))) {
-        inode_free(inode);
-        return NULL;
-    }
-    */
-
     inode->type = INODE_DIRECTORY;
     inode->subdirkey = libflist_path_key(vpath);
 
@@ -1091,6 +885,7 @@ static char *relative_path_parent(char *relative) {
     return strndup(relative, length - 1);
 }
 
+#if 0
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     char *relpath = NULL;
     char *parent = NULL;
@@ -1237,7 +1032,9 @@ char *flist_rootpath_clean(const char *input) {
 
     return fixed;
 }
+#endif
 
+#if 0
 flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend) {
     flist_stats_t *stats = NULL;
     struct stat st;
@@ -1302,3 +1099,4 @@ flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_bac
 
     return stats;
 }
+#endif

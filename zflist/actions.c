@@ -556,7 +556,7 @@ int zf_putdir(zf_callback_t *cb) {
         return 1;
     }
 
-    // nothing more to do
+    libflist_stats_dump(&cb->ctx->stats);
 
     return 0;
 }

@@ -203,6 +203,7 @@
     typedef struct flist_ctx_t {
         flist_db_t *db;
         flist_backend_t *backend;
+        flist_stats_t stats;
 
     } flist_ctx_t;
 
@@ -393,6 +394,7 @@
     //
     void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir);
     void libflist_dirnode_dumps(dirnode_t *root);
+    void libflist_stats_dump(flist_stats_t *stats);
 
     //
     // metadata.c

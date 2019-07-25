@@ -56,3 +56,16 @@ void libflist_dirnode_dumps(dirnode_t *root) {
             warns("inode aclkey not set");
     }
 }
+
+void libflist_stats_dump(flist_stats_t *stats) {
+    printf("[+]\n");
+    printf("[+]   flist: regular  : %lu\n", stats->regular);
+    printf("[+]   flist: symlink  : %lu\n", stats->symlink);
+    printf("[+]   flist: directory: %lu\n", stats->directory);
+    printf("[+]   flist: special  : %lu\n", stats->special);
+    printf("[+]   flist: failure  : %lu\n", stats->failure);
+    printf("[+]   flist: full size: %lu bytes\n", stats->size);
+    printf("[+]\n");
+}
+
+

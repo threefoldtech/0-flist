@@ -181,7 +181,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
             target.attributes.dir = new_SubDir(cs);
             write_SubDir(&sd, target.attributes.dir);
 
-            // globaldata.stats.directory += 1;
+            ctx->stats.directory += 1;
         }
 
         if(inode->type == INODE_LINK) {
@@ -192,7 +192,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
             target.attributes.link = new_Link(cs);
             write_Link(&l, target.attributes.link);
 
-            // globaldata.stats.symlink += 1;
+            ctx->stats.symlink += 1;
         }
 
         if(inode->type == INODE_SPECIAL) {
@@ -210,7 +210,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
             target.attributes.special = new_Special(cs);
             write_Special(&sp, target.attributes.special);
 
-            // globaldata.stats.special += 1;
+            ctx->stats.special += 1;
         }
 
         if(inode->type == INODE_FILE) {
@@ -239,8 +239,8 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
             target.attributes.file = new_File(cs);
             write_File(&f, target.attributes.file);
 
-            // globaldata.stats.regular += 1;
-            // globaldata.stats.size += inode->size;
+            ctx->stats.regular += 1;
+            ctx->stats.size += inode->size;
         }
 
         set_Inode(&target, dir.contents, index);
