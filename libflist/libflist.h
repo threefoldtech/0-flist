@@ -2,15 +2,11 @@
     #define LIBFLIST_H
 
     //
-    // ---------------------------------------------------------------------
+    // libflist
     //
-    // brace yourself
-    //
-    // most of this file will hurt your eyes...
-    //                    ...for now (I promise, this will change)
-    //                    ...look at the end for a better idea of the futur
-    //
-    // ---------------------------------------------------------------------
+    //   flist main library to create, list, update an flist file
+    //   this file will be more documented with time, but it already changed
+    //   a lot across time and is way more much readable now than before
     //
 
     #include <stdint.h>
@@ -207,53 +203,7 @@
 
     } flist_ctx_t;
 
-    //
-    // ----------------------
-    // welcome in the jungle
-    // everything here need to be review
-    // and rewritten in a library perspective
-    //
-    // see below for better
 
-
-    // initialize a backend
-
-
-
-    // hashing
-
-
-
-
-    // convert a binary hash into hexadecimal hash
-
-    void inode_free(inode_t *inode);
-
-    // directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath);
-
-    // void flist_directory_close(flist_db_t *database, directory_t *dir);
-
-    char *libflist_path_key(char *path);
-
-    int flist_walk(flist_db_t *database);
-
-    dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
-    dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
-
-    dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-    dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-
-    dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
-    inode_t *inode_lazy_duplicate(inode_t *source);
-
-    // flist_acl_t *libflist_mk_permissions(char *uname, char *gname, int mode);
-    void inode_acl_commit(flist_db_t *database, acl_t *acl);
-
-    //
-    // --------------------------------------------------
-    // at that point, function are reviewed and handle
-    // error in a library point of view and are exported
-    // here publicly
 
     //
     // verbose.c
@@ -352,13 +302,15 @@
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
     acl_t *libflist_inode_acl_commit(inode_t *inode);
 
+    char *libflist_path_key(char *path);
+
     //
     // flist_write.c
     //
     //   all the logic needed to create entries (inode, directories, ...)
     //
-    int libflist_create_excluders_append(char *regex);
-    void libflist_create_excluders_free();
+    // int libflist_create_excluders_append(char *regex);
+    // void libflist_create_excluders_free();
 
     flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
 
@@ -378,6 +330,14 @@
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
     dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name);
+    void inode_free(inode_t *inode);
+
+    dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+    dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
+    dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
+    dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
+    dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
+    inode_t *inode_lazy_duplicate(inode_t *source);
 
     //
     // flist_merger.c

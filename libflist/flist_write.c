@@ -394,6 +394,7 @@ dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname) {
     return NULL;
 }
 
+#if 0
 static dirnode_t *dirnode_lookup_step(dirnode_t *root, char *token, char *incrpath) {
     dirnode_t *subdir = NULL;
 
@@ -417,7 +418,9 @@ static dirnode_t *dirnode_lookup_step(dirnode_t *root, char *token, char *incrpa
 
     return dirnode_lookup_step(subdir, token, incrpath);
 }
+#endif
 
+#if 0
 static dirnode_t *dirnode_lookup(dirnode_t *root, const char *fullpath) {
     char *token;
     char *incrpath;
@@ -467,6 +470,7 @@ static void dirnode_tree_free(dirnode_t *root) {
 
     dirnode_free(root);
 }
+#endif
 
 
 // WARNING: FIXME - duplication just copy everything and cut next pointer
@@ -816,6 +820,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
     return inode;
 }
 
+#if 0
 static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
     debug("[+] fixing root directory: %s\n", root->fullpath);
 
@@ -828,7 +833,9 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
 
     return 0;
 }
+#endif
 
+#if 0
 // FIX TODO:
 //  - always lookup relative directory from fpath
 //  - when FTW_DP && fpath == / -> we are done
@@ -884,6 +891,7 @@ static char *relative_path_parent(char *relative) {
     // we have the parent directory
     return strndup(relative, length - 1);
 }
+#endif
 
 #if 0
 static int flist_create_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
