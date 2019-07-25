@@ -185,8 +185,8 @@ char *libflist_inode_acl_key(acl_t *acl) {
 }
 
 acl_t *libflist_inode_acl_commit(inode_t *inode) {
-    inode->acl.key = libflist_inode_acl_key(&inode->acl);
-    return &inode->acl;
+    inode->acl->key = libflist_inode_acl_key(inode->acl);
+    return inode->acl;
 }
 
 static char *uidstr(struct passwd *passwd, uid_t uid) {
@@ -222,21 +222,26 @@ static char *gidstr(struct group *group, gid_t gid) {
     return strdup(group->gr_name);
 }
 
-acl_t inode_acl_new(char *uname, char *gname, int mode) {
-    acl_t acl;
+acl_t *inode_acl_new(char *uname, char *gname, int mode) {
+    acl_t *acl;
 
-    acl.mode = mode;
-    acl.uname = strdup(uname);
-    acl.gname = strdup(gname);
-    acl.key = libflist_inode_acl_key(&acl);
+    if(!(acl = malloc(sizeof(acl_t)))) {
+        warnp("acl: new: malloc");
+        return NULL;
+    }
+
+    acl->mode = mode;
+    acl->uname = strdup(uname);
+    acl->gname = strdup(gname);
+    acl->key = libflist_inode_acl_key(acl);
 
     return acl;
 }
 
-acl_t inode_acl(const struct stat *sb) {
+acl_t *inode_acl(const struct stat *sb) {
     char *uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
     char *gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
-    acl_t acl = inode_acl_new(uname, gname, sb->st_mode);
+    acl_t *acl = inode_acl_new(uname, gname, sb->st_mode);
 
     free(uname);
     free(gname);
@@ -249,6 +254,7 @@ void inode_acl_free(acl_t *acl) {
     free(acl->uname);
     free(acl->gname);
     free(acl->key);
+    free(acl);
 }
 
 static dirnode_t *dirnode_create(char *fullpath, char *name) {
@@ -302,7 +308,7 @@ dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
 }
 
 void dirnode_free(dirnode_t *directory) {
-    inode_acl_free(&directory->acl);
+    inode_acl_free(directory->acl);
 
     free(directory->fullpath);
     free(directory->name);
@@ -324,7 +330,7 @@ static inode_t *inode_create(const char *name, size_t size, const char *fullpath
 }
 
 void inode_free(inode_t *inode) {
-    inode_acl_free(&inode->acl);
+    inode_acl_free(inode->acl);
     free(inode->name);
     free(inode->fullpath);
     free(inode->sdata);
@@ -575,66 +581,10 @@ int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode) 
 //
 // capnp dumper
 //
-static capn_text chars_to_text(const char *chars) {
-    return (capn_text) {
-        .len = (int) strlen(chars),
-        .str = chars,
-        .seg = NULL,
-    };
-}
-
-void inode_acl_persist(flist_db_t *database, acl_t *acl) {
-    if(database->sexists(database, acl->key))
-        return;
-
-    // create a capnp aci object
-    struct ACI aci = {
-        .uname = chars_to_text(acl->uname),
-        .gname = chars_to_text(acl->gname),
-        .mode = acl->mode,
-        .id = 0,
-    };
-
-    // prepare a writer
-    struct capn c;
-    capn_init_malloc(&c);
-    capn_ptr cr = capn_root(&c);
-    struct capn_segment *cs = cr.seg;
-    unsigned char buffer[4096];
-
-    ACI_ptr ap = new_ACI(cs);
-    write_ACI(&aci, ap);
-
-    if(capn_setp(capn_root(&c), 0, ap.p))
-        dies("acl capnp setp failed");
-
-    int sz = capn_write_mem(&c, buffer, 4096, 0);
-    capn_free(&c);
-
-    debug("[+]   writing acl into db: %s\n", acl->key);
-    if(database->sset(database, acl->key, buffer, sz))
-        dies("acl database error");
-}
-
-static capn_ptr capn_datatext(struct capn_segment *cs, char *payload) {
-    size_t length = strlen(payload);
-
-    capn_list8 data = capn_new_list8(cs, length);
-    capn_setv8(data, 0, (uint8_t *) payload, length);
-
-    return data.p;
-}
-
-static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t length) {
-    capn_list8 data = capn_new_list8(cs, length);
-    capn_setv8(data, 0, (uint8_t *) payload, length);
-
-    return data.p;
-}
-
 
 // flist_json_t jsonresponse = {0};
 
+#if 0
 void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
@@ -655,7 +605,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
         .creationTime = root->creation,
     };
 
-    inode_acl_persist(ctx->db, &root->acl);
+    inode_acl_commit(ctx->db, &root->acl);
 
     // populating contents
     int index = 0;
@@ -770,7 +720,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
         }
 
         set_Inode(&target, dir.contents, index);
-        inode_acl_persist(ctx->db, &inode->acl);
+        inode_acl_commit(ctx->db, &inode->acl);
     }
 
     // commit capnp object
@@ -802,6 +752,7 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
         libflist_dirnode_commit(subdir, ctx, root);
 }
+#endif
 
 //
 // walker
@@ -885,12 +836,14 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
 
     inode->creation = time(NULL);
     inode->modification = time(NULL);
-    inode->racl = libflist_mk_permissions("root", "root", 0755);
+    // inode->racl = libflist_mk_permissions("root", "root", 0755);
 
+    /*
     if(!(libflist_racl_to_acl(&inode->acl, inode->racl))) {
         inode_free(inode);
         return NULL;
     }
+    */
 
     inode->type = INODE_DIRECTORY;
     inode->subdirkey = libflist_path_key(vpath);
@@ -996,7 +949,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
         debug("[+] libflist: local directory: adding: %s [%s]\n", fentry->fts_name, parentpath);
 
         // fetching parent directory
-        dirnode_t *localparent = libflist_directory_get(ctx->db, parentpath);
+        dirnode_t *localparent = libflist_dirnode_get(ctx->db, parentpath);
 
         // adding this new directory
         if(!(inode = libflist_inode_from_localfile(fentry->fts_path, localparent, ctx))) {
@@ -1037,7 +990,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             // and keep track of the previous (insde 'next' field)
             debug("[+] libflist: switching to virtual directory: %s\n", target);
 
-            dirnode_t *newdir = libflist_directory_get(ctx->db, target);
+            dirnode_t *newdir = libflist_dirnode_get(ctx->db, target);
             newdir->next = workingdir;
             workingdir = newdir;
             continue;
@@ -1076,7 +1029,7 @@ static int flist_dirnode_metadata(dirnode_t *root, const struct stat *sb) {
     root->modification = sb->st_mtime;
 
     // skipping already set acl
-    if(!root->acl.key)
+    if(!root->acl->key)
         root->acl = inode_acl(sb);
 
     return 0;

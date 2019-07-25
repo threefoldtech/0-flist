@@ -138,7 +138,7 @@ int zf_chmod(zf_callback_t *cb) {
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: chmod: no such parent directory\n");
         return 1;
     }
@@ -148,16 +148,16 @@ int zf_chmod(zf_callback_t *cb) {
         return 1;
     }
 
-    debug("[+] action: chmod: current mode: 0o%o\n", inode->acl.mode);
+    debug("[+] action: chmod: current mode: 0o%o\n", inode->acl->mode);
 
     // remove 9 last bits and set new last 9 bits
-    uint32_t cleared = inode->acl.mode & 0xfffffe00;
-    inode->acl.mode = cleared | newmode;
+    uint32_t cleared = inode->acl->mode & 0xfffffe00;
+    inode->acl->mode = cleared | newmode;
     libflist_inode_acl_commit(inode);
 
-    debug("[+] action: chmod: new mode: 0o%o\n", inode->acl.mode);
+    debug("[+] action: chmod: new mode: 0o%o\n", inode->acl->mode);
 
-    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
 
     return 0;
@@ -180,7 +180,7 @@ int zf_rm(zf_callback_t *cb) {
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: rm: no such directory (file parent directory)\n");
         return 1;
     }
@@ -201,7 +201,7 @@ int zf_rm(zf_callback_t *cb) {
     debug("[+] action: rm: file removed\n");
     debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
-    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
 
     return 0;
@@ -228,13 +228,13 @@ int zf_rmdir(zf_callback_t *cb) {
 
     dirnode_t *dirnode;
 
-    if(!(dirnode = libflist_directory_get_recursive(cb->ctx->db, dirpath))) {
+    if(!(dirnode = libflist_dirnode_get_recursive(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: rmdir: no such directory\n");
         return 1;
     }
 
     // fetching parent of this directory
-    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     debug("[+] action: rmdir: directory found, parent: %s\n", parent->fullpath);
 
     // removing all subdirectories
@@ -255,7 +255,7 @@ int zf_rmdir(zf_callback_t *cb) {
     }
 
     // commit changes in the parent (and parent of the parent)
-    dirnode_t *pparent = libflist_directory_get_parent(cb->ctx->db, parent);
+    dirnode_t *pparent = libflist_dirnode_get_parent(cb->ctx->db, parent);
     libflist_dirnode_commit(parent, cb->ctx, pparent);
 
     return 0;
@@ -278,12 +278,12 @@ int zf_mkdir(zf_callback_t *cb) {
     char *parent = dirname(dirpathcpy);
     char *dirname = basename(dirpath);
 
-    if((dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+    if((dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: mkdir: cannot create directory, already exists\n");
         return 1;
     }
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, parent))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, parent))) {
         fprintf(stderr, "[-] action: mkdir: parent directory doesn't exists\n");
         return 1;
     }
@@ -296,7 +296,7 @@ int zf_mkdir(zf_callback_t *cb) {
     }
 
     // commit changes in the parent
-    dirnode_t *dparent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    dirnode_t *dparent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, dparent);
 
     return 0;
@@ -316,7 +316,7 @@ int zf_ls(zf_callback_t *cb) {
 
     dirnode_t *dirnode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: ls: no such directory (file parent directory)\n");
         return 1;
     }
@@ -325,7 +325,7 @@ int zf_ls(zf_callback_t *cb) {
         printf("%c", zf_ls_inode_type(inode));
         zf_ls_inode_perm(inode);
 
-        printf(" %-8s %-8s  ", inode->acl.uname, inode->acl.gname);
+        printf(" %-8s %-8s  ", inode->acl->uname, inode->acl->gname);
         printf(" %8lu ", inode->size);
         printf(" %s\n", inode->name);
     }
@@ -351,7 +351,7 @@ int zf_stat(zf_callback_t *cb) {
     inode_t *inode;
 
     // let's fetch parent directory and looking if inode exists inside
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, parentdir))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, parentdir))) {
         fprintf(stderr, "[-] action: stat: no parent directory found\n");
         return 1;
     }
@@ -431,7 +431,7 @@ int zf_cat(zf_callback_t *cb) {
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         fprintf(stderr, "[-] action: cat: no such parent directory\n");
         return 1;
     }
@@ -484,10 +484,10 @@ int zf_put(zf_callback_t *cb) {
 
     debug("[+] action: put: looking for directory: %s\n", cb->argv[2]);
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, cb->argv[2]))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, cb->argv[2]))) {
         debug("[+] action: put: looking for directory: %s\n", dirpath);
 
-        if(!(dirnode = libflist_directory_get(cb->ctx->db, dirpath))) {
+        if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
             fprintf(stderr, "[-] action: put: no such parent directory\n");
             return 1;
         }
@@ -519,7 +519,7 @@ int zf_put(zf_callback_t *cb) {
     dirnode_appends_inode(dirnode, inode);
 
     // commit
-    dirnode_t *parent = libflist_directory_get_parent(cb->ctx->db, dirnode);
+    dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
 
     return 0;
@@ -546,7 +546,7 @@ int zf_putdir(zf_callback_t *cb) {
     dirnode_t *dirnode;
     inode_t *inode;
 
-    if(!(dirnode = libflist_directory_get(cb->ctx->db, destdir))) {
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, destdir))) {
         fprintf(stderr, "[-] action: putdir: no such parent directory\n");
         return 1;
     }

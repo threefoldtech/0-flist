@@ -26,15 +26,9 @@ void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir) {
     debug("[+] inode:   size: %lu bytes (%.2f MB)\n", inode->size, inode->size / (1024 * 1024.0));
     debug("[+] inode:   ctime: %lu, mtime: %lu\n", inode->creation, inode->modification);
 
-    if(inode->racl) {
-        debug("[+] inode:   user: %s, group: %s\n", inode->racl->uname, inode->racl->gname);
-        debug("[+] inode:   mode: %o\n", inode->racl->mode);
-    }
-
-    if(inode->acl.key) {
-        debug("[+] inode:   user: %s, group: %s\n", inode->acl.uname, inode->acl.gname);
-        debug("[+] inode:   mode: %o\n", inode->acl.mode);
-    }
+    debug("[+] inode: aclkey: %s\n", inode->acl->key);
+    debug("[+] inode:   user: %s, group: %s\n", inode->acl->uname, inode->acl->gname);
+    debug("[+] inode:   mode: %o\n", inode->acl->mode);
 
     if(inode->type == INODE_LINK)
         debug("[+] inode:   symlink: %s\n", inode->link);
@@ -51,14 +45,14 @@ void libflist_dirnode_dumps(dirnode_t *root) {
     for(dirnode_t *source = root->dir_list; source; source = source->next) {
         libflist_dirnode_dumps(source);
 
-        if(source->acl.key == NULL && source->racl == NULL)
+        if(source->acl->key == NULL)
             warns("directory aclkey not set");
     }
 
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         libflist_inode_dumps(inode, root);
 
-        if(inode->acl.key == NULL && inode->racl == NULL)
+        if(inode->acl->key == NULL)
             warns("inode aclkey not set");
     }
 }

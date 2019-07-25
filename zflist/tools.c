@@ -43,7 +43,7 @@ void zf_ls_inode_perm(inode_t *inode) {
 
     // foreach permissions bits, checking
     for(int mask = 1 << 8; mask; mask >>= 1) {
-        printf("%c", (inode->acl.mode & mask) ? *layout : '-');
+        printf("%c", (inode->acl->mode & mask) ? *layout : '-');
         layout += 1;
     }
 }
@@ -52,10 +52,10 @@ int zf_stat_inode(inode_t *inode) {
     printf("  File: /%s\n", inode->fullpath[0] == '/' ? inode->fullpath + 1 : inode->fullpath);
     printf("  Size: %lu bytes\n", inode->size);
 
-    printf("Access: (%o/%c", inode->acl.mode, zf_ls_inode_type(inode));
+    printf("Access: (%o/%c", inode->acl->mode, zf_ls_inode_type(inode));
     zf_ls_inode_perm(inode);
 
-    printf(")  UID: %s, GID: %s\n", inode->acl.uname, inode->acl.gname);
+    printf(")  UID: %s, GID: %s\n", inode->acl->uname, inode->acl->gname);
 
     printf("Access: %lu\n", inode->modification);
     printf("Create: %lu\n", inode->creation);
