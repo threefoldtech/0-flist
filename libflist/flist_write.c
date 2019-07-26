@@ -645,6 +645,7 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
     inode->modification = time(NULL);
     inode->type = INODE_DIRECTORY;
     inode->subdirkey = libflist_path_key(vpath);
+    inode->acl = inode_acl_new("root", "root", 0755);
 
     return inode;
 }
