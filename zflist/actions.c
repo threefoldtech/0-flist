@@ -306,12 +306,7 @@ int zf_mkdir(zf_callback_t *cb) {
 // ls
 //
 int zf_ls(zf_callback_t *cb) {
-    if(cb->argc != 2) {
-        fprintf(stderr, "[-] action: ls: missing directory\n");
-        return 1;
-    }
-
-    char *dirpath = cb->argv[1];
+    char *dirpath = (cb->argc < 2) ? "/" : cb->argv[1];
     debug("[+] action: ls: listing <%s>\n", dirpath);
 
     dirnode_t *dirnode;
