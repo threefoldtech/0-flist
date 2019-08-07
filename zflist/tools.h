@@ -10,4 +10,6 @@
     char zf_ls_inode_type(inode_t *inode);
     void zf_ls_inode_perm(inode_t *inode);
     int zf_stat_inode(inode_t *target);
+
+    void zf_error(char *function, char *message, ...);
 #endif

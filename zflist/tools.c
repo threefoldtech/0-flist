@@ -114,3 +114,15 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
 
     return ctx;
 }
+
+void zf_error(char *function, char *message, ...) {
+    va_list args;
+
+    va_start(args, message);
+
+    fprintf(stderr, "zflist: %s: ", function);
+    vfprintf(stderr, message, args);
+    fprintf(stderr, "\n");
+
+    va_end(args);
+}
