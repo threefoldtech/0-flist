@@ -55,6 +55,9 @@ int usage(char *basename) {
     fprintf(stderr, "  You can also use FLISTDIR environment variable to set your\n");
     fprintf(stderr, "  temporary-point directory and not specify it on the command line.\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "  By default, this tool will print error and information in text format,\n");
+    fprintf(stderr, "  you can get a json output by setting ZFLIST_JSON=1 environment variable.\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "  First, you need to -open- an flist, then you can do some -edit-\n");
     fprintf(stderr, "  and finally you can -commit- (close) your changes to a new flist.\n");
     fprintf(stderr, "\n");
@@ -72,7 +75,14 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .argv = argv,
         .settings = settings,
         .ctx = NULL,
+        .json = 0,
     };
+
+    // check whenever json output is requested
+    char *json = getenv("ZFLIST_JSON");
+
+    if(json && strcmp(json, "1") == 0)
+        cb.json = 1;
 
     // open database (if used)
     if(cmd->db)
