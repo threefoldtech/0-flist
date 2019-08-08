@@ -23,7 +23,7 @@ int zf_open(zf_callback_t *cb) {
 
     // checking if arguments are set
     if(cb->argc != 2) {
-        zf_error("open", "missing filename");
+        zf_error(cb, "open", "missing filename");
         return 1;
     }
 
@@ -39,7 +39,7 @@ int zf_open(zf_callback_t *cb) {
     // an flist database
     snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", cb->settings->mnt);
     if(file_exists(temp)) {
-        zf_error("open", "mountpoint already contains an open flist");
+        zf_error(cb, "open", "mountpoint already contains an open flist");
         return 1;
     }
 
@@ -73,7 +73,7 @@ int zf_init(zf_callback_t *cb) {
     // an flist database
     snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", cb->settings->mnt);
     if(file_exists(temp)) {
-        zf_error("init", "mountpoint already contains an open flist");
+        zf_error(cb, "init", "mountpoint already contains an open flist");
         return 1;
     }
 
@@ -100,7 +100,7 @@ int zf_init(zf_callback_t *cb) {
 //
 int zf_commit(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error("open", "missing filename");
+        zf_error(cb, "open", "missing filename");
         return 1;
     }
 
@@ -112,7 +112,7 @@ int zf_commit(zf_callback_t *cb) {
 
     // create flist
     if(!libflist_archive_create(filename, cb->settings->mnt)) {
-        zf_error("commit", "could not create flist");
+        zf_error(cb, "commit", "could not create flist");
         return 1;
     }
 
@@ -125,7 +125,7 @@ int zf_commit(zf_callback_t *cb) {
 //
 int zf_chmod(zf_callback_t *cb) {
     if(cb->argc != 3) {
-        zf_error("chmod", "missing mode or filename");
+        zf_error(cb, "chmod", "missing mode or filename");
         return 1;
     }
 
@@ -139,12 +139,12 @@ int zf_chmod(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-        zf_error("chmod", "no such parent directory");
+        zf_error(cb, "chmod", "no such parent directory");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        zf_error("chmod", "no such file");
+        zf_error(cb, "chmod", "no such file");
         return 1;
     }
 
@@ -168,7 +168,7 @@ int zf_chmod(zf_callback_t *cb) {
 //
 int zf_rm(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error("rm", "missing filename");
+        zf_error(cb, "rm", "missing filename");
         return 1;
     }
 
@@ -181,12 +181,12 @@ int zf_rm(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-        zf_error("rm", "no such directory (file parent directory)");
+        zf_error(cb, "rm", "no such directory (file parent directory)");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        zf_error("rm", "no such file");
+        zf_error(cb, "rm", "no such file");
         return 1;
     }
 
@@ -194,7 +194,7 @@ int zf_rm(zf_callback_t *cb) {
     debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     if(!libflist_directory_rm_inode(dirnode, inode)) {
-        zf_error("rm", "something went wrong when removing the file");
+        zf_error(cb, "rm", "something went wrong when removing the file");
         return 1;
     }
 
@@ -213,14 +213,14 @@ int zf_rm(zf_callback_t *cb) {
 //
 int zf_rmdir(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error("rmdir", "missing target directory");
+        zf_error(cb, "rmdir", "missing target directory");
         return 1;
     }
 
     char *dirpath = cb->argv[1];
 
     if(strcmp(dirpath, "/") == 0) {
-        zf_error("rmdir", "cannot remove root directory");
+        zf_error(cb, "rmdir", "cannot remove root directory");
         return 1;
     }
 
@@ -229,7 +229,7 @@ int zf_rmdir(zf_callback_t *cb) {
     dirnode_t *dirnode;
 
     if(!(dirnode = libflist_dirnode_get_recursive(cb->ctx->db, dirpath))) {
-        zf_error("rmdir", "no such directory");
+        zf_error(cb, "rmdir", "no such directory");
         return 1;
     }
 
@@ -239,7 +239,7 @@ int zf_rmdir(zf_callback_t *cb) {
 
     // removing all subdirectories
     if(libflist_directory_rm_recursively(cb->ctx->db, dirnode) != 0) {
-        zf_error("rmdir", "could not remove directories: %s", libflist_strerror());
+        zf_error(cb, "rmdir", "could not remove directories: %s", libflist_strerror());
         return 1;
     }
 
@@ -250,7 +250,7 @@ int zf_rmdir(zf_callback_t *cb) {
 
     // removing inode from the parent directory
     if(!libflist_directory_rm_inode(parent, inode)) {
-        zf_error("rmdir", "something went wrong when removing the file");
+        zf_error(cb, "rmdir", "something went wrong when removing the file");
         return 1;
     }
 
@@ -266,7 +266,7 @@ int zf_rmdir(zf_callback_t *cb) {
 //
 int zf_mkdir(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error("mkdir", "missing directory name");
+        zf_error(cb, "mkdir", "missing directory name");
         return 1;
     }
 
@@ -279,19 +279,19 @@ int zf_mkdir(zf_callback_t *cb) {
     char *dirname = basename(dirpath);
 
     if((dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-        zf_error("mkdir", "cannot create directory: file exists");
+        zf_error(cb, "mkdir", "cannot create directory: file exists");
         return 1;
     }
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, parent))) {
-        zf_error("mkdir", "parent directory doesn't exists");
+        zf_error(cb, "mkdir", "parent directory doesn't exists");
         return 1;
     }
 
     debug("[+] action: mkdir: creating <%s> inside <%s>\n", basename(dirpath), parent);
 
     if(!(newdir = libflist_directory_create(dirnode, dirname))) {
-        zf_error("mkdir", "could not create new directory");
+        zf_error(cb, "mkdir", "could not create new directory");
         return 1;
     }
 
@@ -312,7 +312,7 @@ int zf_ls(zf_callback_t *cb) {
     dirnode_t *dirnode;
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-        zf_error("ls", "no such directory (file parent directory)");
+        zf_error(cb, "ls", "no such directory (file parent directory)");
         return 1;
     }
 
@@ -333,7 +333,7 @@ int zf_ls(zf_callback_t *cb) {
 //
 int zf_stat(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error("stat", "missing filename or directory");
+        zf_error(cb, "stat", "missing filename or directory");
         return 1;
     }
 
@@ -347,12 +347,12 @@ int zf_stat(zf_callback_t *cb) {
 
     // let's fetch parent directory and looking if inode exists inside
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, parentdir))) {
-        zf_error("stat", "no parent directory found");
+        zf_error(cb, "stat", "no parent directory found");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        zf_error("stat", "no such file or directory");
+        zf_error(cb, "stat", "no such file or directory");
         return 1;
     }
 
@@ -365,7 +365,7 @@ int zf_stat(zf_callback_t *cb) {
 //
 int zf_metadata(zf_callback_t *cb) {
     if(cb->argc < 2) {
-        zf_error("metadata", "missing metadata name");
+        zf_error(cb, "metadata", "missing metadata name");
         return 1;
     }
 
@@ -396,7 +396,7 @@ int zf_metadata(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "readme") == 0)
         return zf_metadata_set_readme(cb);
 
-    zf_error("metadata", "unknown metadata name");
+    zf_error(cb, "metadata", "unknown metadata name");
     return 1;
 }
 
@@ -405,14 +405,14 @@ int zf_metadata(zf_callback_t *cb) {
 //
 int zf_cat(zf_callback_t *cb) {
     if(cb->argc < 2) {
-        zf_error("cat", "missing filename");
+        zf_error(cb, "cat", "missing filename");
         return 1;
     }
 
     flist_db_t *backdb;
 
     if(!(backdb = libflist_metadata_backend_database(cb->ctx->db))) {
-        zf_error("cat", "backend: %s", libflist_strerror());
+        zf_error(cb, "cat", "backend: %s", libflist_strerror());
         return 1;
     }
 
@@ -427,12 +427,12 @@ int zf_cat(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-        zf_error("cat", "no such parent directory");
+        zf_error(cb, "cat", "no such parent directory");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_name(dirnode, filename))) {
-        zf_error("cat", "no such file");
+        zf_error(cb, "cat", "no such file");
         return 1;
     }
 
@@ -441,7 +441,7 @@ int zf_cat(zf_callback_t *cb) {
         flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
 
         if(!libflist_backend_download_chunk(backend, chunk)) {
-            zf_error("cat", "could not download file: %s", libflist_strerror());
+            zf_error(cb, "cat", "could not download file: %s", libflist_strerror());
             return 1;
         }
 
@@ -457,7 +457,7 @@ int zf_cat(zf_callback_t *cb) {
 //
 int zf_put(zf_callback_t *cb) {
     if(cb->argc < 3) {
-        zf_error("put", "missing host file or target destination");
+        zf_error(cb, "put", "missing host file or target destination");
         return 1;
     }
 
@@ -483,7 +483,7 @@ int zf_put(zf_callback_t *cb) {
         debug("[+] action: put: looking for directory: %s\n", dirpath);
 
         if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
-            zf_error("put", "no such parent directory");
+            zf_error(cb, "put", "no such parent directory");
             return 1;
         }
     }
@@ -497,13 +497,13 @@ int zf_put(zf_callback_t *cb) {
     if((inode = libflist_inode_from_name(dirnode, targetname))) {
         debug("[+] action: put: requested filename (%s) already exists, overwriting\n", targetname);
         if(!libflist_directory_rm_inode(dirnode, inode)) {
-            zf_error("put", "could not overwrite existing inode");
+            zf_error(cb, "put", "could not overwrite existing inode");
             return 1;
         }
     }
 
     if(!(inode = libflist_inode_from_localfile(localfile, dirnode, cb->ctx))) {
-        zf_error("put", "could not load local file");
+        zf_error(cb, "put", "could not load local file");
         return 1;
     }
 
@@ -525,7 +525,7 @@ int zf_put(zf_callback_t *cb) {
 //
 int zf_putdir(zf_callback_t *cb) {
     if(cb->argc < 3) {
-        zf_error("putdir", "missing host directory or target destination");
+        zf_error(cb, "putdir", "missing host directory or target destination");
         return 1;
     }
 
@@ -542,12 +542,12 @@ int zf_putdir(zf_callback_t *cb) {
     inode_t *inode;
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, destdir))) {
-        zf_error("putdir", "no such parent directory");
+        zf_error(cb, "putdir", "no such parent directory");
         return 1;
     }
 
     if(!(inode = libflist_inode_from_localdir(localdir, dirnode, cb->ctx))) {
-        zf_error("putdir", "could not load local directory");
+        zf_error(cb, "putdir", "could not load local directory");
         return 1;
     }
 

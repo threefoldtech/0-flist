@@ -11,5 +11,5 @@
     void zf_ls_inode_perm(inode_t *inode);
     int zf_stat_inode(inode_t *target);
 
-    void zf_error(char *function, char *message, ...);
+    void zf_error(zf_callback_t *cb, char *function, char *message, ...);
 #endif

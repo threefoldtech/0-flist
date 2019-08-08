@@ -23,7 +23,7 @@ static int zf_metadata_reset(zf_callback_t *cb, char *key) {
     debug("[+] action: metadata: removing metadata: %s\n", key);
 
     if(!libflist_metadata_remove(cb->ctx->db, key)) {
-        fprintf(stderr, "[-] action: metadata: %s: %s\n", key, libflist_strerror());
+        zf_error(cb, "metadata", "%s: %s", key, libflist_strerror());
         return 1;
     }
 
@@ -37,7 +37,7 @@ static int zf_metadata_apply(zf_callback_t *cb, char *metadata, json_t *object) 
     debug("[+] action: metadata: %s\n", value);
 
     if(!libflist_metadata_set(cb->ctx->db, metadata, value)) {
-        fprintf(stderr, "[-] action: metadata: %s\n", libflist_strerror());
+        zf_error(cb, "metadata", "%s", libflist_strerror());
         json_decref(object);
         return 1;
     }
@@ -62,7 +62,7 @@ static json_t *zf_metadata_fetch(zf_callback_t *cb, char *metadata, json_t *(*in
     debug("[+] action: metadata: initial value found, parsing\n");
 
     if(!(input = json_loads(value, 0, &error))) {
-        fprintf(stderr, "[-] action: metadata: json: %s\n", error.text);
+        zf_error(cb, "metadata", "json: %s", error.text);
         return initial();
     }
 
@@ -272,12 +272,12 @@ int zf_metadata_set_environ(zf_callback_t *cb) {
     }
 
     if(!name) {
-        fprintf(stderr, "[-] action: metadata: missing environment variable name\n");
+        zf_error(cb, "metadata", "missing environment variable name");
         return 1;
     }
 
     if(!unset && !value) {
-        fprintf(stderr, "[-] action: metadata: missing environment variable value\n");
+        zf_error(cb, "metadata", "missing environment variable value");
         return 1;
     }
 
@@ -359,7 +359,7 @@ int zf_metadata_set_port(zf_callback_t *cb) {
     }
 
     if(in == 0) {
-        fprintf(stderr, "[-] action: metadata: missing input port number\n");
+        zf_error(cb, "metadata", "missing input port number");
         return 1;
     }
 
@@ -441,7 +441,7 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
     }
 
     if(!target) {
-        fprintf(stderr, "[-] action metadata: missing target path\n");
+        zf_error(cb, "metadata", "missing target path");
         return 1;
     }
 
