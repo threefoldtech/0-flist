@@ -25,6 +25,9 @@
 char *flist_inode_fullpath(struct Dir *dir, struct Inode *inode) {
     char *fullpath;
 
+    if(strlen(dir->location.str) == 0)
+        return strdup(inode->name.str);
+
     if(asprintf(&fullpath, "%s/%s", dir->location.str, inode->name.str) < 0)
         return NULL;
 
