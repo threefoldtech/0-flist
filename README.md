@@ -11,15 +11,14 @@ This projects contains multiple components:
 
 ## libflist
 Library don't have special compilation mode. Default build produce a shared library and a static archive
-to static link `libflist` code. The code produced contains debug and production version (customized by a flag
+to link `libflist` code. The code produced contains debug and production version (customized by a flag
 on runtime to enable or not debug output).
-
-Please note this library is in a early stage and was a fully static binary in a first step. Strip is not
-complete right now.
 
 Development note:
 - `flist_xxx` functions are internal functions
 - `libflist_xxx` functions are public functions
+
+More information about how to use the library will be available soon.
 
 # zflist
 Command line utility which use `libflist` to list, create and query a flist file.
@@ -35,7 +34,7 @@ debug output by default.
 Python binding of the library. Work in progress.
 
 # Dependencies
-In order to compile correctly `0-flist`, you'll need theses libraries:
+In order to compile correctly `libflist`, you'll need theses libraries:
 - `sqlite3` (database, libflist)
 - `hiredis` (redis, libflist)
 - `libtar` (archive, libflist)
@@ -43,8 +42,12 @@ In order to compile correctly `0-flist`, you'll need theses libraries:
 - `c-capnp` (serialization, libflist)
 - `libb2` (hashing [blake2], libflist)
 - `zlib` (compression, libflist)
+
+To compile `zflist`, you'll also need:
 - `jansson` (serialization, zflist)
-- `python3` (extension, pyflist)
+
+To compile the python binding, you'll also need:
+- `python3` (obviously, extension, pyflist)
 
 ## Ubuntu
 - Packages dependencies
@@ -55,50 +58,50 @@ You will need to compile `c-capnp` yourself, see autobuild directory.
 
 # Notes
 ## Merge priority
-When merging multiple flist together, the order of `--merge` argument is important.
-All files are proceed one by one from left to right. When file collision occures (same filename is present is multiple flist),
-the first file found is the one used on the final archive.
+When merging multiple flist together, the order of the merge is important.
+All files are proceed one by one from first to last flist. When file collision occures
+(same filename is present in multiple flist), the first file found is the one used on the final archive.
 
-Example: `zflist --archive target.flist --merge first.flist --merge second.flist`
+Example: ```
+zflist init
+zflist merge first.flist
+zflist merge second.flist
+zflist commit merged.flist
+```
 
-If `/bin/ls` is on both flist, the file from `first.flist` will be found `target.flist`
+If `/bin/ls` is on both flist, the file from `first.flist` will be found in `merged.flist`
 
 # Usage
 ```
-Usage: ./zflist [options]
-       ./zflist --archive <filename> --list [--output tree]
-       ./zflist --archive <filename> --create <root-path>
-       ./zflist --archive <filename> [options] --backend <host:port>
+Usage: ./zflist [temporary-point] open <filename>
+       ./zflist [temporary-point] <action> <arguments>
+       ./zflist [temporary-point] commit [optional-new-flist]
 
-Command line options:
-  --archive <flist>     archive (flist) filename
-                        (this option is always required)
+  The temporary-point should be a directory where temporary files
+  will be used for keeping tracks of your changes.
+  You can also use ZFLIST_MNT environment variable to set your
+  temporary-point directory and not specify it on the command line.
 
-  --create <root>       create an archive from <root> directory
+  By default, this tool will print error and information in text format,
+  you can get a json output by setting ZFLIST_JSON=1 environment variable.
 
-  --backend <host:port> upload/download files from archive, on this backend
-  --password <pwd>      backend namespace password (protected mode)
-  --token <jwt>         gateway token (gateway upload)
-  --upload [website]    upload the flist (using --token) on the hub
+  First, you need to -open- an flist, then you can do some -edit-
+  and finally you can -commit- (close) your changes to a new flist.
 
-  --list       list archive content
-  --merge      do a merge and add argument to merge list
-               the --archive will be the result of the merge
-               merge are done in the order of arguments
-  --action     action to do while listing archive:
-                    ls      show kind of 'ls -al' contents (default)
-                    tree    show contents in a tree view
-                    dump    debug dump of contents
-                    json    file list summary in json format (same as --json)
-
-                    blocks  dump files backend blocks (hash, key)
-                    check   proceed to backend integrity check
-                    cat     request file download (with --file option)
-
-  --json       provide (exclusively) json output status
-  --file       specific inside file to target
-  --ramdisk    extract archive to tmpfs
-  --help       shows this help message
+Available actions:
+  open            open an flist to enable editing
+  init            initialize an empty flist to enable editing
+  ls              list the content of a directory
+  stat            dump inode full metadata
+  cat             print file contents (backend metadata required)
+  put             insert local file into the flist
+  putdir          insert local directory into the flist (recursively)
+  chmod           change mode of a file (like chmod command)
+  rm              remove a file (not a directory)
+  rmdir           remove a directory (recursively)
+  mkdir           create an empty directory (non-recursive)
+  metadata        get or set metadata
+  commit          close an flist and commit changes
 ```
 
 # Repository Owner
