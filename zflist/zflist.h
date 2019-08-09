@@ -28,7 +28,8 @@
         zfe_settings_t *settings;
         flist_ctx_t *ctx;
         char **argv;
-        int json;
+        json_t *jout;
+        void *userptr;
 
     } zf_callback_t;
 

@@ -116,14 +116,170 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
     return ctx;
 }
 
+static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
+    dirnode_t *subnode = NULL;
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        // print filename
+        printf("/%s\n", inode->fullpath);
+
+        // if it's a directory, let's walk inside
+        if(inode->type == INODE_DIRECTORY) {
+            libflist_stats_directory_add(cb->ctx, 1);
+
+            if(!(subnode = libflist_dirnode_get(cb->ctx->db, inode->fullpath))) {
+                zf_error(cb, "find", "recursive directory not found");
+                return 1;
+            }
+
+            zf_find_recursive_text(cb, subnode);
+            libflist_dirnode_free(subnode);
+        }
+
+        // updating statistics
+        if(inode->type == INODE_FILE) {
+            libflist_stats_regular_add(cb->ctx, 1);
+            libflist_stats_size_add(cb->ctx, inode->size);
+        }
+
+        if(inode->type == INODE_SPECIAL)
+            libflist_stats_special_add(cb->ctx, 1);
+
+        if(inode->type == INODE_LINK)
+            libflist_stats_symlink_add(cb->ctx, 1);
+    }
+
+    return 0;
+}
+
+static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode) {
+    dirnode_t *subnode = NULL;
+    char buffer[2048];
+
+    json_t *response = json_object_get(cb->jout, "response");
+    json_t *content = json_object_get(response, "content");
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        json_t *entry = json_object();
+
+        snprintf(buffer, sizeof(buffer), "/%s", inode->fullpath);
+
+        json_object_set_new(entry, "size", json_integer(inode->size));
+        json_object_set_new(entry, "path", json_string(buffer));
+        json_array_append_new(content, entry);
+
+        // if it's a directory, let's walk inside
+        if(inode->type == INODE_DIRECTORY) {
+            libflist_stats_directory_add(cb->ctx, 1);
+
+            if(!(subnode = libflist_dirnode_get(cb->ctx->db, inode->fullpath))) {
+                zf_error(cb, "find", "recursive directory not found");
+                return 1;
+            }
+
+            zf_find_recursive_json(cb, subnode);
+            libflist_dirnode_free(subnode);
+        }
+
+        // updating statistics
+        if(inode->type == INODE_FILE) {
+            libflist_stats_regular_add(cb->ctx, 1);
+            libflist_stats_size_add(cb->ctx, inode->size);
+        }
+
+        if(inode->type == INODE_SPECIAL)
+            libflist_stats_special_add(cb->ctx, 1);
+
+        if(inode->type == INODE_LINK)
+            libflist_stats_symlink_add(cb->ctx, 1);
+    }
+
+    return 0;
+}
+
+int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode) {
+    if(cb->jout) {
+        json_t *response = json_object_get(cb->jout, "response");
+        json_t *content = json_array();
+
+        json_object_set(response, "content", content);
+        cb->userptr = content;
+
+        return zf_find_recursive_json(cb, dirnode);
+    }
+
+    return zf_find_recursive_text(cb, dirnode);
+}
+
+static int zf_find_finalize_text(zf_callback_t *cb) {
+    flist_stats_t *stats = libflist_stats_get(cb->ctx);
+
+    printf("\nContent summary:\n");
+    printf("  Regular files  : %zu\n", stats->regular);
+    printf("  Symbolic links : %lu\n", stats->symlink);
+    printf("  Directories    : %lu\n", stats->directory);
+    printf("  Special files  : %lu\n", stats->special);
+    printf("  Total size     : %.2f MB\n\n", (stats->size / (1024.0 * 1024)));
+
+    return 0;
+}
+
+static int zf_find_finalize_json(zf_callback_t *cb) {
+    flist_stats_t *stats = libflist_stats_get(cb->ctx);
+    json_t *response = json_object_get(cb->jout, "response");
+
+    json_object_set_new(response, "regular", json_integer(stats->regular));
+    json_object_set_new(response, "symlink", json_integer(stats->symlink));
+    json_object_set_new(response, "directory", json_integer(stats->directory));
+    json_object_set_new(response, "special", json_integer(stats->special));
+    json_object_set_new(response, "fullsize", json_integer(stats->size));
+
+    return 0;
+}
+
+int zf_find_finalize(zf_callback_t *cb) {
+    if(cb->jout)
+        return zf_find_finalize_json(cb);
+
+    return zf_find_finalize_text(cb);
+}
+
+//
+// error handling
+//
+static void zf_error_json(zf_callback_t *cb, char *function, char *message, va_list argp) {
+    char *str = NULL;
+    json_t *error = json_object();
+
+    if(vasprintf(&str, message, argp) < 0)
+        diep("vasprintf");
+
+    json_object_set(error, "function", json_string(function));
+    json_object_set(error, "message", json_string(str));
+
+    json_object_set(cb->jout, "success", json_false());
+    json_object_set(cb->jout, "error", error);
+
+    free(str);
+}
+
+static void zf_error_stderr(zf_callback_t *cb, char *function, char *message, va_list argp) {
+    (void) cb;
+
+    fprintf(stderr, "zflist: %s: ", function);
+    vfprintf(stderr, message, argp);
+    fprintf(stderr, "\n");
+}
+
 void zf_error(zf_callback_t *cb, char *function, char *message, ...) {
     va_list args;
 
     va_start(args, message);
 
-    fprintf(stderr, "zflist: %s: ", function);
-    vfprintf(stderr, message, args);
-    fprintf(stderr, "\n");
+    if(cb->jout)
+        zf_error_json(cb, function, message, args);
+    else
+        zf_error_stderr(cb, function, message, args);
 
     va_end(args);
 }

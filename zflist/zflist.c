@@ -33,6 +33,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "open",     .db = 0, .callback = zf_open,     .help = "open an flist to enable editing"},
     {.name = "init",     .db = 0, .callback = zf_init,     .help = "initialize an empty flist to enable editing"},
     {.name = "ls",       .db = 1, .callback = zf_ls,       .help = "list the content of a directory"},
+    {.name = "find",     .db = 1, .callback = zf_find,     .help = "list full contents of files and directories"},
     {.name = "stat",     .db = 1, .callback = zf_stat,     .help = "dump inode full metadata"},
     {.name = "cat",      .db = 1, .callback = zf_cat,      .help = "print file contents (backend metadata required)"},
     {.name = "put",      .db = 1, .callback = zf_put,      .help = "insert local file into the flist"},
@@ -75,14 +76,19 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .argv = argv,
         .settings = settings,
         .ctx = NULL,
-        .json = 0,
+        .jout = NULL,
     };
 
     // check whenever json output is requested
     char *json = getenv("ZFLIST_JSON");
 
-    if(json && strcmp(json, "1") == 0)
-        cb.json = 1;
+    if(json && strcmp(json, "1") == 0) {
+        // initialize json response
+        cb.jout = json_object();
+        json_object_set(cb.jout, "success", json_true());
+        json_object_set(cb.jout, "error", json_null());
+        json_object_set(cb.jout, "response", json_object());
+    }
 
     // open database (if used)
     if(cmd->db)
@@ -95,6 +101,17 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
     // commit database (if used)
     if(cmd->db)
         cb.ctx->db->close(cb.ctx->db);
+
+    // dump json response if set
+    if(cb.jout) {
+        if(!(json = json_dumps(cb.jout, 0))) {
+            fprintf(stderr, "zflist: json: could not dumps message\n");
+            return value;
+        }
+
+        puts(json);
+        free(json);
+    }
 
     return value;
 }
