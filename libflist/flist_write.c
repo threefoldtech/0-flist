@@ -112,6 +112,8 @@ flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend) {
     ctx->db = db;
     ctx->backend = backend;
 
+    memset(&ctx->stats, 0x00, sizeof(flist_stats_t));
+
     return ctx;
 }
 
