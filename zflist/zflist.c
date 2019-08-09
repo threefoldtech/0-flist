@@ -52,7 +52,7 @@ int usage(char *basename) {
     fprintf(stderr, "\n");
     fprintf(stderr, "  The temporary-point should be a directory where temporary files\n");
     fprintf(stderr, "  will be used for keeping tracks of your changes.\n");
-    fprintf(stderr, "  You can also use FLISTDIR environment variable to set your\n");
+    fprintf(stderr, "  You can also use ZFLIST_MNT environment variable to set your\n");
     fprintf(stderr, "  temporary-point directory and not specify it on the command line.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  By default, this tool will print error and information in text format,\n");
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     #endif
 
     // checking if environment variable is set
-    if((settings.mnt = getenv("FLISTDIR"))) {
+    if((settings.mnt = getenv("ZFLIST_MNT"))) {
         debug("[+] system: entrypoint set from environment variable\n");
         action = argv[1];
         nargc = argc - 1;
