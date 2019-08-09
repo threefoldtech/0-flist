@@ -330,7 +330,9 @@
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
     dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name);
-    void inode_free(inode_t *inode);
+
+    void libflist_inode_free(inode_t *inode);
+    void libflist_dirnode_free(dirnode_t *dirnode);
 
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
     dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);

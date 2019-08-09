@@ -8,6 +8,7 @@
 #include "libflist.h"
 #include "verbose.h"
 #include "flist_serial.h"
+#include "flist_write.h"
 
 #define KEYLENGTH 16
 
@@ -175,7 +176,13 @@ static dirnode_t *flist_dirnode_get(flist_db_t *database, char *key, char *fullp
     dirp.p = capn_getp(capn_root(&capctx), 0, 1);
     read_Dir(&dir, dirp);
 
-    return flist_dir_to_dirnode(database, &dir);
+    dirnode_t *dirnode = flist_dir_to_dirnode(database, &dir);
+
+    // cleanup capnp
+    capn_free(&capctx);
+    database->clean(value);
+
+    return dirnode;
 }
 
 

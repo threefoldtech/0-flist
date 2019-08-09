@@ -98,6 +98,9 @@ acl_t *libflist_get_acl(flist_db_t *database, const char *aclkey) {
     acl->mode = aci.mode;
     acl->key = strdup(aclkey);
 
+    capn_free(&permsctx);
+    database->clean(rawdata);
+
     return acl;
 }
 

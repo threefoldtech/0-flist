@@ -23,9 +23,11 @@
 #include "database.h"
 #include "flist.capnp.h"
 #include "flist_write.h"
+#include "flist_read.h"
 
 // #define FLIST_WRITE_FULLDUMP
 
+#if 0
 // global excluders (regex of files or directory
 // to exclude when creating an flist)
 static excluders_t excluders = {
@@ -89,6 +91,7 @@ int libflist_create_excluders_matches(const char *input) {
 
     return 0;
 }
+#endif
 
 #define KEYLENGTH 16
 #define ACLLENGTH 8
@@ -298,13 +301,20 @@ dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
     return dirnode_create(fullpath, name);
 }
 
-void dirnode_free(dirnode_t *directory) {
-    inode_acl_free(directory->acl);
+void dirnode_free(dirnode_t *dirnode) {
+    inode_acl_free(dirnode->acl);
 
-    free(directory->fullpath);
-    free(directory->name);
-    free(directory->hashkey);
-    free(directory);
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next)
+        libflist_inode_free(inode);
+
+    free(dirnode->fullpath);
+    free(dirnode->name);
+    free(dirnode->hashkey);
+    free(dirnode);
+}
+
+void libflist_dirnode_free(dirnode_t *dirnode) {
+    dirnode_free(dirnode);
 }
 
 static inode_t *inode_create(const char *name, size_t size, const char *fullpath) {
@@ -322,12 +332,18 @@ static inode_t *inode_create(const char *name, size_t size, const char *fullpath
 
 void inode_free(inode_t *inode) {
     inode_acl_free(inode->acl);
+    inode_chunks_free(inode);
+
     free(inode->name);
     free(inode->fullpath);
     free(inode->sdata);
     free(inode->link);
     free(inode->subdirkey);
     free(inode);
+}
+
+void libflist_inode_free(inode_t *inode) {
+    inode_free(inode);
 }
 
 dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode) {
