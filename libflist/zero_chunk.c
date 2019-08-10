@@ -138,10 +138,12 @@ uint8_t *libflist_chunk_hash(const void *buffer, size_t length) {
 // chunks manager
 //
 flist_buffer_t libflist_buffer_new(uint8_t *data, size_t length) {
-    flist_buffer_t buffer = {
-        .data = data,
-        .length = length,
-    };
+    flist_buffer_t buffer;
+
+    // FIXME: allocation failure
+    buffer.length = length;
+    buffer.data = malloc(length);
+    memcpy(buffer.data, data, length);
 
     return buffer;
 }
@@ -158,7 +160,9 @@ flist_chunk_t *libflist_chunk_new(uint8_t *id, uint8_t *cipher, void *data, size
 
     chunk->id = libflist_buffer_new(id, ZEROCHUNK_HASH_LENGTH);
     chunk->cipher = libflist_buffer_new(cipher, ZEROCHUNK_HASH_LENGTH);
-    chunk->plain = libflist_buffer_new(data, datalen);
+
+    if(datalen > 0)
+        chunk->plain = libflist_buffer_new(data, datalen);
 
     return chunk;
 }
