@@ -147,13 +147,13 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -H --host       <host>        tcp remote host\n");
-                printf("[+]   -p --port       <tcp-port>    tcp remote port\n");
-                printf("[+]   -s --socket     <hostname>    unix socket path\n");
-                printf("[+]   -n --namespace  <namespace>   zdb namespace name (optional)\n");
-                printf("[+]   -x --password   <password>    zdb namespace password (optional)\n");
-                printf("[+]   -r --reset                    remove backend metadata\n");
-                printf("[+]   -h --help                     show this message\n");
+                printf("[+]   --host       <host>        tcp remote host\n");
+                printf("[+]   --port       <tcp-port>    tcp remote port\n");
+                printf("[+]   --socket     <hostname>    unix socket path\n");
+                printf("[+]   --namespace  <namespace>   zdb namespace name (optional)\n");
+                printf("[+]   --password   <password>    zdb namespace password (optional)\n");
+                printf("[+]   --reset                    remove backend metadata\n");
+                printf("[+]   --help                     show this message\n");
                 printf("[+]\n");
                 printf("[+] tcp connection to <%s>, port %d will be set\n", host, port);
                 printf("[+] if you set the unix socket, the port needs to be set to 0\n");
@@ -197,8 +197,8 @@ int zf_metadata_set_entry(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -r --reset       remove metadata (all environment variables)\n");
-                printf("[+]   -h --help        show this message\n");
+                printf("[+]   --reset       remove metadata (all environment variables)\n");
+                printf("[+]   --help        show this message\n");
                 printf("[+]\n");
                 printf("[+] note: you should use -- as first argument to ensure\n");
                 printf("[+] everything you'll pass after will be used as-it for\n");
@@ -261,11 +261,11 @@ int zf_metadata_set_environ(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -n --name        environment variable name\n");
-                printf("[+]   -v --value       environment variable value\n");
-                printf("[+]   -u --unset       remove the specified environment variable\n");
-                printf("[+]   -r --reset       remove metadata (all environment variables)\n");
-                printf("[+]   -h --help        show this message\n");
+                printf("[+]   --name        environment variable name\n");
+                printf("[+]   --value       environment variable value\n");
+                printf("[+]   --unset       remove the specified environment variable\n");
+                printf("[+]   --reset       remove metadata (all environment variables)\n");
+                printf("[+]   --help        show this message\n");
                 return 1;
 
             case '?':
@@ -347,12 +347,12 @@ int zf_metadata_set_port(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -p --protocol    protocol name (should be tcp or udp, default: tcp)\n");
-                printf("[+]   -i --in          input port number\n");
-                printf("[+]   -o --out         destination port (default: same as in)\n");
-                printf("[+]   -u --unset       remove the specified input port\n");
-                printf("[+]   -r --reset       remove metadata (all exported ports)\n");
-                printf("[+]   -h --help        show this message\n");
+                printf("[+]   --protocol    protocol name (should be tcp or udp, default: tcp)\n");
+                printf("[+]   --in          input port number\n");
+                printf("[+]   --out         destination port (default: same as in)\n");
+                printf("[+]   --unset       remove the specified input port\n");
+                printf("[+]   --reset       remove metadata (all exported ports)\n");
+                printf("[+]   --help        show this message\n");
                 return 1;
 
             case '?':
@@ -430,11 +430,11 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -t --target      target file/directory on the container\n");
-                printf("[+]   -h --host        source file/directory on the host side\n");
-                printf("[+]   -u --unset       remove the specified source point\n");
-                printf("[+]   -r --reset       remove metadata (all volumes)\n");
-                printf("[+]   -h --help        show this message\n");
+                printf("[+]   --target      target file/directory on the container\n");
+                printf("[+]   --host        source file/directory on the host side\n");
+                printf("[+]   --unset       remove the specified source point\n");
+                printf("[+]   --reset       remove metadata (all volumes)\n");
+                printf("[+]   --help        show this message\n");
                 return 1;
 
             case '?':
@@ -550,10 +550,10 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
 
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
-                printf("[+]   -e --edit        edit the readme interactively\n");
-                printf("[+]   -l --license     set a specific license name\n");
-                printf("[+]   -r --reset       remove metadata (all volumes)\n");
-                printf("[+]   -h --help        show this message\n");
+                printf("[+]   --edit        edit the readme interactively\n");
+                printf("[+]   --license     set a specific license name\n");
+                printf("[+]   --reset       remove metadata (all volumes)\n");
+                printf("[+]   --help        show this message\n");
                 return 1;
 
             case '?':
