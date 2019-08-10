@@ -176,6 +176,9 @@ int zf_chmod(zf_callback_t *cb) {
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
 
+    libflist_dirnode_free(parent);
+    libflist_dirnode_free(dirnode);
+
     return 0;
 }
 
@@ -465,6 +468,9 @@ int zf_cat(zf_callback_t *cb) {
 
     dirnode_t *dirnode;
     inode_t *inode;
+
+    // there is no backend and dirnode free
+    // in case of error, it's okay
 
     if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
         zf_error(cb, "cat", "no such parent directory");

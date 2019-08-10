@@ -177,6 +177,9 @@ char *libflist_inode_acl_key(acl_t *acl) {
 }
 
 acl_t *libflist_inode_acl_commit(inode_t *inode) {
+    if(inode->acl->key)
+        free(inode->acl->key);
+
     inode->acl->key = libflist_inode_acl_key(inode->acl);
     return inode->acl;
 }
