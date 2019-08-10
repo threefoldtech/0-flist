@@ -190,12 +190,6 @@
     } flist_chunks_t;
 
 
-    typedef struct flist_merge_t {
-        size_t length;
-        char **sources;
-
-    } flist_merge_t;
-
     typedef struct flist_ctx_t {
         flist_db_t *db;
         flist_backend_t *backend;
@@ -346,9 +340,6 @@
     //
     // flist_merger.c
     //
-    int libflist_merge_list_init(flist_merge_t *merge);
-    int libflist_merge_list_append(flist_merge_t *merge, char *path);
-    int libflist_merge_list_free(flist_merge_t *merge);
     dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source);
 
     //

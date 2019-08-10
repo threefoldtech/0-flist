@@ -8,12 +8,14 @@
 #include "verbose.h"
 #include "database.h"
 
+// #define FULLMERGE_DEBUG
+
 #ifdef FULLMERGE_DEBUG
 static void list_dirnode_inodes(dirnode_t *root) {
-    printf("[ ] dirnode inodes count: %lu\n", root->inode_length);
+    debug("[+] libflist: merge: dirnode inodes count: %lu\n", root->inode_length);
 
     for(inode_t *inode = root->inode_list; inode; inode = inode->next)
-        printf("[ ] dirnode inode: %s\n", inode->name);
+        debug("[+] libflist: merge: dirnode inode: %s\n", inode->name);
 }
 #endif
 
@@ -100,34 +102,3 @@ dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source) {
     return finaltree;
 }
 
-int libflist_merge_list_init(flist_merge_t *merge) {
-    merge->length = 0;
-    merge->sources = NULL;
-
-    return 0;
-}
-
-int libflist_merge_list_append(flist_merge_t *merge, char *path) {
-    merge->length += 1;
-
-    if(!(merge->sources = realloc(merge->sources, sizeof(char *) * merge->length))) {
-        libflist_errp("realloc");
-        return 1;
-    }
-
-    if(!(merge->sources[merge->length - 1] = strdup(path))) {
-        libflist_errp("strdup");
-        return 1;
-    }
-
-    return 0;
-}
-
-int libflist_merge_list_free(flist_merge_t *merge) {
-    for(size_t i = 0; i < merge->length; i++)
-        free(merge->sources[i]);
-
-    free(merge->sources);
-
-    return 0;
-}
