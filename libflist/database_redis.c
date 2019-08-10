@@ -278,12 +278,14 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, ch
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnect(host, port)))
+    if(!(handler->redis = redisConnect(host, port))) {
+        database_redis_close(db);
         return libflist_set_error("redis: connect: cannot allocate memory");
+    }
 
     if(handler->redis->err) {
         libflist_set_error("redis: connect: tcp: %s", handler->redis->errstr);
-        redisFree(handler->redis);
+        database_redis_close(db);
         return NULL;
     }
 
@@ -296,12 +298,14 @@ flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *pas
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnectUnix(socket)))
+    if(!(handler->redis = redisConnectUnix(socket))) {
+        database_redis_close(db);
         return libflist_set_error("redis: connect: unix: cannot allocate memory");
+    }
 
     if(handler->redis->err) {
         libflist_set_error("redis: connect: unix: %s", handler->redis->errstr);
-        redisFree(handler->redis);
+        database_redis_close(db);
         return NULL;
     }
 
