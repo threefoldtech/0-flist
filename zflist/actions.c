@@ -563,6 +563,8 @@ int zf_put(zf_callback_t *cb) {
             zf_error(cb, "put", "could not overwrite existing inode");
             return 1;
         }
+
+        libflist_inode_free(inode);
     }
 
     if(!(inode = libflist_inode_from_localfile(localfile, dirnode, cb->ctx))) {
@@ -579,6 +581,9 @@ int zf_put(zf_callback_t *cb) {
     // commit
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
+
+    libflist_dirnode_free(parent);
+    libflist_dirnode_free(dirnode);
 
     return 0;
 }

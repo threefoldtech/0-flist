@@ -224,6 +224,10 @@ flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
     response->encrypted.data = encrypt_data;
     response->encrypted.length = encrypt_length;
 
+    // memory duplicated on chunk object
+    free(hashcrypt);
+    free(hashkey);
+
     return response;
 }
 
