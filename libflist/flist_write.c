@@ -27,6 +27,12 @@
 
 // #define FLIST_WRITE_FULLDUMP
 
+#define discard __attribute__((cleanup(__cleanup_free)))
+
+static void __cleanup_free(void *p) {
+    free(* (void **) p);
+}
+
 #if 0
 // global excluders (regex of files or directory
 // to exclude when creating an flist)
@@ -291,6 +297,10 @@ static dirnode_t *dirnode_create_from_stat(dirnode_t *parent, const char *name, 
 
     root->creation = sb->st_ctime;
     root->modification = sb->st_mtime;
+
+    if(root->acl)
+        inode_acl_free(root->acl);
+
     root->acl = inode_acl(sb);
 
     free(fullpath);
@@ -646,6 +656,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
         dirnode_t *newdir = dirnode_create_from_stat(parent, iname, sb);
         dirnode_appends_dirnode(parent, newdir);
         libflist_dirnode_commit(newdir, ctx, parent);
+        libflist_dirnode_free(newdir);
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
@@ -792,8 +803,8 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
         if(fentry->fts_info != FTS_D)
             continue;
 
-        char *vpath = dirnode_virtual_path(workingdir, fentry->fts_path + strlen(tmpsrc));
-        char *parentpath = dirname(strdup(vpath));
+        discard char *vpath = dirnode_virtual_path(workingdir, fentry->fts_path + strlen(tmpsrc));
+        discard char *parentpath = dirname(strdup(vpath));
 
         debug("[+] libflist: local directory: adding: %s [%s]\n", fentry->fts_name, parentpath);
 
@@ -810,7 +821,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
         dirnode_appends_inode(localparent, inode);
         libflist_dirnode_commit(localparent, ctx, localparent);
 
-        free(vpath);
+        libflist_dirnode_free(localparent);
     }
 
     fts_close(fs);
@@ -830,7 +841,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
     workingdir = parent;
 
     while((fentry = fts_read(fs))) {
-        char *target = dirnode_virtual_path(parent, fentry->fts_path + strlen(tmpsrc));
+        discard char *target = dirnode_virtual_path(parent, fentry->fts_path + strlen(tmpsrc));
 
         debug("[+] libflist: processing: %s -> %s\n", fentry->fts_path, target);
 
@@ -851,7 +862,10 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             debug("[+] libflist: commiting: %s\n", workingdir->fullpath);
 
             libflist_dirnode_commit(workingdir, ctx, workingdir->next);
-            workingdir = workingdir->next;
+            dirnode_t *next = workingdir->next;
+
+            libflist_dirnode_free(workingdir);
+            workingdir = next;
             continue;
         }
 

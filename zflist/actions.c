@@ -620,6 +620,7 @@ int zf_putdir(zf_callback_t *cb) {
     }
 
     libflist_stats_dump(&cb->ctx->stats);
+    libflist_dirnode_free(dirnode);
 
     return 0;
 }
