@@ -329,6 +329,9 @@ int zf_mkdir(zf_callback_t *cb) {
     dirnode_t *dparent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, dparent);
 
+    libflist_dirnode_free(dirnode);
+    libflist_dirnode_free(dparent);
+
     return 0;
 }
 

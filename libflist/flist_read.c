@@ -247,6 +247,9 @@ static char *flist_clean_path(char *path) {
     offset = 0;
     length = strlen(path);
 
+    if(length == 0)
+        return calloc(1, 1);
+
     // remove lead slash
     if(path[0] == '/')
         offset = 1;
