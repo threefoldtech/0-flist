@@ -238,18 +238,6 @@
     void libflist_backend_chunks_free(flist_chunks_t *chunks);
 
     //
-    // workspace.c
-    //
-    //   everything related to temporary directories
-    //   which contains everything needed to work with an flist database
-    //
-    char *libflist_workspace_create();
-    char *libflist_workspace_destroy(char *mountpoint);
-
-    char *libflist_ramdisk_create();
-    char *libflist_ramdisk_destroy(char *mountpoint);
-
-    //
     // database_redis.c
     //
     //   everything related to redis based database, which include zero-db
