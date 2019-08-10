@@ -56,6 +56,20 @@ void zf_internal_json_finalize(zf_callback_t *cb) {
     free(json);
 }
 
+int zf_remove_database(char *mountpoint) {
+    char dbfile[2048];
+
+    snprintf(dbfile, sizeof(dbfile), "%s/flistdb.sqlite3", mountpoint);
+
+    debug("[+] action: remove: unlink database: %s\n", dbfile);
+    if(unlink(dbfile) < 0) {
+        warnp(dbfile);
+        return 1;
+    }
+
+    return 0;
+}
+
 int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint) {
     char temp[2048];
 
