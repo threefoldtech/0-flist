@@ -71,6 +71,7 @@ flist_db_t *libflist_metadata_backend_database(flist_db_t *database) {
 
     if(!(value = libflist_metadata_get(database, "backend"))) {
         debug("[-] libflist: backend database: metadata not found\n");
+        libflist_set_error("backend metadata not found, could not fetch data");
         return NULL;
     }
 
