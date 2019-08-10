@@ -217,11 +217,16 @@ int zf_rm(zf_callback_t *cb) {
         return 1;
     }
 
+    libflist_inode_free(inode);
+
     debug("[+] action: rm: file removed\n");
     debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
     libflist_dirnode_commit(dirnode, cb->ctx, parent);
+
+    libflist_dirnode_free(parent);
+    libflist_dirnode_free(dirnode);
 
     return 0;
 }
@@ -273,9 +278,15 @@ int zf_rmdir(zf_callback_t *cb) {
         return 1;
     }
 
+    libflist_inode_free(inode);
+
     // commit changes in the parent (and parent of the parent)
     dirnode_t *pparent = libflist_dirnode_get_parent(cb->ctx->db, parent);
     libflist_dirnode_commit(parent, cb->ctx, pparent);
+
+    libflist_dirnode_free(parent);
+    libflist_dirnode_free(pparent);
+    libflist_dirnode_free_recursive(dirnode);
 
     return 0;
 }

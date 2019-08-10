@@ -317,8 +317,22 @@ void dirnode_free(dirnode_t *dirnode) {
     free(dirnode);
 }
 
+void dirnode_free_recursive(dirnode_t *dirnode) {
+    for(dirnode_t *subdir = dirnode->dir_list; subdir; ) {
+        dirnode_t *temp = subdir->next;
+        dirnode_free_recursive(subdir);
+        subdir = temp;
+    }
+
+    dirnode_free(dirnode);
+}
+
 void libflist_dirnode_free(dirnode_t *dirnode) {
     dirnode_free(dirnode);
+}
+
+void libflist_dirnode_free_recursive(dirnode_t *dirnode) {
+    dirnode_free_recursive(dirnode);
 }
 
 static inode_t *inode_create(const char *name, size_t size, const char *fullpath) {

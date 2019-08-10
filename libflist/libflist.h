@@ -334,6 +334,7 @@
 
     void libflist_inode_free(inode_t *inode);
     void libflist_dirnode_free(dirnode_t *dirnode);
+    void libflist_dirnode_free_recursive(dirnode_t *dirnode);
 
     dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
     dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
