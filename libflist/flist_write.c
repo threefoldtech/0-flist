@@ -302,8 +302,11 @@ dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
 void dirnode_free(dirnode_t *dirnode) {
     inode_acl_free(dirnode->acl);
 
-    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next)
+    for(inode_t *inode = dirnode->inode_list; inode; ) {
+        inode_t *next = inode->next;
         libflist_inode_free(inode);
+        inode = next;
+    }
 
     free(dirnode->fullpath);
     free(dirnode->name);
@@ -327,6 +330,20 @@ static inode_t *inode_create(const char *name, size_t size, const char *fullpath
 
     return inode;
 }
+
+void inode_chunks_free(inode_t *inode) {
+    if(!inode->chunks)
+        return;
+
+    for(size_t i = 0; i < inode->chunks->size; i += 1) {
+        free(inode->chunks->list[i].entryid);
+        free(inode->chunks->list[i].decipher);
+    }
+
+    free(inode->chunks->list);
+    free(inode->chunks);
+}
+
 
 void inode_free(inode_t *inode) {
     inode_acl_free(inode->acl);

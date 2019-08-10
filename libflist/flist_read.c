@@ -258,19 +258,6 @@ static char *flist_clean_path(char *path) {
     return strndup(path + offset, length);
 }
 
-void inode_chunks_free(inode_t *inode) {
-    if(!inode->chunks)
-        return;
-
-    for(size_t i = 0; i < inode->chunks->size; i += 1) {
-        free(inode->chunks->list[i].entryid);
-        free(inode->chunks->list[i].decipher);
-    }
-
-    free(inode->chunks->list);
-    free(inode->chunks);
-}
-
 //
 // public helpers
 //
