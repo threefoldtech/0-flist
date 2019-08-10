@@ -79,6 +79,7 @@ int zf_metadata_get(zf_callback_t *cb) {
 
     if(!(value = libflist_metadata_get(cb->ctx->db, cb->argv[1]))) {
         debug("[-] action: metadata: get: metadata not found\n");
+        zf_error(cb, "metadata", "metadata not found");
         return 1;
     }
 
@@ -203,6 +204,7 @@ int zf_metadata_set_entry(zf_callback_t *cb) {
                 printf("[+] everything you'll pass after will be used as-it for\n");
                 printf("[+] your arguments, eg:\n");
                 printf("[+]   metadata entrypoint -- /bin/sh /etc/init.d/myscript --force\n");
+                json_decref(root);
                 return 1;
 
             case '?':
@@ -376,8 +378,8 @@ int zf_metadata_set_port(zf_callback_t *cb) {
 
     if(!unset) {
         json_t *item = json_object();
-        json_object_set(root, keyname, json_integer(out));
-        json_array_append(root, item);
+        json_object_set_new(root, keyname, json_integer(out));
+        json_array_append_new(root, item);
 
     } else {
         json_object_del(root, keyname);
@@ -452,7 +454,7 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
         json_t *item = json_object();
 
         if(host)
-            json_object_set(item, "host", json_string(host));
+            json_object_set_new(item, "host", json_string(host));
 
         json_object_set_new(root, target, item);
 
@@ -507,7 +509,7 @@ static char *zf_metadata_edit_readme(const char *original) {
     lseek(fd, 0, SEEK_SET);
 
     // allocating variable for it
-    if(!(readmeval = malloc(length)))
+    if(!(readmeval = calloc(sizeof(char), length + 1)))
         diep("malloc");
 
     // reading new file
@@ -569,14 +571,14 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
     if(existing)
         debug("[+] action: metadata: existing readme found (%lu bytes)\n", strlen(existing));
 
-    if(edit)
+    if(edit) {
         newvalue = zf_metadata_edit_readme(existing);
+        json_object_set_new(root, "readme", json_string(newvalue));
+        free(newvalue);
+    }
 
     if(license)
-        json_object_set(root, "license", json_string(license));
-
-    json_object_set(root, "readme", json_string(newvalue));
-    free(newvalue);
+        json_object_set_new(root, "license", json_string(license));
 
     return zf_metadata_apply(cb, "readme", root);
 }
