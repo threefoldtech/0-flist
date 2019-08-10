@@ -5,6 +5,11 @@
     void __cleanup_free(void *p);
 
     flist_ctx_t *zf_internal_init(char *mountpoint);
+    void zf_internal_cleanup(zf_callback_t *cb);
+
+    void zf_internal_json_init(zf_callback_t *cb);
+    void zf_internal_json_finalize(zf_callback_t *cb);
+
     flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx);
 
     char zf_ls_inode_type(inode_t *inode);

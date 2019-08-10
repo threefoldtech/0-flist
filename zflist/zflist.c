@@ -78,18 +78,14 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .settings = settings,
         .ctx = NULL,
         .jout = NULL,
+        .userptr = NULL,
     };
 
     // check whenever json output is requested
     char *json = getenv("ZFLIST_JSON");
 
-    if(json && strcmp(json, "1") == 0) {
-        // initialize json response
-        cb.jout = json_object();
-        json_object_set(cb.jout, "success", json_true());
-        json_object_set(cb.jout, "error", json_null());
-        json_object_set(cb.jout, "response", json_object());
-    }
+    if(json && strcmp(json, "1") == 0)
+        zf_internal_json_init(&cb);
 
     // open database (if used)
     if(cmd->db)
@@ -101,18 +97,11 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     // commit database (if used)
     if(cmd->db)
-        cb.ctx->db->close(cb.ctx->db);
+        zf_internal_cleanup(&cb);
 
     // dump json response if set
-    if(cb.jout) {
-        if(!(json = json_dumps(cb.jout, 0))) {
-            fprintf(stderr, "zflist: json: could not dumps message\n");
-            return value;
-        }
-
-        puts(json);
-        free(json);
-    }
+    if(cb.jout)
+        zf_internal_json_finalize(&cb);
 
     return value;
 }

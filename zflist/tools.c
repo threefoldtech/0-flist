@@ -28,6 +28,34 @@ flist_ctx_t *zf_internal_init(char *mountpoint) {
     return ctx;
 }
 
+void zf_internal_cleanup(zf_callback_t *cb) {
+    cb->ctx->db->close(cb->ctx->db);
+    libflist_context_free(cb->ctx);
+}
+
+void zf_internal_json_init(zf_callback_t *cb) {
+    // initialize json response object
+    cb->jout = json_object();
+
+    json_object_set(cb->jout, "success", json_true());
+    json_object_set(cb->jout, "error", json_null());
+    json_object_set(cb->jout, "response", json_object());
+}
+
+void zf_internal_json_finalize(zf_callback_t *cb) {
+    char *json;
+
+    // dump json response object
+    if(!(json = json_dumps(cb->jout, 0))) {
+        fprintf(stderr, "zflist: json: could not dumps message\n");
+        return;
+    }
+
+    puts(json);
+    free(json);
+}
+
+
 char zf_ls_inode_type(inode_t *inode) {
     char *slayout = "sbcf?";
     char *rlayout = "d-l.";
