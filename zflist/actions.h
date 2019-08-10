@@ -1,10 +1,10 @@
 #ifndef ZFLISTEDIT_ACTIONS_H
     #define ZFLISTEDIT_ACTIONS_H
 
-
     int zf_open(zf_callback_t *cb);
     int zf_init(zf_callback_t *cb);
     int zf_commit(zf_callback_t *cb);
+    int zf_close(zf_callback_t *cb);
 
     int zf_chmod(zf_callback_t *cb);
     int zf_rm(zf_callback_t *cb);

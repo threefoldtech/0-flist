@@ -121,6 +121,20 @@ int zf_commit(zf_callback_t *cb) {
 }
 
 //
+// close
+//
+int zf_close(zf_callback_t *cb) {
+    char dbfile[2048];
+
+    snprintf(dbfile, sizeof(dbfile), "%s/flistdb.sqlite3", cb->settings->mnt);
+
+    debug("[+] action: close: unlink database: %s\n", dbfile);
+    unlink(dbfile);
+
+    return 0;
+}
+
+//
 // chmod
 //
 int zf_chmod(zf_callback_t *cb) {
