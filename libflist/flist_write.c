@@ -121,8 +121,6 @@ flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend) {
 }
 
 void libflist_context_free(flist_ctx_t *ctx) {
-    // FIXME: close database
-    // FIXME: close backend
     free(ctx);
 }
 

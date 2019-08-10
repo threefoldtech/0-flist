@@ -313,6 +313,7 @@
     // void libflist_create_excluders_free();
 
     flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
+    void libflist_context_free(flist_ctx_t *ctx);
 
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
