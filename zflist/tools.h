@@ -12,6 +12,8 @@
 
     flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx);
 
+    int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint);
+
     char zf_ls_inode_type(inode_t *inode);
     void zf_ls_inode_perm(inode_t *inode);
     int zf_stat_inode(inode_t *target);

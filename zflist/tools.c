@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include "libflist.h"
 #include "zflist.h"
+#include "filesystem.h"
 #include "tools.h"
 
 void __cleanup_free(void *p) {
@@ -55,6 +56,34 @@ void zf_internal_json_finalize(zf_callback_t *cb) {
     free(json);
 }
 
+int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint) {
+    char temp[2048];
+
+    // creating mountpoint directory (if not exists)
+    if(!dir_exists(endpoint)) {
+        debug("[+] action: open file: creating mountpoint: <%s>\n", endpoint);
+
+        if(dir_create(endpoint) < 0)
+            diep(endpoint);
+    }
+
+    // checking if the mountpoint doesn't contains already
+    // an flist database
+    snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", endpoint);
+    if(file_exists(temp)) {
+        zf_error(cb, "open file", "mountpoint already contains an open flist");
+        return 1;
+    }
+
+    debug("[+] action: open file: opening file <%s>\n", filename);
+
+    if(!libflist_archive_extract(filename, endpoint)) {
+        warnp("libflist_archive_extract");
+        return 1;
+    }
+
+    return 0;
+}
 
 char zf_ls_inode_type(inode_t *inode) {
     char *slayout = "sbcf?";

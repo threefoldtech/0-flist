@@ -19,7 +19,7 @@
 // open
 //
 int zf_open(zf_callback_t *cb) {
-    char temp[2048];
+    int value;
 
     // checking if arguments are set
     if(cb->argc != 2) {
@@ -27,32 +27,10 @@ int zf_open(zf_callback_t *cb) {
         return 1;
     }
 
-    // creating mountpoint directory (if not exists)
-    if(!dir_exists(cb->settings->mnt)) {
-        debug("[+] action: open: creating mountpoint: <%s>\n", cb->settings->mnt);
+    if((value = zf_open_file(cb, cb->argv[1], cb->settings->mnt)) == 0)
+        debug("[+] action: open: flist opened\n");
 
-        if(dir_create(cb->settings->mnt) < 0)
-            diep(cb->settings->mnt);
-    }
-
-    // checking if the mountpoint doesn't contains already
-    // an flist database
-    snprintf(temp, sizeof(temp), "%s/flistdb.sqlite3", cb->settings->mnt);
-    if(file_exists(temp)) {
-        zf_error(cb, "open", "mountpoint already contains an open flist");
-        return 1;
-    }
-
-    char *filename = cb->argv[1];
-    debug("[+] action: open: opening file <%s>\n", filename);
-
-    if(!libflist_archive_extract(filename, cb->settings->mnt)) {
-        warnp("libflist_archive_extract");
-        return 1;
-    }
-
-    debug("[+] action: open: flist opened\n");
-    return 0;
+    return value;
 }
 
 //
