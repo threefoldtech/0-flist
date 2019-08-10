@@ -86,9 +86,11 @@ int zf_init(zf_callback_t *cb) {
     // initialize root directory
     dirnode_t *root = libflist_internal_dirnode_create("", "");
     libflist_dirnode_commit(root, ctx, root);
+    libflist_dirnode_free(root);
 
     // commit changes
     database->close(database);
+    libflist_context_free(ctx);
 
     debug("[+] action: init: flist initialized\n");
     return 0;
@@ -339,6 +341,8 @@ int zf_ls(zf_callback_t *cb) {
         printf(" %s\n", inode->name);
     }
 
+    libflist_dirnode_free(dirnode);
+
     return 0;
 }
 
@@ -390,7 +394,10 @@ int zf_stat(zf_callback_t *cb) {
     }
 
     // we found the inode
-    return zf_stat_inode(inode);
+    int value = zf_stat_inode(inode);
+    libflist_dirnode_free(dirnode);
+
+    return value;
 }
 
 //
@@ -481,6 +488,9 @@ int zf_cat(zf_callback_t *cb) {
         printf("%.*s\n", (int) chunk->plain.length, chunk->plain.data);
         libflist_chunk_free(chunk);
     }
+
+    libflist_dirnode_free(dirnode);
+    libflist_backend_free(backend);
 
     return 0;
 }

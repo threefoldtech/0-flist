@@ -133,15 +133,15 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
 
             case 's':
                 port = 0;
-                json_object_set(root, "socket", json_string(optarg));
+                json_object_set_new(root, "socket", json_string(optarg));
                 break;
 
             case 'n':
-                json_object_set(root, "namespace", json_string(optarg));
+                json_object_set_new(root, "namespace", json_string(optarg));
                 break;
 
             case 'x':
-                json_object_set(root, "password", json_string(optarg));
+                json_object_set_new(root, "password", json_string(optarg));
                 break;
 
             case 'h':
@@ -156,6 +156,7 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
                 printf("[+]\n");
                 printf("[+] tcp connection to <%s>, port %d will be set\n", host, port);
                 printf("[+] if you set the unix socket, the port needs to be set to 0\n");
+                json_decref(root);
                 return 1;
 
             case '?':
@@ -164,8 +165,8 @@ int zf_metadata_set_backend(zf_callback_t *cb) {
         }
     }
 
-    json_object_set(root, "host", json_string(host));
-    json_object_set(root, "port", json_integer(port));
+    json_object_set_new(root, "host", json_string(host));
+    json_object_set_new(root, "port", json_integer(port));
 
     return zf_metadata_apply(cb, "backend", root);
 }

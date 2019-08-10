@@ -95,13 +95,13 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
     debug("[+] system: callback found for command: %s\n", cmd->name);
     int value = cmd->callback(&cb);
 
-    // commit database (if used)
-    if(cmd->db)
-        zf_internal_cleanup(&cb);
-
     // dump json response if set
     if(cb.jout)
         zf_internal_json_finalize(&cb);
+
+    // commit database (if used)
+    if(cmd->db)
+        zf_internal_cleanup(&cb);
 
     return value;
 }
