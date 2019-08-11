@@ -44,7 +44,7 @@ int zf_init(zf_callback_t *cb) {
         debug("[+] action: init: creating mountpoint: <%s>\n", cb->settings->mnt);
 
         if(dir_create(cb->settings->mnt) < 0)
-            diep(cb->settings->mnt);
+            zf_diep(cb, cb->settings->mnt);
     }
 
     // checking if the mountpoint doesn't contains already
@@ -104,10 +104,8 @@ int zf_commit(zf_callback_t *cb) {
 // close
 //
 int zf_close(zf_callback_t *cb) {
-    if(zf_remove_database(cb->settings->mnt)) {
-        zf_error(cb, "close", "could not remove database file");
+    if(zf_remove_database(cb, cb->settings->mnt))
         return 1;
-    }
 
     return 0;
 }

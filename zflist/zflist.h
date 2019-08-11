@@ -9,10 +9,6 @@
 
     #define discard __attribute__((cleanup(__cleanup_free)))
 
-    void warnp(const char *str);
-    void diep(const char *str);
-    void dies(const char *str);
-
     typedef struct zfe_settings_t {
         char *mnt;         // temporary-point directory
 

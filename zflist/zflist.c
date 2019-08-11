@@ -11,20 +11,6 @@
 
 zfe_settings_t settings;
 
-void warnp(const char *str) {
-    fprintf(stderr, "[-] %s: %s\n", str, strerror(errno));
-}
-
-void diep(const char *str) {
-    warnp(str);
-    exit(EXIT_FAILURE);
-}
-
-void dies(const char *str) {
-    fprintf(stderr, "[-] %s\n", str);
-    exit(EXIT_FAILURE);
-}
-
 
 //
 // commands list
@@ -101,7 +87,7 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     // commit database (if used)
     if(cmd->db)
-        zf_internal_cleanup(&cb);
+        zf_internal_cleanup(cb.ctx);
 
     return value;
 }

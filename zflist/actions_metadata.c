@@ -476,7 +476,7 @@ static struct option readme_long_options[] = {
     {0, 0, 0, 0}
 };
 
-static char *zf_metadata_edit_readme(const char *original) {
+static char *zf_metadata_edit_readme(zf_callback_t *cb, const char *original) {
     // generate a temporary file
     char template[] = "/tmp/zflistXXXXXX";
     char fname[1024];
@@ -494,7 +494,7 @@ static char *zf_metadata_edit_readme(const char *original) {
         size_t sl = strlen(original);
 
         if(write(fd, original, sl) != (ssize_t) sl)
-            diep(fname);
+            zf_diep(cb, fname);
     }
 
     // starting interactive editor
@@ -502,7 +502,7 @@ static char *zf_metadata_edit_readme(const char *original) {
     sprintf(tmpcmd, "$EDITOR %s", fname);
 
     if(system(tmpcmd) < 0)
-        diep(tmpcmd);
+        zf_diep(cb, tmpcmd);
 
     // fetching length of the new file
     off_t length = lseek(fd, 0, SEEK_END);
@@ -510,11 +510,11 @@ static char *zf_metadata_edit_readme(const char *original) {
 
     // allocating variable for it
     if(!(readmeval = calloc(sizeof(char), length + 1)))
-        diep("malloc");
+        zf_diep(cb, "malloc");
 
     // reading new file
     if(read(fd, readmeval, length) != length)
-        diep(fname);
+        zf_diep(cb, fname);
 
     // closing and cleaning
     close(fd);
@@ -572,7 +572,7 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
         debug("[+] action: metadata: existing readme found (%lu bytes)\n", strlen(existing));
 
     if(edit) {
-        newvalue = zf_metadata_edit_readme(existing);
+        newvalue = zf_metadata_edit_readme(cb, existing);
         json_object_set_new(root, "readme", json_string(newvalue));
         free(newvalue);
     }

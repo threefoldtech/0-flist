@@ -29,9 +29,9 @@ flist_ctx_t *zf_internal_init(char *mountpoint) {
     return ctx;
 }
 
-void zf_internal_cleanup(zf_callback_t *cb) {
-    cb->ctx->db->close(cb->ctx->db);
-    libflist_context_free(cb->ctx);
+void zf_internal_cleanup(flist_ctx_t *ctx) {
+    ctx->db->close(ctx->db);
+    libflist_context_free(ctx);
 }
 
 void zf_internal_json_init(zf_callback_t *cb) {
@@ -56,14 +56,18 @@ void zf_internal_json_finalize(zf_callback_t *cb) {
     free(json);
 }
 
-int zf_remove_database(char *mountpoint) {
+int zf_remove_database(zf_callback_t *cb, char *mountpoint) {
     char dbfile[2048];
 
     snprintf(dbfile, sizeof(dbfile), "%s/flistdb.sqlite3", mountpoint);
+    if(!file_exists(dbfile)) {
+        zf_error(cb, "remove", "no database opened found");
+        return 1;
+    }
 
     debug("[+] action: remove: unlink database: %s\n", dbfile);
     if(unlink(dbfile) < 0) {
-        warnp(dbfile);
+        zf_warnp(cb, dbfile);
         return 1;
     }
 
@@ -78,7 +82,7 @@ int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint) {
         debug("[+] action: open file: creating mountpoint: <%s>\n", endpoint);
 
         if(dir_create(endpoint) < 0)
-            diep(endpoint);
+            zf_diep(cb, endpoint);
     }
 
     // checking if the mountpoint doesn't contains already
@@ -92,7 +96,7 @@ int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint) {
     debug("[+] action: open file: opening file <%s>\n", filename);
 
     if(!libflist_archive_extract(filename, endpoint)) {
-        warnp("libflist_archive_extract");
+        zf_warnp(cb, "libflist_archive_extract");
         return 1;
     }
 
@@ -323,7 +327,7 @@ static void zf_error_json(zf_callback_t *cb, char *function, char *message, va_l
     json_t *error = json_object();
 
     if(vasprintf(&str, message, argp) < 0)
-        diep("vasprintf");
+        zf_diep(cb, "vasprintf");
 
     json_object_set(error, "function", json_string(function));
     json_object_set(error, "message", json_string(str));
@@ -354,3 +358,18 @@ void zf_error(zf_callback_t *cb, char *function, char *message, ...) {
 
     va_end(args);
 }
+
+void zf_warnp(zf_callback_t *cb, const char *str) {
+    zf_error(cb, "warning", "%s: %s", str, strerror(errno));
+}
+
+void zf_diep(zf_callback_t *cb, const char *str) {
+    zf_warnp(cb, str);
+    exit(EXIT_FAILURE);
+}
+
+void zf_dies(zf_callback_t *cb, const char *str) {
+    zf_error(cb, "critical", "%s", str);
+    exit(EXIT_FAILURE);
+}
+
