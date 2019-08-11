@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <libgen.h>
 #include "libflist.h"
 #include "verbose.h"
 #include "database.h"
+#include "flist_read.h"
 
 // #define FULLMERGE_DEBUG
 

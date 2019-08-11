@@ -280,6 +280,7 @@
     dirnode_t *libflist_dirnode_get(flist_db_t *database, char *key);
     dirnode_t *libflist_dirnode_get_recursive(flist_db_t *database, char *path);
     dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root);
+    dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
 
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
     acl_t *libflist_inode_acl_commit(inode_t *inode);

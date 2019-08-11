@@ -345,7 +345,7 @@ void libflist_dirnode_free_recursive(dirnode_t *dirnode) {
     dirnode_free_recursive(dirnode);
 }
 
-static inode_t *inode_create(const char *name, size_t size, const char *fullpath) {
+inode_t *inode_create(const char *name, size_t size, const char *fullpath) {
     inode_t *inode;
 
     if(!(inode = calloc(sizeof(inode_t), 1)))

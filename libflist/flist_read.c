@@ -317,7 +317,7 @@ flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src) {
 }
 #endif
 
-dirnode_t *flist_directory_from_inode(inode_t *inode) {
+dirnode_t *flist_dirnode_from_inode(inode_t *inode) {
     dirnode_t *dirnode;
 
     if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
@@ -334,11 +334,26 @@ dirnode_t *flist_directory_from_inode(inode_t *inode) {
     return dirnode;
 }
 
+inode_t *flist_inode_from_dirnode(dirnode_t *dirnode) {
+    inode_t *inode;
+
+    if(!(inode = inode_create(dirnode->name, 4096, dirnode->fullpath)))
+        return NULL;
+
+    inode->type = INODE_DIRECTORY;
+    inode->modification = dirnode->modification;
+    inode->creation = dirnode->creation;
+    inode->subdirkey = strdup(dirnode->hashkey);
+    inode->acl = dirnode->acl; // FIXME: DUPLICATE ACL
+
+    return inode;
+}
+
 inode_t *libflist_directory_create(dirnode_t *parent, char *name) {
     inode_t *inode = libflist_inode_mkdir(name, parent);
     dirnode_appends_inode(parent, inode);
 
-    dirnode_t *dirnode = flist_directory_from_inode(inode);
+    dirnode_t *dirnode = flist_dirnode_from_inode(inode);
     dirnode_appends_dirnode(parent, dirnode);
 
     return inode;
@@ -433,4 +448,12 @@ dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root) {
         return root;
 
     return libflist_dirnode_get(database, copypath);
+}
+
+dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname) {
+    for(dirnode_t *dir = root->dir_list; dir; dir = dir->next)
+        if(strcmp(dir->name, dirname) == 0)
+            return dir;
+
+    return NULL;
 }
