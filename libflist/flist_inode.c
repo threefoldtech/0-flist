@@ -19,6 +19,8 @@
 #include "flist_acl.h"
 #include "flist_dirnode.h"
 #include "flist_serial.h"
+#include "flist_tools.h"
+#include "zero_chunk.h"
 
 #define discard __attribute__((cleanup(__cleanup_free)))
 
@@ -62,6 +64,27 @@ void flist_inode_free(inode_t *inode) {
     free(inode->link);
     free(inode->subdirkey);
     free(inode);
+}
+
+inode_t *flist_inode_duplicate(inode_t *source) {
+    inode_t *inode;
+
+    if(!(inode = flist_inode_create(source->name, source->size, source->fullpath)))
+        return NULL;
+
+    inode->acl = flist_acl_duplicate(source->acl);
+    inode->type = source->type;
+    inode->modification = source->modification;
+    inode->creation = source->creation;
+    inode->stype = source->stype;
+
+    inode->subdirkey = flist_strdup_safe(source->subdirkey);
+    inode->sdata = flist_strdup_safe(source->sdata);
+    inode->link = flist_strdup_safe(source->link);
+
+    inode->chunks = flist_chunks_duplicate(source->chunks);
+
+    return inode;
 }
 
 inode_t *flist_inode_search(dirnode_t *root, char *inodename) {
@@ -396,7 +419,7 @@ inode_t *flist_inode_from_dirnode(dirnode_t *dirnode) {
     inode->modification = dirnode->modification;
     inode->creation = dirnode->creation;
     inode->subdirkey = strdup(dirnode->hashkey);
-    inode->acl = dirnode->acl; // FIXME: DUPLICATE ACL
+    inode->acl = flist_acl_duplicate(dirnode->acl);
 
     return inode;
 }

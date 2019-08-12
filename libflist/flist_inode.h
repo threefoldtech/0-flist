@@ -2,6 +2,7 @@
     #define LIBFLIST_FLIST_INODE_H
 
     inode_t *flist_inode_create(const char *name, size_t size, const char *fullpath);
+    inode_t *flist_inode_duplicate(inode_t *source);
     void flist_inode_chunks_free(inode_t *inode);
     void flist_inode_free(inode_t *inode);
 

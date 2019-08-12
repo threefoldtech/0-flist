@@ -10,6 +10,7 @@
 #include "libflist.h"
 #include "verbose.h"
 #include "xxtea.h"
+#include "flist_tools.h"
 #include "zero_chunk.h"
 
 #define CHUNK_SIZE    1024 * 512    // 512 KB
@@ -365,6 +366,39 @@ inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx) {
 
     // cleaning
     buffer_free(buffer);
+
+    return chunks;
+}
+
+inode_chunks_t *flist_chunks_duplicate(inode_chunks_t *source) {
+    inode_chunks_t *chunks;
+
+	if(!source)
+		return NULL;
+
+    if(!(chunks = malloc(sizeof(inode_chunks_t)))) {
+        libflist_warnp("chunks duplicate malloc");
+        return NULL;
+    }
+
+    chunks->size = source->size;
+    chunks->blocksize = source->blocksize;
+
+    if(!(chunks->list = malloc(sizeof(inode_chunk_t) * chunks->size))) {
+        libflist_warnp("chunks duplicate list");
+        return NULL;
+    }
+
+    for(size_t i = 0; i < source->size; i++) {
+        inode_chunk_t *src = &source->list[i];
+        inode_chunk_t *item = &chunks->list[i];
+
+        item->entryid = flist_memdup(src->entryid, src->entrylen);
+        item->entrylen = src->entrylen;
+
+        item->decipher = flist_memdup(src->decipher, src->decipherlen);
+        item->decipherlen = src->decipherlen;
+    }
 
     return chunks;
 }
