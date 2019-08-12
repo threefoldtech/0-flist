@@ -24,7 +24,7 @@
 //
 // capnp helpers
 //
-char *flist_inode_fullpath(struct Dir *dir, struct Inode *inode) {
+static char *flist_inode_fullpath(struct Dir *dir, struct Inode *inode) {
     char *fullpath;
 
     if(strlen(dir->location.str) == 0)
@@ -60,10 +60,44 @@ static capn_ptr capn_databinary(struct capn_segment *cs, char *payload, size_t l
     return data.p;
 }
 
+static inode_chunks_t *flist_inode_to_chunks(struct Inode *inode) {
+    inode_chunks_t *blocks;
+
+    struct File file;
+    read_File(&file, inode->attributes.file);
+
+    // allocate empty blocks
+    if(!(blocks = calloc(sizeof(inode_chunks_t), 1)))
+        return NULL;
+
+    blocks->size = capn_len(file.blocks);
+    blocks->blocksize = 0;
+
+    if(!(blocks->list = (inode_chunk_t *) malloc(sizeof(inode_chunk_t) * blocks->size)))
+        return NULL;
+
+    for(size_t i = 0; i < blocks->size; i++) {
+        FileBlock_ptr blockp;
+        struct FileBlock block;
+
+        blockp.p = capn_getp(file.blocks.p, i, 1);
+        read_FileBlock(&block, blockp);
+
+        blocks->list[i].entryid = libflist_bufdup(block.hash.p.data, block.hash.p.len);
+        blocks->list[i].entrylen = block.hash.p.len;
+
+        blocks->list[i].decipher = libflist_bufdup(block.key.p.data, block.key.p.len);
+        blocks->list[i].decipherlen = block.key.p.len;
+    }
+
+    return blocks;
+}
+
+
 //
 // capnp deserializers
 //
-acl_t *libflist_get_acl(flist_db_t *database, const char *aclkey) {
+acl_t *flist_serial_get_acl(flist_db_t *database, const char *aclkey) {
     acl_t *acl;
 
     if(strlen(aclkey) == 0) {
@@ -112,7 +146,7 @@ acl_t *libflist_get_acl(flist_db_t *database, const char *aclkey) {
 //
 // capnp serializers
 //
-void inode_acl_commit(flist_db_t *database, acl_t *acl) {
+void flist_serial_commit_acl(flist_db_t *database, acl_t *acl) {
     if(database->sexists(database, acl->key))
         return;
 
@@ -145,7 +179,7 @@ void inode_acl_commit(flist_db_t *database, acl_t *acl) {
         dies("acl database error");
 }
 
-void flist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
+void flist_serial_commit_dirnode(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -165,7 +199,7 @@ void flist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) 
         .creationTime = root->creation,
     };
 
-    inode_acl_commit(ctx->db, root->acl);
+    flist_serial_commit_acl(ctx->db, root->acl);
 
     // populating contents
     int index = 0;
@@ -252,7 +286,7 @@ void flist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) 
         }
 
         set_Inode(&target, dir.contents, index);
-        inode_acl_commit(ctx->db, inode->acl);
+        flist_serial_commit_acl(ctx->db, inode->acl);
     }
 
     // commit capnp object
@@ -282,10 +316,10 @@ void flist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) 
 
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        flist_dirnode_commit(subdir, ctx, root);
+        flist_serial_commit_dirnode(subdir, ctx, root);
 }
 
-dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
+static dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
     dirnode_t *dirnode;
 
     if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
@@ -298,7 +332,7 @@ dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
     dirnode->creation = dir->creationTime;
     dirnode->modification = dir->modificationTime;
 
-    dirnode->acl = libflist_get_acl(database, dir->aclkey.str);
+    dirnode->acl = flist_serial_get_acl(database, dir->aclkey.str);
 
     // iterating over the full contents
     // and add each inode to the inode list of this directory
@@ -312,7 +346,7 @@ dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
     return dirnode;
 }
 
-dirnode_t *xxx_flist_dirnode_get(flist_db_t *database, char *key, char *fullpath) {
+dirnode_t *flist_serial_get_dirnode(flist_db_t *database, char *key, char *fullpath) {
     value_t *value;
     struct capn capctx;
     Dir_ptr dirp;
@@ -351,9 +385,78 @@ dirnode_t *xxx_flist_dirnode_get(flist_db_t *database, char *key, char *fullpath
     return dirnode;
 }
 
+inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fileindex) {
+    inode_t *target;
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    // pointing to the right item
+    // on the contents list
+    inodep.p = capn_getp(dir->contents.p, fileindex, 1);
+    read_Inode(&inode, inodep);
+
+    // allocate a new inode empty object
+    if(!(target = calloc(sizeof(inode_t), 1)))
+        return NULL;
+
+    // fill in default information
+    target->name = strdup(inode.name.str);
+    target->size = inode.size;
+    target->fullpath = flist_inode_fullpath(dir, &inode);
+    target->creation = inode.creationTime;
+    target->modification = inode.modificationTime;
+
+    if(!(target->acl = flist_serial_get_acl(database, inode.aclkey.str))) {
+        inode_free(target);
+        return NULL;
+    }
+
+    // fill in specific information dependent of
+    // the type of the entry
+    switch(inode.attributes_which) {
+        case Inode_attributes_dir: ;
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            target->type = INODE_DIRECTORY;
+            target->subdirkey = strdup(sub.key.str);
+            break;
+
+        case Inode_attributes_file: ;
+            target->type = INODE_FILE;
+            target->chunks = flist_inode_to_chunks(&inode);
+            break;
+
+        case Inode_attributes_link: ;
+            struct Link link;
+            read_Link(&link, inode.attributes.link);
+
+            target->type = INODE_LINK;
+            target->link = strdup(link.target.str);
+            break;
+
+        case Inode_attributes_special: ;
+            struct Special special;
+            read_Special(&special, inode.attributes.special);
+
+            target->type = INODE_SPECIAL;
+            target->stype = special.type;
+
+            capn_data capdata = capn_get_data(special.data.p, 0);
+            target->sdata = strndup(capdata.p.data, capdata.p.len);
+            break;
+    }
+
+    return target;
+}
+
 //
 // public interface
 //
 void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
-    return flist_dirnode_commit(root, ctx, parent);
+    return flist_serial_commit_dirnode(root, ctx, parent);
+}
+
+acl_t *libflist_acl_get(flist_db_t *database, const char *aclkey) {
+    return flist_serial_get_acl(database, aclkey);
 }

@@ -255,7 +255,7 @@ dirnode_t *flist_dirnode_get(flist_db_t *database, char *path) {
     // the object in the database is packed, this function will
     // return us something decoded and ready to use
     dirnode_t *direntry;
-    if(!(direntry = xxx_flist_dirnode_get(database, key, cleanpath)))
+    if(!(direntry = flist_serial_get_dirnode(database, key, cleanpath)))
         return NULL;
 
     #if 0

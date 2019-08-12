@@ -400,7 +400,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
         debug("[+] libflist: process file: creating new directory entry\n");
         dirnode_t *newdir = flist_dirnode_create_from_stat(parent, iname, sb);
         flist_dirnode_appends_dirnode(parent, newdir);
-        flist_dirnode_commit(newdir, ctx, parent);
+        flist_serial_commit_dirnode(newdir, ctx, parent);
         flist_dirnode_free(newdir);
     }
 
@@ -544,7 +544,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
 
         // saving changes
         flist_dirnode_appends_inode(localparent, inode);
-        flist_dirnode_commit(localparent, ctx, localparent);
+        flist_serial_commit_dirnode(localparent, ctx, localparent);
 
         flist_dirnode_free(localparent);
     }
@@ -586,7 +586,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             // and reload previous directory
             debug("[+] libflist: commiting: %s\n", workingdir->fullpath);
 
-            flist_dirnode_commit(workingdir, ctx, workingdir->next);
+            flist_serial_commit_dirnode(workingdir, ctx, workingdir->next);
             dirnode_t *next = workingdir->next;
 
             flist_dirnode_free(workingdir);
