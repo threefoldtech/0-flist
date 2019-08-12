@@ -62,7 +62,8 @@ When merging multiple flist together, the order of the merge is important.
 All files are proceed one by one from first to last flist. When file collision occures
 (same filename is present in multiple flist), the first file found is the one used on the final archive.
 
-Example: ```
+Example:
+```
 zflist init
 zflist merge first.flist
 zflist merge second.flist
