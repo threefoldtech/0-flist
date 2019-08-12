@@ -10,7 +10,7 @@
     dirnode_t *flist_dirnode_appends_inode(dirnode_t *root, inode_t *inode);
     dirnode_t *flist_dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
     dirnode_t *flist_dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-    dirnode_t *flist_dirnode_lazy_duplicate(dirnode_t *source);
+    dirnode_t *flist_dirnode_duplicate(dirnode_t *source);
     dirnode_t *flist_dirnode_from_inode(inode_t *inode);
     dirnode_t *flist_dirnode_get(flist_db_t *database, char *path);
     dirnode_t *flist_dirnode_get_recursive(flist_db_t *database, char *path);

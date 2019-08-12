@@ -157,18 +157,20 @@ dirnode_t *flist_dirnode_search(dirnode_t *root, char *dirname) {
     return NULL;
 }
 
-// WARNING: FIXME - duplication just copy everything and cut next pointer
-//                  THIS IS NOT A REAL DUPLICATION
-dirnode_t *flist_dirnode_lazy_duplicate(dirnode_t *source) {
-    dirnode_t *copy;
+dirnode_t *flist_dirnode_duplicate(dirnode_t *source) {
+    dirnode_t *dirnode;
 
-    if(!(copy = malloc(sizeof(dirnode_t))))
+    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
         return libflist_diep("malloc");
 
-    memcpy(copy, source, sizeof(dirnode_t));
-    copy->next = NULL;
+    dirnode->fullpath = strdup(source->fullpath);
+    dirnode->name = strdup(source->name);
+    dirnode->hashkey = strdup(source->hashkey);
+    dirnode->creation = source->creation;
+    dirnode->modification = source->modification;
+    dirnode->acl = flist_acl_duplicate(source->acl);
 
-    return copy;
+    return dirnode;
 }
 
 int flist_dirnode_is_root(dirnode_t *dirnode) {
