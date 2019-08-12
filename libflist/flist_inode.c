@@ -200,7 +200,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
         dirnode_t *newdir = flist_dirnode_create_from_stat(parent, iname, sb);
         flist_dirnode_appends_dirnode(parent, newdir);
         flist_serial_commit_dirnode(newdir, ctx, parent);
-        flist_dirnode_free(newdir);
+        // flist_dirnode_free(newdir); // FIXME ?
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
