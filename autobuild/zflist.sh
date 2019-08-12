@@ -53,7 +53,7 @@ zeroflist() {
     popd
 
     pushd zflist
-    # make production
+    make production
     popd
 
     # cp zflist/zflist /tmp/zflist
