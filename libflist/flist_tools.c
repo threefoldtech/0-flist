@@ -126,15 +126,6 @@ int flist_fileindex_from_name(directory_t *direntry, char *filename) {
 }
 #endif
 
-inode_t *libflist_inode_from_name(dirnode_t *root, char *filename) {
-    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
-        if(strcmp(inode->name, filename) == 0)
-            return inode;
-    }
-
-    return NULL;
-}
-
 #if 0
 // populate an acl object from a racl pointer
 flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src) {

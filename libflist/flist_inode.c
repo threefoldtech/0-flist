@@ -432,6 +432,16 @@ inode_t *flist_directory_create(dirnode_t *parent, char *name) {
     return inode;
 }
 
+inode_t *flist_inode_from_name(dirnode_t *root, char *filename) {
+    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
+        if(strcmp(inode->name, filename) == 0)
+            return inode;
+    }
+
+    return NULL;
+}
+
+
 
 
 //
@@ -471,4 +481,8 @@ inode_t *libflist_inode_search(dirnode_t *root, char *inodename) {
 
 inode_t *libflist_directory_create(dirnode_t *parent, char *name) {
     return flist_directory_create(parent, name);
+}
+
+inode_t *libflist_inode_from_name(dirnode_t *root, char *filename) {
+    return flist_inode_from_name(root, filename);
 }
