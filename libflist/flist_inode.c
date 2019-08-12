@@ -52,7 +52,6 @@ void flist_inode_chunks_free(inode_t *inode) {
     free(inode->chunks);
 }
 
-
 void flist_inode_free(inode_t *inode) {
     flist_acl_free(inode->acl);
     flist_inode_chunks_free(inode);

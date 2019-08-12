@@ -12,10 +12,10 @@
     dirnode_t *flist_dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
     dirnode_t *flist_dirnode_duplicate(dirnode_t *source);
     dirnode_t *flist_dirnode_from_inode(inode_t *inode);
+    dirnode_t *flist_dirnode_search(dirnode_t *root, char *dirname);
     dirnode_t *flist_dirnode_get(flist_db_t *database, char *path);
     dirnode_t *flist_dirnode_get_recursive(flist_db_t *database, char *path);
     dirnode_t *flist_dirnode_get_parent(flist_db_t *database, dirnode_t *root);
-    dirnode_t *flist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
 
     void flist_dirnode_free(dirnode_t *dirnode);
     void flist_dirnode_free_recursive(dirnode_t *dirnode);

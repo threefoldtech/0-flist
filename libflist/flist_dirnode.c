@@ -130,13 +130,6 @@ dirnode_t *flist_dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     return root;
 }
 
-/*
-dirnode_t dirnode_lazy_appends_new_dirnode(dirnode_t *root, dirnode_t *dir) {
-
-    return dirnode_lazy_appends_dirnode(root, dir);
-}
-*/
-
 dirnode_t *flist_dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
     dir->next = NULL;
     return flist_dirnode_lazy_appends_dirnode(root, dir);
@@ -290,14 +283,6 @@ dirnode_t *flist_dirnode_get_parent(flist_db_t *database, dirnode_t *root) {
     return flist_dirnode_get(database, copypath);
 }
 
-dirnode_t *flist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname) {
-    for(dirnode_t *dir = root->dir_list; dir; dir = dir->next)
-        if(strcmp(dir->name, dirname) == 0)
-            return dir;
-
-    return NULL;
-}
-
 //
 // public interface
 //
@@ -331,8 +316,4 @@ dirnode_t *libflist_dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
 
 dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root) {
     return flist_dirnode_get_parent(database, root);
-}
-
-dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname) {
-    return flist_dirnode_lookup_dirnode(root, dirname);
 }
