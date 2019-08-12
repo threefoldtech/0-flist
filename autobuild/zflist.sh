@@ -56,8 +56,8 @@ zeroflist() {
     make production
     popd
 
-    # cp zflist/zflist /tmp/zflist
-    # strip -s /tmp/zflist
+    cp zflist/zflist /tmp/zflist
+    strip -s /tmp/zflist
 
     popd
 }
