@@ -1,6 +1,4 @@
-#define _DEFAULT_SOURCE
 #define _GNU_SOURCE
-#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,15 +6,11 @@
 #include <stdint.h>
 #include <time.h>
 #include <fts.h>
-#include <ftw.h>
-#include <unistd.h>
-#include <blake2.h>
-#include <linux/limits.h>
 #include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <linux/limits.h>
 #include <sys/sysmacros.h>
-#include <regex.h>
 #include <libgen.h>
 #include "libflist.h"
 #include "verbose.h"
@@ -24,27 +18,13 @@
 #include "flist.capnp.h"
 #include "flist_acl.h"
 #include "flist_dirnode.h"
-#include "flist_write.h"
-#include "flist_read.h"
 #include "flist_serial.h"
-
-// #define FLIST_WRITE_FULLDUMP
 
 #define discard __attribute__((cleanup(__cleanup_free)))
 
 static void __cleanup_free(void *p) {
     free(* (void **) p);
 }
-
-#define KEYLENGTH 16
-#define ACLLENGTH 8
-
-const char *inode_type_str[] = {
-    "INODE_DIRECTORY",
-    "INODE_FILE",
-    "INODE_LINK",
-    "INODE_SPECIAL",
-};
 
 inode_t *flist_inode_create(const char *name, size_t size, const char *fullpath) {
     inode_t *inode;

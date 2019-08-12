@@ -3,22 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdint.h>
 #include <time.h>
-#include <fts.h>
 #include <unistd.h>
-#include <regex.h>
 #include "libflist.h"
 #include "verbose.h"
 #include "database.h"
 #include "flist.capnp.h"
-#include "flist_read.h"
 #include "flist_dirnode.h"
 #include "flist_inode.h"
-
-#define KEYLENGTH 16
-#define ACLLENGTH 8
+#include "flist_serial.h"
 
 
 //
@@ -91,6 +85,71 @@ static inode_chunks_t *flist_inode_to_chunks(struct Inode *inode) {
     }
 
     return blocks;
+}
+
+inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fileindex) {
+    inode_t *target;
+    Inode_ptr inodep;
+    struct Inode inode;
+
+    // pointing to the right item
+    // on the contents list
+    inodep.p = capn_getp(dir->contents.p, fileindex, 1);
+    read_Inode(&inode, inodep);
+
+    // allocate a new inode empty object
+    if(!(target = calloc(sizeof(inode_t), 1)))
+        return NULL;
+
+    // fill in default information
+    target->name = strdup(inode.name.str);
+    target->size = inode.size;
+    target->fullpath = flist_inode_fullpath(dir, &inode);
+    target->creation = inode.creationTime;
+    target->modification = inode.modificationTime;
+
+    if(!(target->acl = flist_serial_get_acl(database, inode.aclkey.str))) {
+        flist_inode_free(target);
+        return NULL;
+    }
+
+    // fill in specific information dependent of
+    // the type of the entry
+    switch(inode.attributes_which) {
+        case Inode_attributes_dir: ;
+            struct SubDir sub;
+            read_SubDir(&sub, inode.attributes.dir);
+
+            target->type = INODE_DIRECTORY;
+            target->subdirkey = strdup(sub.key.str);
+            break;
+
+        case Inode_attributes_file: ;
+            target->type = INODE_FILE;
+            target->chunks = flist_inode_to_chunks(&inode);
+            break;
+
+        case Inode_attributes_link: ;
+            struct Link link;
+            read_Link(&link, inode.attributes.link);
+
+            target->type = INODE_LINK;
+            target->link = strdup(link.target.str);
+            break;
+
+        case Inode_attributes_special: ;
+            struct Special special;
+            read_Special(&special, inode.attributes.special);
+
+            target->type = INODE_SPECIAL;
+            target->stype = special.type;
+
+            capn_data capdata = capn_get_data(special.data.p, 0);
+            target->sdata = strndup(capdata.p.data, capdata.p.len);
+            break;
+    }
+
+    return target;
 }
 
 
@@ -383,71 +442,6 @@ dirnode_t *flist_serial_get_dirnode(flist_db_t *database, char *key, char *fullp
     database->clean(value);
 
     return dirnode;
-}
-
-inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fileindex) {
-    inode_t *target;
-    Inode_ptr inodep;
-    struct Inode inode;
-
-    // pointing to the right item
-    // on the contents list
-    inodep.p = capn_getp(dir->contents.p, fileindex, 1);
-    read_Inode(&inode, inodep);
-
-    // allocate a new inode empty object
-    if(!(target = calloc(sizeof(inode_t), 1)))
-        return NULL;
-
-    // fill in default information
-    target->name = strdup(inode.name.str);
-    target->size = inode.size;
-    target->fullpath = flist_inode_fullpath(dir, &inode);
-    target->creation = inode.creationTime;
-    target->modification = inode.modificationTime;
-
-    if(!(target->acl = flist_serial_get_acl(database, inode.aclkey.str))) {
-        flist_inode_free(target);
-        return NULL;
-    }
-
-    // fill in specific information dependent of
-    // the type of the entry
-    switch(inode.attributes_which) {
-        case Inode_attributes_dir: ;
-            struct SubDir sub;
-            read_SubDir(&sub, inode.attributes.dir);
-
-            target->type = INODE_DIRECTORY;
-            target->subdirkey = strdup(sub.key.str);
-            break;
-
-        case Inode_attributes_file: ;
-            target->type = INODE_FILE;
-            target->chunks = flist_inode_to_chunks(&inode);
-            break;
-
-        case Inode_attributes_link: ;
-            struct Link link;
-            read_Link(&link, inode.attributes.link);
-
-            target->type = INODE_LINK;
-            target->link = strdup(link.target.str);
-            break;
-
-        case Inode_attributes_special: ;
-            struct Special special;
-            read_Special(&special, inode.attributes.special);
-
-            target->type = INODE_SPECIAL;
-            target->stype = special.type;
-
-            capn_data capdata = capn_get_data(special.data.p, 0);
-            target->sdata = strndup(capdata.p.data, capdata.p.len);
-            break;
-    }
-
-    return target;
 }
 
 //

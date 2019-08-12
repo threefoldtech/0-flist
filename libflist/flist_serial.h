@@ -8,7 +8,4 @@
     // deserializers
     dirnode_t *flist_serial_get_dirnode(flist_db_t *database, char *key, char *fullpath);
     acl_t *flist_serial_get_acl(flist_db_t *database, const char *aclkey);
-
-    // tools
-    char *flist_inode_fullpath(struct Dir *dir, struct Inode *inode);
 #endif

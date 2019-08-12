@@ -1,30 +1,19 @@
-#define _DEFAULT_SOURCE
 #define _GNU_SOURCE
-#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdint.h>
-#include <time.h>
-#include <fts.h>
-#include <ftw.h>
-#include <unistd.h>
-#include <blake2.h>
-#include <linux/limits.h>
 #include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
-#include <sys/sysmacros.h>
-#include <regex.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <libgen.h>
 #include "libflist.h"
 #include "verbose.h"
 #include "database.h"
 #include "flist.capnp.h"
 #include "flist_acl.h"
-#include "flist_read.h"
 #include "flist_serial.h"
+#include "flist_tools.h"
 
 #define discard __attribute__((cleanup(__cleanup_free)))
 
@@ -50,7 +39,7 @@ dirnode_t *flist_dirnode_create(char *fullpath, char *name) {
     if(lf && directory->fullpath[lf - 1] == '/')
         directory->fullpath[lf - 1] = '\0';
 
-    directory->hashkey = libflist_path_key(directory->fullpath);
+    directory->hashkey = flist_path_key(directory->fullpath);
     directory->acl = flist_acl_new("root", "root", 0755);
 
     return directory;
@@ -211,7 +200,7 @@ dirnode_t *flist_dirnode_from_inode(inode_t *inode) {
     // setting directory metadata
     dirnode->fullpath = strdup(inode->fullpath);
     dirnode->name = strdup(inode->name);
-    dirnode->hashkey = libflist_path_key(inode->fullpath);
+    dirnode->hashkey = flist_path_key(inode->fullpath);
     dirnode->creation = inode->creation;
     dirnode->modification = inode->modification;
     dirnode->acl = inode->acl;
@@ -247,7 +236,7 @@ dirnode_t *flist_dirnode_get(flist_db_t *database, char *path) {
     // converting this directory string into a directory
     // hash by the internal way used everywhere, this will
     // give the key required to find entry on the database
-    discard char *key = libflist_path_key(cleanpath);
+    discard char *key = flist_path_key(cleanpath);
     debug("[+] libflist: dirnode: get: entry key: <%s>\n", key);
 
     // requesting the directory object from the database

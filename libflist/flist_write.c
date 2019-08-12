@@ -24,7 +24,6 @@
 #include "flist.capnp.h"
 #include "flist_acl.h"
 #include "flist_dirnode.h"
-#include "flist_read.h"
 #include "flist_serial.h"
 
 // #define FLIST_WRITE_FULLDUMP
@@ -95,9 +94,6 @@ int libflist_create_excluders_matches(const char *input) {
     return 0;
 }
 #endif
-
-#define KEYLENGTH 16
-#define ACLLENGTH 8
 
 //
 //

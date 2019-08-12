@@ -140,9 +140,6 @@
 
     } flist_db_type_t;
 
-    // FIXME
-    #include "flist.capnp.h"
-
     typedef struct flist_backend_t {
         flist_db_t *database;
         char *rootpath;
@@ -197,7 +194,14 @@
 
     } flist_ctx_t;
 
+    #define FLIST_ENTRY_KEY_LENGTH  16
+    #define FLIST_ACL_KEY_LENGTH    8
 
+    //
+    // ------------------------
+    //  public function declaration
+    // ------------------------
+    //
 
     //
     // verbose.c
@@ -272,13 +276,8 @@
     void libflist_chunk_free(flist_chunk_t *chunk);
 
     //
-    // flist_read.c
+    // flist_tools.c
     //
-    //   all the logic needed to do read operation on entries (inode, directory, ...)
-    //
-    inode_t *libflist_directory_create(dirnode_t *parent, char *name);
-    inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
-
     char *libflist_path_key(char *path);
 
     //
@@ -329,6 +328,22 @@
 
     void libflist_dirnode_free(dirnode_t *dirnode);
     void libflist_dirnode_free_recursive(dirnode_t *dirnode);
+
+    //
+    // flist_inode.c
+    //
+    inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
+    inode_t *libflist_inode_rename(inode_t *inode, char *name);
+    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
+    inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx);
+    inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
+    inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
+
+    inode_t *libflist_directory_create(dirnode_t *parent, char *name);
+    dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
+    int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
+
+    void libflist_inode_free(inode_t *inode);
 
     //
     // flist_merger.c

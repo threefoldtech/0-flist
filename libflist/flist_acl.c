@@ -11,9 +11,6 @@
 #include "libflist.h"
 #include "verbose.h"
 
-#define KEYLENGTH 16
-#define ACLLENGTH 8
-
 //
 // access-control list management
 //
@@ -66,12 +63,12 @@ char *flist_acl_key(acl_t *acl) {
         diep("asprintf");
 
     // hashing payload
-    unsigned char hash[ACLLENGTH];
+    unsigned char hash[FLIST_ACL_KEY_LENGTH];
 
-    if(blake2b(hash, key, "", ACLLENGTH, strlen(key), 0) < 0)
+    if(blake2b(hash, key, "", FLIST_ACL_KEY_LENGTH, strlen(key), 0) < 0)
         dies("blake2 acl error");
 
-    char *hashkey = libflist_hashhex(hash, ACLLENGTH);
+    char *hashkey = libflist_hashhex(hash, FLIST_ACL_KEY_LENGTH);
     free(key);
 
     return hashkey;
