@@ -385,7 +385,7 @@ int zf_stat(zf_callback_t *cb) {
     }
 
     // we found the inode
-    int value = zf_stat_inode(inode);
+    int value = zf_stat_inode(cb, inode);
     libflist_dirnode_free(dirnode);
 
     return value;

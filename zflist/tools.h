@@ -17,7 +17,7 @@
 
     char zf_ls_inode_type(inode_t *inode);
     void zf_ls_inode_perm(inode_t *inode);
-    int zf_stat_inode(inode_t *target);
+    int zf_stat_inode(zf_callback_t *cb, inode_t *target);
 
     int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode);
     int zf_find_finalize(zf_callback_t *cb);

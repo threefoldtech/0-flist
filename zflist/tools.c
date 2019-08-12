@@ -124,7 +124,49 @@ void zf_ls_inode_perm(inode_t *inode) {
     }
 }
 
-int zf_stat_inode(inode_t *inode) {
+//
+// stat implementation
+//
+int zf_stat_inode_json(zf_callback_t *cb, inode_t *inode) {
+    json_t *response = json_object_get(cb->jout, "response");
+
+    char filename[2048];
+    sprintf(filename, "/%s", inode->fullpath[0] == '/' ? inode->fullpath + 1 : inode->fullpath);
+
+    json_object_set_new(response, "file", json_string(filename));
+    json_object_set_new(response, "size", json_integer(inode->size));
+    json_object_set_new(response, "mode", json_integer(inode->acl->mode));
+    json_object_set_new(response, "user", json_string(inode->acl->uname));
+    json_object_set_new(response, "group", json_string(inode->acl->gname));
+    json_object_set_new(response, "created", json_integer(inode->creation));
+    json_object_set_new(response, "modified", json_integer(inode->modification));
+
+    if(inode->type == INODE_LINK)
+        json_object_set_new(response, "linkto", json_string(inode->link));
+
+    if(inode->type == INODE_SPECIAL)
+        json_object_set_new(response, "device", json_string(inode->sdata));
+
+    json_t *chunks = json_array();
+
+    for(size_t i = 0; inode->chunks && i < inode->chunks->size; i++) {
+        inode_chunk_t *ichunk = &inode->chunks->list[i];
+        json_t *chunk = json_object();
+
+        discard char *hashstr = libflist_hashhex((unsigned char *) ichunk->entryid, ichunk->entrylen);
+        discard char *keystr = libflist_hashhex((unsigned char *) ichunk->decipher, ichunk->decipherlen);
+
+        json_object_set_new(chunk, "key", json_string(hashstr));
+        json_object_set_new(chunk, "decipher", json_string(keystr));
+        json_array_append(chunks, chunk);
+    }
+
+    json_object_set_new(response, "chunks", chunks);
+
+    return 0;
+}
+
+static int zf_stat_inode_text(inode_t *inode) {
     printf("  File: /%s\n", inode->fullpath[0] == '/' ? inode->fullpath + 1 : inode->fullpath);
     printf("  Size: %lu bytes\n", inode->size);
 
@@ -165,6 +207,13 @@ int zf_stat_inode(inode_t *inode) {
     return 0;
 }
 
+int zf_stat_inode(zf_callback_t *cb, inode_t *inode) {
+    if(cb->jout)
+        return zf_stat_inode_json(cb, inode);
+
+    return zf_stat_inode_text(inode);
+}
+
 // looking for global defined backend
 // and set context if possible
 flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
@@ -191,6 +240,9 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
     return ctx;
 }
 
+//
+// find implementaion
+//
 static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
     dirnode_t *subnode = NULL;
 
