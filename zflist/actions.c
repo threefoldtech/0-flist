@@ -598,3 +598,61 @@ int zf_putdir(zf_callback_t *cb) {
 
     return 0;
 }
+
+//
+// merge
+//
+int zf_merge(zf_callback_t *cb) {
+    int value = 0;
+
+    if(cb->argc < 2) {
+        zf_error(cb, "merge", "missing flist argument to merge");
+        return 1;
+    }
+
+    // create temporary workspace for the merging flist
+    char dname[2048];
+
+    snprintf(dname, sizeof(dname), "%s/mergeXXXXXX", cb->settings->mnt);
+    debug("[+] action: merge: creating temporary directory\n");
+
+    if(!mkdtemp(dname))
+        zf_diep(cb, "dname");
+
+    debug("[+] action: merge: temporary directory: %s\n", dname);
+
+    // open the target flist into that directory
+    if(zf_open_file(cb, cb->argv[1], dname)) {
+        debug("[-] action: merge: could not extract merging flist\n");
+        return 1;
+    }
+
+    // merging the flist with the current database
+    flist_ctx_t *ctx = zf_internal_init(dname);
+
+    // do the merge
+    dirnode_t *merged;
+
+    if(!(merged = libflist_merge(cb->ctx, ctx))) {
+        zf_error(cb, "merge", "error: %s", libflist_strerror());
+        value = 1;
+    }
+
+    libflist_serial_dirnode_commit(merged, cb->ctx, merged);
+    libflist_dirnode_free_recursive(merged);
+
+    // cleanup target context
+    zf_internal_cleanup(ctx);
+
+    // cleaning workspace
+    if(zf_remove_database(cb, dname)) {
+        zf_error(cb, "merge", "could not remove database file");
+        return 1;
+    }
+
+    debug("[+] action: merge: removing temporary directory: %s\n", dname);
+    if(rmdir(dname) < 0)
+        zf_diep(cb, "dname");
+
+    return value;
+}

@@ -29,6 +29,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "rmdir",    .db = 1, .callback = zf_rmdir,    .help = "remove a directory (recursively)"},
     {.name = "mkdir",    .db = 1, .callback = zf_mkdir,    .help = "create an empty directory (non-recursive)"},
     {.name = "metadata", .db = 1, .callback = zf_metadata, .help = "get or set metadata"},
+    {.name = "merge",    .db = 1, .callback = zf_merge,    .help = "merge another flist into the current one"},
     {.name = "commit",   .db = 0, .callback = zf_commit,   .help = "commit changes to a new flist"},
     {.name = "close",    .db = 0, .callback = zf_close,    .help = "close mountpoint and discard files"},
 };
