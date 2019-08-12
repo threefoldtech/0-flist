@@ -9,6 +9,8 @@
 #include "verbose.h"
 #include "database.h"
 #include "flist_read.h"
+#include "flist_dirnode.h"
+#include "flist_serial.h"
 
 // #define FULLMERGE_DEBUG
 

@@ -62,7 +62,7 @@ int zf_init(zf_callback_t *cb) {
     flist_ctx_t *ctx = libflist_context_create(database, NULL);
 
     // initialize root directory
-    dirnode_t *root = libflist_internal_dirnode_create("", "");
+    dirnode_t *root = libflist_dirnode_create("", "");
     libflist_dirnode_commit(root, ctx, root);
     libflist_dirnode_free(root);
 
@@ -550,7 +550,7 @@ int zf_put(zf_callback_t *cb) {
     libflist_inode_rename(inode, targetname);
 
     // append inode to that directory
-    dirnode_appends_inode(dirnode, inode);
+    libflist_dirnode_appends_inode(dirnode, inode);
 
     // commit
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);

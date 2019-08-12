@@ -23,8 +23,10 @@
 #include "database.h"
 #include "flist.capnp.h"
 #include "flist_acl.h"
+#include "flist_dirnode.h"
 #include "flist_write.h"
 #include "flist_read.h"
+#include "flist_serial.h"
 
 // #define FLIST_WRITE_FULLDUMP
 
@@ -153,96 +155,6 @@ static flist_write_global_t globaldata = {
 };
 #endif
 
-//
-// dirnode
-//
-static dirnode_t *dirnode_create(char *fullpath, char *name) {
-    dirnode_t *directory;
-
-    if(!(directory = calloc(sizeof(dirnode_t), 1)))
-        return NULL;
-
-    directory->fullpath = strdup(fullpath);
-    directory->name = strdup(name);
-
-    // some cleaning (remove trailing slash)
-    // but ignoring empty fullpath
-    size_t lf = strlen(directory->fullpath);
-    if(lf && directory->fullpath[lf - 1] == '/')
-        directory->fullpath[lf - 1] = '\0';
-
-    directory->hashkey = libflist_path_key(directory->fullpath);
-    directory->acl = flist_acl_new("root", "root", 0755);
-
-    return directory;
-}
-
-static dirnode_t *dirnode_create_from_stat(dirnode_t *parent, const char *name, const struct stat *sb) {
-    char *fullpath;
-    dirnode_t *root;
-
-    if(strlen(parent->fullpath) == 0) {
-        if(!(fullpath = strdup(name)))
-            diep("strdup");
-
-    } else {
-        if(asprintf(&fullpath, "%s/%s", parent->fullpath, name) < 0)
-            diep("asprintf");
-    }
-
-    if(!(root = dirnode_create(fullpath, (char *) name)))
-        return NULL;
-
-    root->creation = sb->st_ctime;
-    root->modification = sb->st_mtime;
-
-    if(root->acl)
-        flist_acl_free(root->acl);
-
-    root->acl = flist_acl_from_stat(sb);
-
-    free(fullpath);
-
-    return root;
-}
-
-dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
-    return dirnode_create(fullpath, name);
-}
-
-void dirnode_free(dirnode_t *dirnode) {
-    flist_acl_free(dirnode->acl);
-
-    for(inode_t *inode = dirnode->inode_list; inode; ) {
-        inode_t *next = inode->next;
-        libflist_inode_free(inode);
-        inode = next;
-    }
-
-    free(dirnode->fullpath);
-    free(dirnode->name);
-    free(dirnode->hashkey);
-    free(dirnode);
-}
-
-void dirnode_free_recursive(dirnode_t *dirnode) {
-    for(dirnode_t *subdir = dirnode->dir_list; subdir; ) {
-        dirnode_t *temp = subdir->next;
-        dirnode_free_recursive(subdir);
-        subdir = temp;
-    }
-
-    dirnode_free(dirnode);
-}
-
-void libflist_dirnode_free(dirnode_t *dirnode) {
-    dirnode_free(dirnode);
-}
-
-void libflist_dirnode_free_recursive(dirnode_t *dirnode) {
-    dirnode_free_recursive(dirnode);
-}
-
 inode_t *inode_create(const char *name, size_t size, const char *fullpath) {
     inode_t *inode;
 
@@ -286,42 +198,6 @@ void libflist_inode_free(inode_t *inode) {
     inode_free(inode);
 }
 
-dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode) {
-    if(!root->inode_list)
-        root->inode_list = inode;
-
-    if(root->inode_last)
-        root->inode_last->next = inode;
-
-    root->inode_last = inode;
-    root->inode_length += 1;
-
-    return root;
-}
-
-dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode) {
-    inode->next = NULL;
-    return dirnode_lazy_appends_inode(root, inode);
-}
-
-dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
-    if(!root->dir_list)
-        root->dir_list = dir;
-
-    if(root->dir_last)
-        root->dir_last->next = dir;
-
-    root->dir_last = dir;
-    root->dir_length += 1;
-
-    return root;
-}
-
-dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir) {
-    dir->next = NULL;
-    return dirnode_lazy_appends_dirnode(root, dir);
-}
-
 inode_t *libflist_inode_search(dirnode_t *root, char *inodename) {
     // inodes list empty (no list already set)
     if(!root->inode_list)
@@ -334,21 +210,6 @@ inode_t *libflist_inode_search(dirnode_t *root, char *inodename) {
     }
 
     // inode not found
-    return NULL;
-}
-
-dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname) {
-    // directory empty (no list already set)
-    if(!root->dir_list)
-        return NULL;
-
-    // iterating over directories
-    for(dirnode_t *source = root->dir_list; source; source = source->next) {
-        if(strcmp(source->name, dirname) == 0)
-            return source;
-    }
-
-    // directory not found
     return NULL;
 }
 
@@ -430,20 +291,6 @@ static void dirnode_tree_free(dirnode_t *root) {
 }
 #endif
 
-
-// WARNING: FIXME - duplication just copy everything and cut next pointer
-//                  THIS IS NOT A REAL DUPLICATION
-dirnode_t *dirnode_lazy_duplicate(dirnode_t *source) {
-    dirnode_t *copy;
-
-    if(!(copy = malloc(sizeof(dirnode_t))))
-        return libflist_diep("malloc");
-
-    memcpy(copy, source, sizeof(dirnode_t));
-    copy->next = NULL;
-
-    return copy;
-}
 
 inode_t *inode_lazy_duplicate(inode_t *source) {
     inode_t *copy;
@@ -551,10 +398,10 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
 
         // create entry on the database
         debug("[+] libflist: process file: creating new directory entry\n");
-        dirnode_t *newdir = dirnode_create_from_stat(parent, iname, sb);
-        dirnode_appends_dirnode(parent, newdir);
-        libflist_dirnode_commit(newdir, ctx, parent);
-        libflist_dirnode_free(newdir);
+        dirnode_t *newdir = flist_dirnode_create_from_stat(parent, iname, sb);
+        flist_dirnode_appends_dirnode(parent, newdir);
+        flist_dirnode_commit(newdir, ctx, parent);
+        flist_dirnode_free(newdir);
     }
 
     if(S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
@@ -643,26 +490,6 @@ static int fts_compare(const FTSENT **one, const FTSENT **two) {
     return (strcmp((*one)->fts_name, (*two)->fts_name));
 }
 
-static int dirnode_is_root(dirnode_t *dirnode) {
-    return (strlen(dirnode->fullpath) == 0);
-}
-
-static char *dirnode_virtual_path(dirnode_t *parent, char *target) {
-    char *vpath;
-
-    if(dirnode_is_root(parent)) {
-        if(asprintf(&vpath, "%s", target) < 0)
-            return NULL;
-
-        return vpath;
-    }
-
-    if(asprintf(&vpath, "/%s%s", parent->fullpath, target) < 0)
-        return NULL;
-
-    return vpath;
-}
-
 inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx) {
     struct stat sb;
 
@@ -701,13 +528,13 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
         if(fentry->fts_info != FTS_D)
             continue;
 
-        discard char *vpath = dirnode_virtual_path(workingdir, fentry->fts_path + strlen(tmpsrc));
+        discard char *vpath = flist_dirnode_virtual_path(workingdir, fentry->fts_path + strlen(tmpsrc));
         discard char *parentpath = dirname(strdup(vpath));
 
         debug("[+] libflist: local directory: adding: %s [%s]\n", fentry->fts_name, parentpath);
 
         // fetching parent directory
-        dirnode_t *localparent = libflist_dirnode_get(ctx->db, parentpath);
+        dirnode_t *localparent = flist_dirnode_get(ctx->db, parentpath);
 
         // adding this new directory
         if(!(inode = libflist_inode_from_localfile(fentry->fts_path, localparent, ctx))) {
@@ -716,10 +543,10 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
         }
 
         // saving changes
-        dirnode_appends_inode(localparent, inode);
-        libflist_dirnode_commit(localparent, ctx, localparent);
+        flist_dirnode_appends_inode(localparent, inode);
+        flist_dirnode_commit(localparent, ctx, localparent);
 
-        libflist_dirnode_free(localparent);
+        flist_dirnode_free(localparent);
     }
 
     fts_close(fs);
@@ -739,7 +566,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
     workingdir = parent;
 
     while((fentry = fts_read(fs))) {
-        discard char *target = dirnode_virtual_path(parent, fentry->fts_path + strlen(tmpsrc));
+        discard char *target = flist_dirnode_virtual_path(parent, fentry->fts_path + strlen(tmpsrc));
 
         debug("[+] libflist: processing: %s -> %s\n", fentry->fts_path, target);
 
@@ -748,7 +575,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             // and keep track of the previous (insde 'next' field)
             debug("[+] libflist: switching to virtual directory: %s\n", target);
 
-            dirnode_t *newdir = libflist_dirnode_get(ctx->db, target);
+            dirnode_t *newdir = flist_dirnode_get(ctx->db, target);
             newdir->next = workingdir;
             workingdir = newdir;
             continue;
@@ -759,10 +586,10 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             // and reload previous directory
             debug("[+] libflist: commiting: %s\n", workingdir->fullpath);
 
-            libflist_dirnode_commit(workingdir, ctx, workingdir->next);
+            flist_dirnode_commit(workingdir, ctx, workingdir->next);
             dirnode_t *next = workingdir->next;
 
-            libflist_dirnode_free(workingdir);
+            flist_dirnode_free(workingdir);
             workingdir = next;
             continue;
         }
@@ -772,7 +599,7 @@ inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_c
             return NULL;
         }
 
-        dirnode_appends_inode(workingdir, inode);
+        flist_dirnode_appends_inode(workingdir, inode);
     }
 
     fts_close(fs);

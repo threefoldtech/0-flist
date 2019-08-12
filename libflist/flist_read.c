@@ -9,14 +9,9 @@
 #include "verbose.h"
 #include "flist_serial.h"
 #include "flist_write.h"
+#include "flist_dirnode.h"
 
 #define KEYLENGTH 16
-
-#define discard __attribute__((cleanup(__cleanup_free)))
-
-static void __cleanup_free(void *p) {
-    free(* (void **) p);
-}
 
 //
 // directory object reader
@@ -54,7 +49,7 @@ static inode_chunks_t *capnp_inode_to_chunks(struct Inode *inode) {
     return blocks;
 }
 
-static inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fileindex) {
+inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fileindex) {
     inode_t *target;
     Inode_ptr inodep;
     struct Inode inode;
@@ -119,72 +114,6 @@ static inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, 
     return target;
 }
 
-static dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
-    dirnode_t *dirnode;
-
-    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
-        return NULL;
-
-    // setting directory metadata
-    dirnode->fullpath = strdup(dir->location.str);
-    dirnode->name = strdup(dir->name.str);
-    dirnode->hashkey = libflist_path_key(dirnode->fullpath);
-    dirnode->creation = dir->creationTime;
-    dirnode->modification = dir->modificationTime;
-
-    dirnode->acl = libflist_get_acl(database, dir->aclkey.str);
-
-    // iterating over the full contents
-    // and add each inode to the inode list of this directory
-    for(int i = 0; i < capn_len(dir->contents); i++) {
-        inode_t *inode;
-
-        if((inode = flist_itementry_to_inode(database, dir, i)))
-            dirnode_appends_inode(dirnode, inode);
-    }
-
-    return dirnode;
-}
-
-static dirnode_t *flist_dirnode_get(flist_db_t *database, char *key, char *fullpath) {
-    value_t *value;
-    struct capn capctx;
-    Dir_ptr dirp;
-    struct Dir dir;
-
-    // reading capnp message from database
-    value = database->sget(database, key);
-
-    // FIXME: memory leak
-    if(!value->data) {
-        debug("[-] libflist: dirnode: key [%s - %s] not found\n", key, fullpath);
-        database->clean(value);
-        return NULL;
-    }
-
-    // build capn context
-    if(capn_init_mem(&capctx, (unsigned char *) value->data, value->length, 0)) {
-        debug("[-] libflist: dirnode: capnp: init error\n");
-        database->clean(value);
-        // FIXME: memory leak
-        return NULL;
-    }
-
-    // populate dir struct from context
-    // the contents is always a directory (one key per directory)
-    // and the whole contents is on the content field
-    dirp.p = capn_getp(capn_root(&capctx), 0, 1);
-    read_Dir(&dir, dirp);
-
-    dirnode_t *dirnode = flist_dir_to_dirnode(database, &dir);
-
-    // cleanup capnp
-    capn_free(&capctx);
-    database->clean(value);
-
-    return dirnode;
-}
-
 
 #if 0
 directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath) {
@@ -241,7 +170,7 @@ char *libflist_path_key(char *path) {
     return libflist_hashhex(hash, KEYLENGTH);
 }
 
-static char *flist_clean_path(char *path) {
+char *flist_clean_path(char *path) {
     size_t offset, length;
 
     offset = 0;
@@ -317,23 +246,6 @@ flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src) {
 }
 #endif
 
-dirnode_t *flist_dirnode_from_inode(inode_t *inode) {
-    dirnode_t *dirnode;
-
-    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
-        return NULL;
-
-    // setting directory metadata
-    dirnode->fullpath = strdup(inode->fullpath);
-    dirnode->name = strdup(inode->name);
-    dirnode->hashkey = libflist_path_key(inode->fullpath);
-    dirnode->creation = inode->creation;
-    dirnode->modification = inode->modification;
-    dirnode->acl = inode->acl;
-
-    return dirnode;
-}
-
 inode_t *flist_inode_from_dirnode(dirnode_t *dirnode) {
     inode_t *inode;
 
@@ -349,111 +261,33 @@ inode_t *flist_inode_from_dirnode(dirnode_t *dirnode) {
     return inode;
 }
 
+/*
+dirnode_t *flist_dirnode_duplicate(dirnode_t *source) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
+        return NULL;
+
+    // setting directory metadata
+    dirnode->fullpath = strdup(inode->fullpath);
+    dirnode->name = strdup(inode->name);
+    dirnode->hashkey = libflist_path_key(inode->fullpath);
+    dirnode->creation = inode->creation;
+    dirnode->modification = inode->modification;
+    dirnode->acl = inode->acl;
+
+    return dirnode;
+}
+*/
+
 inode_t *libflist_directory_create(dirnode_t *parent, char *name) {
     inode_t *inode = libflist_inode_mkdir(name, parent);
-    dirnode_appends_inode(parent, inode);
+    flist_dirnode_appends_inode(parent, inode);
 
     dirnode_t *dirnode = flist_dirnode_from_inode(inode);
-    dirnode_appends_dirnode(parent, dirnode);
+    flist_dirnode_appends_dirnode(parent, dirnode);
 
     return inode;
 }
 
-//
-// fetch a directory object from the database
-//
-dirnode_t *libflist_dirnode_get(flist_db_t *database, char *path) {
-    discard char *cleanpath = NULL;
 
-    // we use strict convention to store
-    // entry on the database since the id is a hash of
-    // the path, the path needs to match exactly
-    //
-    // all the keys are without leading slash and never have
-    // trailing slash, the root directory is an empty string
-    //
-    //   eg:  /        -> ""
-    //        /home    -> "home"
-    //        /var/log -> "var/log"
-    //
-    // to make this function working for mostly everybody, let's
-    // clean the path to ensure it should reflect exactly how
-    // it's stored on the database
-    if(!(cleanpath = flist_clean_path(path)))
-        return NULL;
-
-    debug("[+] libflist: dirnode: get: clean path: <%s> -> <%s>\n", path, cleanpath);
-
-    // converting this directory string into a directory
-    // hash by the internal way used everywhere, this will
-    // give the key required to find entry on the database
-    discard char *key = libflist_path_key(cleanpath);
-    debug("[+] libflist: dirnode: get: entry key: <%s>\n", key);
-
-    // requesting the directory object from the database
-    // the object in the database is packed, this function will
-    // return us something decoded and ready to use
-    dirnode_t *direntry;
-    if(!(direntry = flist_dirnode_get(database, key, cleanpath)))
-        return NULL;
-
-    #if 0
-    // we now have the full directory contents into memory
-    // because the internal object contains everything, but in
-    // an internal format, it's time to convert this format
-    // into our public interface
-    dirnode_t *contents;
-
-    if(!(contents = flist_directory_to_dirnode(database, direntry)))
-        return NULL;
-    #endif
-
-    // cleaning temporary string allocated
-    // by internal functions and not needed objects anymore
-    // flist_directory_close(database, direntry);
-
-    return direntry;
-}
-
-dirnode_t *libflist_dirnode_get_recursive(flist_db_t *database, char *path) {
-    dirnode_t *root = NULL;
-
-    // fetching root directory
-    if(!(root = libflist_dirnode_get(database, path)))
-        return NULL;
-
-    for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
-        // ignoring non-directories
-        if(inode->type != INODE_DIRECTORY)
-            continue;
-
-        // if it's a directory, loading it's contents
-        // and adding it to the directory lists
-        dirnode_t *subdir;
-        if(!(subdir = libflist_dirnode_get_recursive(database, inode->fullpath)))
-            return NULL;
-
-        dirnode_appends_dirnode(root, subdir);
-    }
-
-    return root;
-}
-
-dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root) {
-    discard char *copypath = strdup(root->fullpath);
-    char *parent = dirname(copypath);
-
-    // no parent
-    if(strcmp(parent, root->fullpath) == 0)
-        return root;
-
-    return libflist_dirnode_get(database, copypath);
-}
-
-dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname) {
-    for(dirnode_t *dir = root->dir_list; dir; dir = dir->next)
-        if(strcmp(dir->name, dirname) == 0)
-            return dir;
-
-    return NULL;
-}

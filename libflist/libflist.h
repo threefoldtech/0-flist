@@ -277,11 +277,6 @@
     //   all the logic needed to do read operation on entries (inode, directory, ...)
     //
     inode_t *libflist_directory_create(dirnode_t *parent, char *name);
-    dirnode_t *libflist_dirnode_get(flist_db_t *database, char *key);
-    dirnode_t *libflist_dirnode_get_recursive(flist_db_t *database, char *path);
-    dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root);
-    dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
-
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
 
     char *libflist_path_key(char *path);
@@ -306,7 +301,6 @@
     flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
     void libflist_context_free(flist_ctx_t *ctx);
 
-    dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
     inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
     inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx);
@@ -316,27 +310,30 @@
     dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
     int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
 
-    void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
-
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 
-    dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name);
-
     void libflist_inode_free(inode_t *inode);
+
+    inode_t *inode_lazy_duplicate(inode_t *source);
+
+    //
+    // flist_dirnode.c
+    //
+    dirnode_t *libflist_dirnode_create(char *fullpath, char *name);
+    dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
+    dirnode_t *libflist_dirnode_get(flist_db_t *database, char *path);
+    dirnode_t *libflist_dirnode_get_recursive(flist_db_t *database, char *path);
+    dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root);
+    dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
+    dirnode_t *libflist_dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+
     void libflist_dirnode_free(dirnode_t *dirnode);
     void libflist_dirnode_free_recursive(dirnode_t *dirnode);
-
-    dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
-    dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
-    dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-    dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-    dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
-    inode_t *inode_lazy_duplicate(inode_t *source);
 
     //
     // flist_merger.c
     //
-    dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source);
+    dirnode_t *libflist_merge(flist_ctx_t *source, flist_ctx_t *target);
 
     //
     // flist_dumps.c

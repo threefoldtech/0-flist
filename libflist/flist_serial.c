@@ -14,6 +14,8 @@
 #include "database.h"
 #include "flist.capnp.h"
 #include "flist_write.h"
+#include "flist_read.h"
+#include "flist_dirnode.h"
 
 #define KEYLENGTH 16
 #define ACLLENGTH 8
@@ -143,7 +145,7 @@ void inode_acl_commit(flist_db_t *database, acl_t *acl) {
         dies("acl database error");
 }
 
-void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
+void flist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
     struct capn c;
     capn_init_malloc(&c);
     capn_ptr cr = capn_root(&c);
@@ -280,6 +282,78 @@ void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *paren
 
     // walking over the sub-directories
     for(dirnode_t *subdir = root->dir_list; subdir; subdir = subdir->next)
-        libflist_dirnode_commit(subdir, ctx, root);
+        flist_dirnode_commit(subdir, ctx, root);
 }
 
+dirnode_t *flist_dir_to_dirnode(flist_db_t *database, struct Dir *dir) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = calloc(sizeof(dirnode_t), 1)))
+        return NULL;
+
+    // setting directory metadata
+    dirnode->fullpath = strdup(dir->location.str);
+    dirnode->name = strdup(dir->name.str);
+    dirnode->hashkey = libflist_path_key(dirnode->fullpath);
+    dirnode->creation = dir->creationTime;
+    dirnode->modification = dir->modificationTime;
+
+    dirnode->acl = libflist_get_acl(database, dir->aclkey.str);
+
+    // iterating over the full contents
+    // and add each inode to the inode list of this directory
+    for(int i = 0; i < capn_len(dir->contents); i++) {
+        inode_t *inode;
+
+        if((inode = flist_itementry_to_inode(database, dir, i)))
+            flist_dirnode_appends_inode(dirnode, inode);
+    }
+
+    return dirnode;
+}
+
+dirnode_t *xxx_flist_dirnode_get(flist_db_t *database, char *key, char *fullpath) {
+    value_t *value;
+    struct capn capctx;
+    Dir_ptr dirp;
+    struct Dir dir;
+
+    // reading capnp message from database
+    value = database->sget(database, key);
+
+    // FIXME: memory leak
+    if(!value->data) {
+        debug("[-] libflist: dirnode: key [%s - %s] not found\n", key, fullpath);
+        database->clean(value);
+        return NULL;
+    }
+
+    // build capn context
+    if(capn_init_mem(&capctx, (unsigned char *) value->data, value->length, 0)) {
+        debug("[-] libflist: dirnode: capnp: init error\n");
+        database->clean(value);
+        // FIXME: memory leak
+        return NULL;
+    }
+
+    // populate dir struct from context
+    // the contents is always a directory (one key per directory)
+    // and the whole contents is on the content field
+    dirp.p = capn_getp(capn_root(&capctx), 0, 1);
+    read_Dir(&dir, dirp);
+
+    dirnode_t *dirnode = flist_dir_to_dirnode(database, &dir);
+
+    // cleanup capnp
+    capn_free(&capctx);
+    database->clean(value);
+
+    return dirnode;
+}
+
+//
+// public interface
+//
+void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
+    return flist_dirnode_commit(root, ctx, parent);
+}
