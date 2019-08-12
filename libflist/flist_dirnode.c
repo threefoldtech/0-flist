@@ -246,17 +246,6 @@ dirnode_t *flist_dirnode_get(flist_db_t *database, char *path) {
     if(!(direntry = flist_serial_get_dirnode(database, key, cleanpath)))
         return NULL;
 
-    #if 0
-    // we now have the full directory contents into memory
-    // because the internal object contains everything, but in
-    // an internal format, it's time to convert this format
-    // into our public interface
-    dirnode_t *contents;
-
-    if(!(contents = flist_directory_to_dirnode(database, direntry)))
-        return NULL;
-    #endif
-
     // cleaning temporary string allocated
     // by internal functions and not needed objects anymore
     // flist_directory_close(database, direntry);

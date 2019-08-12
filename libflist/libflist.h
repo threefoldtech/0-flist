@@ -278,6 +278,9 @@
     //
     // flist_tools.c
     //
+    flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
+    void libflist_context_free(flist_ctx_t *ctx);
+
     char *libflist_path_key(char *path);
 
     //
@@ -288,32 +291,6 @@
     acl_t *libflist_acl_duplicate(acl_t *source);
     acl_t *libflist_acl_commit(acl_t *acl);
     void libflist_acl_free(acl_t *acl);
-
-    //
-    // flist_write.c
-    //
-    //   all the logic needed to create entries (inode, directories, ...)
-    //
-    // int libflist_create_excluders_append(char *regex);
-    // void libflist_create_excluders_free();
-
-    flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
-    void libflist_context_free(flist_ctx_t *ctx);
-
-    inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
-    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
-    inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx);
-    inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
-    inode_t *libflist_inode_rename(inode_t *inode, char *name);
-
-    dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
-    int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
-
-    flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
-
-    void libflist_inode_free(inode_t *inode);
-
-    inode_t *inode_lazy_duplicate(inode_t *source);
 
     //
     // flist_dirnode.c

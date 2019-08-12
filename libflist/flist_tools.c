@@ -44,6 +44,25 @@ char *flist_clean_path(char *path) {
     return strndup(path + offset, length);
 }
 
+flist_ctx_t *flist_context_create(flist_db_t *db, flist_backend_t *backend) {
+    flist_ctx_t *ctx;
+
+    if(!(ctx = malloc(sizeof(flist_ctx_t))))
+        diep("malloc");
+
+    ctx->db = db;
+    ctx->backend = backend;
+
+    memset(&ctx->stats, 0x00, sizeof(flist_stats_t));
+
+    return ctx;
+}
+
+void flist_context_free(flist_ctx_t *ctx) {
+    free(ctx);
+}
+
+
 //
 // public interface
 //
@@ -51,3 +70,10 @@ char *libflist_path_key(char *path) {
     return flist_path_key(path);
 }
 
+flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend) {
+    return flist_context_create(db, backend);
+}
+
+void libflist_context_free(flist_ctx_t *ctx) {
+    flist_context_free(ctx);
+}
