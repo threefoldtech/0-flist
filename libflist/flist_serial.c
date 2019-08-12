@@ -13,9 +13,9 @@
 #include "verbose.h"
 #include "database.h"
 #include "flist.capnp.h"
-#include "flist_write.h"
 #include "flist_read.h"
 #include "flist_dirnode.h"
+#include "flist_inode.h"
 
 #define KEYLENGTH 16
 #define ACLLENGTH 8
@@ -407,7 +407,7 @@ inode_t *flist_itementry_to_inode(flist_db_t *database, struct Dir *dir, int fil
     target->modification = inode.modificationTime;
 
     if(!(target->acl = flist_serial_get_acl(database, inode.aclkey.str))) {
-        inode_free(target);
+        flist_inode_free(target);
         return NULL;
     }
 

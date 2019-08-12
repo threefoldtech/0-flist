@@ -23,7 +23,6 @@
 #include "database.h"
 #include "flist.capnp.h"
 #include "flist_acl.h"
-#include "flist_write.h"
 #include "flist_read.h"
 #include "flist_serial.h"
 

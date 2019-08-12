@@ -8,7 +8,6 @@
 #include "libflist.h"
 #include "verbose.h"
 #include "flist_serial.h"
-#include "flist_write.h"
 #include "flist_dirnode.h"
 
 #define KEYLENGTH 16
@@ -148,21 +147,6 @@ flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src) {
 }
 #endif
 
-inode_t *flist_inode_from_dirnode(dirnode_t *dirnode) {
-    inode_t *inode;
-
-    if(!(inode = inode_create(dirnode->name, 4096, dirnode->fullpath)))
-        return NULL;
-
-    inode->type = INODE_DIRECTORY;
-    inode->modification = dirnode->modification;
-    inode->creation = dirnode->creation;
-    inode->subdirkey = strdup(dirnode->hashkey);
-    inode->acl = dirnode->acl; // FIXME: DUPLICATE ACL
-
-    return inode;
-}
-
 /*
 dirnode_t *flist_dirnode_duplicate(dirnode_t *source) {
     dirnode_t *dirnode;
@@ -181,15 +165,4 @@ dirnode_t *flist_dirnode_duplicate(dirnode_t *source) {
     return dirnode;
 }
 */
-
-inode_t *libflist_directory_create(dirnode_t *parent, char *name) {
-    inode_t *inode = libflist_inode_mkdir(name, parent);
-    flist_dirnode_appends_inode(parent, inode);
-
-    dirnode_t *dirnode = flist_dirnode_from_inode(inode);
-    flist_dirnode_appends_dirnode(parent, dirnode);
-
-    return inode;
-}
-
 
