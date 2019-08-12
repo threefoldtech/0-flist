@@ -276,6 +276,9 @@ dirnode_t *flist_dirnode_get_parent(flist_db_t *database, dirnode_t *root) {
     discard char *copypath = strdup(root->fullpath);
     char *parent = dirname(copypath);
 
+    if(strcmp(parent, ".") == 0)
+        return flist_dirnode_get(database, "/");
+
     // no parent
     if(strcmp(parent, root->fullpath) == 0)
         return root;
