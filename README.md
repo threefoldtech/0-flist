@@ -92,6 +92,7 @@ Available actions:
   open            open an flist to enable editing
   init            initialize an empty flist to enable editing
   ls              list the content of a directory
+  find            list full contents of files and directories
   stat            dump inode full metadata
   cat             print file contents (backend metadata required)
   put             insert local file into the flist
@@ -101,7 +102,9 @@ Available actions:
   rmdir           remove a directory (recursively)
   mkdir           create an empty directory (non-recursive)
   metadata        get or set metadata
-  commit          close an flist and commit changes
+  merge           merge another flist into the current one
+  commit          commit changes to a new flist
+  close           close mountpoint and discard files
 ```
 
 # Repository Owner
