@@ -3,4 +3,6 @@
 
     char *flist_path_key(char *path);
     char *flist_clean_path(char *path);
+    void *flist_strdup_safe(char *source);
+    void *flist_memdup(void *input, size_t length);
 #endif

@@ -62,6 +62,26 @@ void flist_context_free(flist_ctx_t *ctx) {
     free(ctx);
 }
 
+void *flist_strdup_safe(char *source) {
+    if(source)
+        return strdup(source);
+
+    return NULL;
+}
+
+void *flist_memdup(void *input, size_t length) {
+    void *target;
+
+    if(!(target = malloc(length))) {
+        libflist_warnp("memdup malloc");
+        return NULL;
+    }
+
+    memcpy(target, input, length);
+
+    return target;
+}
+
 
 //
 // public interface
