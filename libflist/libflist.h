@@ -355,8 +355,8 @@
     //   since capnp can be really a mess, you won't have to deal with this in other place
     //   than this file, where you can set/read object and use internal struct to deal
     //   with information (and not with capnp object which are difficult to use)
-    void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
-    acl_t *libflist_acl_get(flist_db_t *database, const char *aclkey);
+    void libflist_serial_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
+    acl_t *libflist_serial_acl_get(flist_db_t *database, const char *aclkey);
     //
     // statistics.c
     //

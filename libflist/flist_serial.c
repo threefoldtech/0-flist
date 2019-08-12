@@ -447,10 +447,10 @@ dirnode_t *flist_serial_get_dirnode(flist_db_t *database, char *key, char *fullp
 //
 // public interface
 //
-void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
+void libflist_serial_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent) {
     return flist_serial_commit_dirnode(root, ctx, parent);
 }
 
-acl_t *libflist_acl_get(flist_db_t *database, const char *aclkey) {
+acl_t *libflist_serial_acl_get(flist_db_t *database, const char *aclkey) {
     return flist_serial_get_acl(database, aclkey);
 }

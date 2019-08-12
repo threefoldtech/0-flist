@@ -63,7 +63,7 @@ int zf_init(zf_callback_t *cb) {
 
     // initialize root directory
     dirnode_t *root = libflist_dirnode_create("", "");
-    libflist_dirnode_commit(root, ctx, root);
+    libflist_serial_dirnode_commit(root, ctx, root);
     libflist_dirnode_free(root);
 
     // commit changes
@@ -148,7 +148,7 @@ int zf_chmod(zf_callback_t *cb) {
     debug("[+] action: chmod: new mode: 0o%o\n", inode->acl->mode);
 
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
-    libflist_dirnode_commit(dirnode, cb->ctx, parent);
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, parent);
 
     libflist_dirnode_free(parent);
     libflist_dirnode_free(dirnode);
@@ -197,7 +197,7 @@ int zf_rm(zf_callback_t *cb) {
     debug("[+] action: rm: files in the directory: %lu\n", dirnode->inode_length);
 
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
-    libflist_dirnode_commit(dirnode, cb->ctx, parent);
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, parent);
 
     libflist_dirnode_free(parent);
     libflist_dirnode_free(dirnode);
@@ -256,7 +256,7 @@ int zf_rmdir(zf_callback_t *cb) {
 
     // commit changes in the parent (and parent of the parent)
     dirnode_t *pparent = libflist_dirnode_get_parent(cb->ctx->db, parent);
-    libflist_dirnode_commit(parent, cb->ctx, pparent);
+    libflist_serial_dirnode_commit(parent, cb->ctx, pparent);
 
     libflist_dirnode_free(parent);
     libflist_dirnode_free(pparent);
@@ -301,7 +301,7 @@ int zf_mkdir(zf_callback_t *cb) {
 
     // commit changes in the parent
     dirnode_t *dparent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
-    libflist_dirnode_commit(dirnode, cb->ctx, dparent);
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, dparent);
 
     libflist_dirnode_free(dirnode);
     libflist_dirnode_free(dparent);
@@ -554,7 +554,7 @@ int zf_put(zf_callback_t *cb) {
 
     // commit
     dirnode_t *parent = libflist_dirnode_get_parent(cb->ctx->db, dirnode);
-    libflist_dirnode_commit(dirnode, cb->ctx, parent);
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, parent);
 
     libflist_dirnode_free(parent);
     libflist_dirnode_free(dirnode);
