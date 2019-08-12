@@ -69,9 +69,10 @@ zflist merge second.flist
 zflist commit merged.flist
 ```
 
-If `/bin/ls` is on both flist, the file from `first.flist` will be found in `merged.flist`
+If `/bin/ls` is on both flist, the file from `first.flist` will be found in `merged.flist`.
 
 # Usage
+
 ```
 Usage: ./zflist [temporary-point] open <filename>
        ./zflist [temporary-point] <action> <arguments>
