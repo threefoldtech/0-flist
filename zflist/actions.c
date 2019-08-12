@@ -312,6 +312,27 @@ int zf_mkdir(zf_callback_t *cb) {
 //
 // ls
 //
+static int zf_ls_json(zf_callback_t *cb, dirnode_t *dirnode) {
+    json_t *list = json_array();
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        json_t *entry = json_object();
+
+        json_object_set(entry, "name", json_string(inode->name));
+        json_object_set(entry, "type", json_string(zf_inode_typename(inode->type, inode->stype)));
+        json_object_set(entry, "size", json_integer(inode->size));
+        json_object_set(entry, "user", json_string(inode->acl->uname));
+        json_object_set(entry, "group", json_string(inode->acl->gname));
+
+        json_array_append(list, entry);
+    }
+
+    json_object_set_new(cb->jout, "response", list);
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
 int zf_ls(zf_callback_t *cb) {
     char *dirpath = (cb->argc < 2) ? "/" : cb->argv[1];
     debug("[+] action: ls: listing <%s>\n", dirpath);
@@ -322,6 +343,9 @@ int zf_ls(zf_callback_t *cb) {
         zf_error(cb, "ls", "no such directory (file parent directory)");
         return 1;
     }
+
+    if(cb->jout)
+        return zf_ls_json(cb, dirnode);
 
     for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
         printf("%c", zf_ls_inode_type(inode));

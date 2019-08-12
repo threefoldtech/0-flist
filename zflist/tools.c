@@ -124,6 +124,16 @@ void zf_ls_inode_perm(inode_t *inode) {
     }
 }
 
+char *zf_inode_typename(inode_type_t type, inode_special_t special) {
+    char *types[] = {"directory", "regular file", "symlink"};
+    char *specials[] = {"unix socket", "block device", "character device", "fifo", "unknown"};
+
+    if(type == INODE_SPECIAL)
+        return specials[special];
+
+    return types[type];
+}
+
 //
 // stat implementation
 //
