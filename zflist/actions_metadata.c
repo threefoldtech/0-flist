@@ -74,6 +74,22 @@ static json_t *zf_metadata_fetch(zf_callback_t *cb, char *metadata, json_t *(*in
 //
 // getter
 //
+static int zf_metadata_get_json(zf_callback_t *cb, char *metaname, char *str) {
+    json_error_t error;
+    json_t *value;
+
+    if(!(value = json_loads(str, 0, &error)))
+        return 1;
+
+    json_t *metadata = json_object();
+
+    json_object_set_new(metadata, "metadata", json_string(metaname));
+    json_object_set_new(metadata, "value", value);
+    json_object_set_new(cb->jout, "response", metadata);
+
+    return 0;
+}
+
 int zf_metadata_get(zf_callback_t *cb) {
     char *value;
 
@@ -82,6 +98,9 @@ int zf_metadata_get(zf_callback_t *cb) {
         zf_error(cb, "metadata", "metadata not found");
         return 1;
     }
+
+    if(cb->jout)
+        return zf_metadata_get_json(cb, cb->argv[1], value);
 
     debug("[+] action: metadata: value for <%s>\n", cb->argv[1]);
     printf("%s\n", value);
