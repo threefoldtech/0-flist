@@ -283,9 +283,17 @@
     dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
 
     inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
-    acl_t *libflist_inode_acl_commit(inode_t *inode);
 
     char *libflist_path_key(char *path);
+
+    //
+    // flist_acl.c
+    //
+    acl_t *libflist_acl_new(char *uname, char *gname, int mode);
+    char *libflist_acl_key(acl_t *acl);
+    acl_t *libflist_acl_duplicate(acl_t *source);
+    acl_t *libflist_acl_commit(acl_t *acl);
+    void libflist_acl_free(acl_t *acl);
 
     //
     // flist_write.c
@@ -309,7 +317,6 @@
     int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
 
     void libflist_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
-    char *libflist_inode_acl_key(acl_t *acl);
 
     flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
 

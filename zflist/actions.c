@@ -143,7 +143,7 @@ int zf_chmod(zf_callback_t *cb) {
     // remove 9 last bits and set new last 9 bits
     uint32_t cleared = inode->acl->mode & 0xfffffe00;
     inode->acl->mode = cleared | newmode;
-    libflist_inode_acl_commit(inode);
+    libflist_acl_commit(inode->acl);
 
     debug("[+] action: chmod: new mode: 0o%o\n", inode->acl->mode);
 

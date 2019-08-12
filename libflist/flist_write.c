@@ -22,6 +22,7 @@
 #include "verbose.h"
 #include "database.h"
 #include "flist.capnp.h"
+#include "flist_acl.h"
 #include "flist_write.h"
 #include "flist_read.h"
 
@@ -153,111 +154,8 @@ static flist_write_global_t globaldata = {
 #endif
 
 //
+// dirnode
 //
-
-char *libflist_inode_acl_key(acl_t *acl) {
-    char *key;
-    char strmode[32];
-
-    // re-implementing the python original version
-    // the mode is created using 'oct(mode)[4:]'
-    //
-    // when doing oct(int), the returns is '0oXXXX'
-    // so we fake the same behavior
-    sprintf(strmode, "0o%o", acl->mode);
-
-    // intermediate string key
-    if(asprintf(&key, "user:%s\ngroup:%s\nmode:%s\n", acl->uname, acl->gname, strmode + 4) < 0)
-        diep("asprintf");
-
-    // hashing payload
-    unsigned char hash[ACLLENGTH];
-
-    if(blake2b(hash, key, "", ACLLENGTH, strlen(key), 0) < 0)
-        dies("blake2 acl error");
-
-    char *hashkey = libflist_hashhex(hash, ACLLENGTH);
-    free(key);
-
-    return hashkey;
-}
-
-acl_t *libflist_inode_acl_commit(inode_t *inode) {
-    if(inode->acl->key)
-        free(inode->acl->key);
-
-    inode->acl->key = libflist_inode_acl_key(inode->acl);
-    return inode->acl;
-}
-
-static char *uidstr(struct passwd *passwd, uid_t uid) {
-    char *target;
-
-    // if username cannot be found
-    // let use user id as username
-    if(!passwd) {
-        libflist_warnp("getpwuid");
-
-        if(asprintf(&target, "%d", uid) < 0)
-            diep("asprintf");
-
-        return target;
-    }
-
-    return strdup(passwd->pw_name);
-}
-
-static char *gidstr(struct group *group, gid_t gid) {
-    char *target;
-
-    // if group name cannot be found
-    // let use group id as groupname
-    if(!group) {
-        warnp("getgrpid");
-        if(asprintf(&target, "%d", gid) < 0)
-            diep("asprintf");
-
-        return target;
-    }
-
-    return strdup(group->gr_name);
-}
-
-acl_t *inode_acl_new(char *uname, char *gname, int mode) {
-    acl_t *acl;
-
-    if(!(acl = malloc(sizeof(acl_t)))) {
-        warnp("acl: new: malloc");
-        return NULL;
-    }
-
-    acl->mode = mode;
-    acl->uname = strdup(uname);
-    acl->gname = strdup(gname);
-    acl->key = libflist_inode_acl_key(acl);
-
-    return acl;
-}
-
-acl_t *inode_acl(const struct stat *sb) {
-    char *uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
-    char *gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
-    acl_t *acl = inode_acl_new(uname, gname, sb->st_mode);
-
-    free(uname);
-    free(gname);
-
-    return acl;
-}
-
-
-void inode_acl_free(acl_t *acl) {
-    free(acl->uname);
-    free(acl->gname);
-    free(acl->key);
-    free(acl);
-}
-
 static dirnode_t *dirnode_create(char *fullpath, char *name) {
     dirnode_t *directory;
 
@@ -274,7 +172,7 @@ static dirnode_t *dirnode_create(char *fullpath, char *name) {
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = libflist_path_key(directory->fullpath);
-    directory->acl = inode_acl_new("root", "root", 0755);
+    directory->acl = flist_acl_new("root", "root", 0755);
 
     return directory;
 }
@@ -299,9 +197,9 @@ static dirnode_t *dirnode_create_from_stat(dirnode_t *parent, const char *name, 
     root->modification = sb->st_mtime;
 
     if(root->acl)
-        inode_acl_free(root->acl);
+        flist_acl_free(root->acl);
 
-    root->acl = inode_acl(sb);
+    root->acl = flist_acl_from_stat(sb);
 
     free(fullpath);
 
@@ -313,7 +211,7 @@ dirnode_t *libflist_internal_dirnode_create(char *fullpath, char *name) {
 }
 
 void dirnode_free(dirnode_t *dirnode) {
-    inode_acl_free(dirnode->acl);
+    flist_acl_free(dirnode->acl);
 
     for(inode_t *inode = dirnode->inode_list; inode; ) {
         inode_t *next = inode->next;
@@ -373,7 +271,7 @@ void inode_chunks_free(inode_t *inode) {
 
 
 void inode_free(inode_t *inode) {
-    inode_acl_free(inode->acl);
+    flist_acl_free(inode->acl);
     inode_chunks_free(inode);
 
     free(inode->name);
@@ -643,7 +541,7 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
 
     inode->creation = sb->st_ctime;
     inode->modification = sb->st_mtime;
-    inode->acl = inode_acl(sb);
+    inode->acl = flist_acl_from_stat(sb);
 
     // special stuff related to different
     // type of inode
@@ -706,7 +604,7 @@ inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent) {
     inode->modification = time(NULL);
     inode->type = INODE_DIRECTORY;
     inode->subdirkey = libflist_path_key(vpath);
-    inode->acl = inode_acl_new("root", "root", 0755);
+    inode->acl = flist_acl_new("root", "root", 0755);
 
     return inode;
 }
