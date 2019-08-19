@@ -1,5 +1,5 @@
-#ifndef ZFLISTEDIT_TOOLS_H
-    #define ZFLISTEDIT_TOOLS_H
+#ifndef ZFLIST_TOOLS_H
+    #define ZFLIST_TOOLS_H
 
     // automatic cleanup
     void __cleanup_free(void *p);

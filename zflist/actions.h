@@ -1,5 +1,5 @@
-#ifndef ZFLISTEDIT_ACTIONS_H
-    #define ZFLISTEDIT_ACTIONS_H
+#ifndef ZFLIST_ACTIONS_H
+    #define ZFLIST_ACTIONS_H
 
     int zf_open(zf_callback_t *cb);
     int zf_init(zf_callback_t *cb);

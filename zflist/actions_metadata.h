@@ -1,5 +1,5 @@
-#ifndef ZFLISTEDIT_ACTIONS_METADATA_H
-    #define ZFLISTEDIT_ACTIONS_METADATA_H
+#ifndef ZFLIST_ACTIONS_METADATA_H
+    #define ZFLIST_ACTIONS_METADATA_H
 
     int zf_metadata_set_backend(zf_callback_t *cb);
     int zf_metadata_set_entry(zf_callback_t *cb);

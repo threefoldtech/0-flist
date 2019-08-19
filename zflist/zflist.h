@@ -1,5 +1,5 @@
-#ifndef ZFLISTEDIT_H
-    #define ZFLISTEDIT_H
+#ifndef ZFLIST_H
+    #define ZFLIST_H
 
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
