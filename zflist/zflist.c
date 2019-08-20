@@ -50,6 +50,10 @@ int usage(char *basename) {
     fprintf(stderr, "  First, you need to -open- an flist, then you can do some -edit-\n");
     fprintf(stderr, "  and finally you can -commit- (close) your changes to a new flist.\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "  If you want to upload chunks when inserting files, please set\n");
+    fprintf(stderr, "  environment variable ZFLIST_BACKEND to a json backend formatted string,\n");
+    fprintf(stderr, "  check backend documentation for more information\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "Available actions:\n");
 
     for(unsigned int i = 0; i < sizeof(zf_commands) / sizeof(zf_cmds_t); i++)
