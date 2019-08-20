@@ -230,14 +230,16 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
     flist_db_t *backdb = NULL;
     char *envbackend;
 
-    if(!(envbackend = getenv("UPLOADBACKEND"))) {
+    if(!(envbackend = getenv("ZFLIST_BACKEND"))) {
         debug("[-] WARNING:\n");
         debug("[-] WARNING: upload backend is not set and is requested\n");
         debug("[-] WARNING: file won't be uploaded, but chunks\n");
         debug("[-] WARNING: will be computed and stored\n");
         debug("[-] WARNING:\n");
         return NULL;
-   }
+    }
+
+    debug("[+] backend: detecting backend settings\n");
 
     if(!(backdb = libflist_metadata_backend_database_json(envbackend))) {
         fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
@@ -246,6 +248,8 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
 
     // updating context
     ctx->backend = libflist_backend_init(backdb, "/");
+
+    debug("[+] backend: connected and attached to context\n");
 
     return ctx;
 }
