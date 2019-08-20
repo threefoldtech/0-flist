@@ -1,7 +1,7 @@
-# zflist (currently zflist-edit)
+# zflist
 
 This is the main command line tool to use when you want to create/update an flist. It's a central point
-where you can do everything you want.
+where you can do everything you want, using the `libflist`.
 
 # Motivation
 
@@ -13,10 +13,12 @@ of actions possible:
 
 - open
 - init
+- close
 - ls
 - stat
 - cat
 - put
+- putdir
 - chmod
 - rm
 - rmdir
@@ -29,25 +31,133 @@ done with the changes, you `commit` changes to a new flist.
 
 ## open
 
+Open an existing flist file and extract everything to the temporary directory in order to be
+able to modify contents later.
+
+```
+$ zflist open /tmp/existing.flist
+```
+
 ## init
+
+Create an empty environment with a root filesystem and nothing inside.
+
+```
+$ zflist init
+```
 
 ## ls
 
+List the content of one directory (if not specified, default is root directory)
+
+```
+$ zflist ls
+drwxr-xr-x root     root           1344  bin
+drwxr-xr-x root     root              0  boot
+drwxr-xr-x root     root           1890  etc
+drwxr-xr-x root     root              0  home
+drwxr-xr-x root     root            106  lib
+drwxr-xr-x root     root             40  lib64
+drwxr-xr-x root     root              0  media
+[...]
+
+$ zflist ls /var
+drwxr-xr-x root     root              0  backups
+drwxr-xr-x root     root             36  cache
+drwxr-xr-x root     root            190  lib
+drwxrwxr-x root     staff             0  local
+drwxr-xr-x root     root            142  log
+drwxrwxr-x root     mail              0  mail
+[...]
+```
+
 ## stat
+
+Dumps informations about a single inode
+
+```
+$ zflist stat /etc/hostname
+  File: /etc/hostname
+  Size: 13 bytes
+Access: (100644/-rw-r--r--)  UID: root, GID: root
+Access: 1536587642
+Create: 1536588043
+Chunks: key: f1a594ca047379ad6942572350cc022a, decipher: b4649e4b54a1426a05d93580cba9bf5f
+```
 
 ## put
 
 ## chmod
 
+Change the mode of a file
+
+```
+$ zflist chmod 777 /etc/hostname
+```
+
 ## rm
+
+Remove an inode (nothing recursive)
+
+```
+$ zflist ls /etc/init
+-rw-r--r-- root     root            284  hostname.conf
+-rw-r--r-- root     root            300  hostname.sh.conf
+-rw-r--r-- root     root            561  hwclock-save.conf
+-rw-r--r-- root     root            674  hwclock.conf
+[...]
+
+$ zflist rm /etc/init/hostname.conf
+
+$ zflist ls /etc/init
+-rw-r--r-- root     root            300  hostname.sh.conf
+-rw-r--r-- root     root            561  hwclock-save.conf
+-rw-r--r-- root     root            674  hwclock.conf
+[...]
+```
 
 ## rmdir
 
+Recursively remove a directory and all subdirectories
+
+```
+$ zflist rmdir /etc/init
+$ zflist ls /etc/init
+zflist: ls: no such directory (file parent directory)
+```
+
 ## mkdir
+
+Create an ew directory
+
+```
+$ zflist ls /mnt
+$ zflist mkdir /mnt/hello
+$ zflist ls /mnt
+drwxr-xr-x root     root           4096  hello
+```
 
 ## metadata
 
+Set or get metadata informations (see below)
+
+```
+$ zflist metadata backend
+zflist: metadata: metadata not found
+
+$ zflist metadata backend --host hub.grid.tf --port 9900
+
+$ zflist metadata backend
+{"host": "hub.grid.tf", "port": 9900}
+```
+
 ## commit
+
+Export temporary directory and create a new flist with the new database
+
+```
+$ zflist commit /tmp/newfile.flist
+```
 
 # Metadata
 
@@ -74,7 +184,12 @@ contents, this backend won't be used when **uploading** file (if you want to add
 
 Usually, backend are publicly readable but not writable without authentication. You don't want to expose
 your personnal credentials inside the flist metadata, obviously. In order to upload files, you need to
-set the `UPLOADBACKEND` environment variable.
+set the `ZFLIST_BACKEND` environment variable.
+
+Example to upload:
+```
+ZFLIST_BACKEND='{"host":"localhost","port":9900}' ./zflist put ...
+```
 
 ## Entrypoint
 
