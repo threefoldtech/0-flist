@@ -50,10 +50,17 @@ flist_db_t *libflist_metadata_backend_database_json(char *input) {
     json_error_t error;
     json_t *backend = json_loads(input, 0, &error);
 
+    if(!backend) {
+        libflist_set_error("backend json could not be parsed");
+        return NULL;
+    }
+
     char *host = (char *) json_string_value(json_object_get(backend, "host"));
     char *namespace = (char *) json_string_value(json_object_get(backend, "namespace"));
     char *password = (char *) json_string_value(json_object_get(backend, "password"));
     int port = json_integer_value(json_object_get(backend, "port"));
+
+    debug("[+] libflist: backend: %s, %d (%s, password: %s)\n", host, port, namespace, password ? "yes" : "no");
 
     if(!(backdb = libflist_db_redis_init_tcp(host, port, namespace, password, NULL))) {
         json_decref(backend);
