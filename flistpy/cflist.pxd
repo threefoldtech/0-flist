@@ -104,7 +104,7 @@ cdef extern from "<time.h>" nogil:
     ctypedef long time_t
 
 
-cdef extern from "/opt/0-flist/libflist/libflist.h":
+cdef extern from "libflist.h":
     ctypedef struct acl_t:
         char *uname;     
         char *gname;     
