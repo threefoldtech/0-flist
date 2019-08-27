@@ -831,9 +831,22 @@ static const char *__pyx_f[] = {
 
 /*--- Type declarations ---*/
 struct __pyx_obj_5flist_Flist;
+struct __pyx_opt_args_5flist_5Flist_ls;
 
-/* "flist.pyx":3
- * cimport cflist
+/* "flist.pyx":60
+ *             print("no database at {}".format(self.sqlite_db_path))
+ * 
+ *     cdef ls(self, path="/"):             # <<<<<<<<<<<<<<
+ *         bthepath = path.encode()
+ *         cdef char* dirpath = bthepath
+ */
+struct __pyx_opt_args_5flist_5Flist_ls {
+  int __pyx_n;
+  PyObject *path;
+};
+
+/* "flist.pyx":7
+ *     pass
  * 
  * cdef class Flist:             # <<<<<<<<<<<<<<
  *     def __init__(self, path, mntpath):
@@ -848,6 +861,7 @@ struct __pyx_obj_5flist_Flist {
 
 struct __pyx_vtabstruct_5flist_Flist {
   PyObject *(*init)(struct __pyx_obj_5flist_Flist *, PyObject *);
+  PyObject *(*ls)(struct __pyx_obj_5flist_Flist *, struct __pyx_opt_args_5flist_5Flist_ls *__pyx_optional_args);
 };
 static struct __pyx_vtabstruct_5flist_Flist *__pyx_vtabptr_5flist_Flist;
 
@@ -915,6 +929,16 @@ static struct __pyx_vtabstruct_5flist_Flist *__pyx_vtabptr_5flist_Flist;
 #define __Pyx_CLEAR(r)    do { PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);} while(0)
 #define __Pyx_XCLEAR(r)   do { if((r) != NULL) {PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);}} while(0)
 
+/* PyObjectGetAttrStr.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
+#else
+#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
+#endif
+
+/* GetBuiltinName.proto */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name);
+
 /* RaiseArgTupleInvalid.proto */
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
@@ -934,13 +958,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #else
 #define __Pyx_PyObject_DelAttrStr(o,n)   PyObject_DelAttr(o,n)
 #define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
-#endif
-
-/* PyObjectGetAttrStr.proto */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
-#else
-#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
 #endif
 
 /* PyFunctionFastCall.proto */
@@ -1024,58 +1041,8 @@ static PyObject* __Pyx__CallUnboundCMethod0(__Pyx_CachedCFunction* cfunc, PyObje
 #define __Pyx_CallUnboundCMethod0(cfunc, self)  __Pyx__CallUnboundCMethod0(cfunc, self)
 #endif
 
-/* PyErrExceptionMatches.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
-#else
-#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
-#endif
-
-/* PyThreadStateGet.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
-#define __Pyx_PyThreadState_assign  __pyx_tstate = __Pyx_PyThreadState_Current;
-#define __Pyx_PyErr_Occurred()  __pyx_tstate->curexc_type
-#else
-#define __Pyx_PyThreadState_declare
-#define __Pyx_PyThreadState_assign
-#define __Pyx_PyErr_Occurred()  PyErr_Occurred()
-#endif
-
-/* PyErrFetchRestore.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_Clear() __Pyx_ErrRestore(NULL, NULL, NULL)
-#define __Pyx_ErrRestoreWithState(type, value, tb)  __Pyx_ErrRestoreInState(PyThreadState_GET(), type, value, tb)
-#define __Pyx_ErrFetchWithState(type, value, tb)    __Pyx_ErrFetchInState(PyThreadState_GET(), type, value, tb)
-#define __Pyx_ErrRestore(type, value, tb)  __Pyx_ErrRestoreInState(__pyx_tstate, type, value, tb)
-#define __Pyx_ErrFetch(type, value, tb)    __Pyx_ErrFetchInState(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#if CYTHON_COMPILING_IN_CPYTHON
-#define __Pyx_PyErr_SetNone(exc) (Py_INCREF(exc), __Pyx_ErrRestore((exc), NULL, NULL))
-#else
-#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
-#endif
-#else
-#define __Pyx_PyErr_Clear() PyErr_Clear()
-#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
-#define __Pyx_ErrRestoreWithState(type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetchWithState(type, value, tb)  PyErr_Fetch(type, value, tb)
-#define __Pyx_ErrRestoreInState(tstate, type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
-#define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
-#endif
-
-/* GetAttr.proto */
-static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
-
-/* GetAttr3.proto */
-static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *, PyObject *, PyObject *);
-
-/* GetBuiltinName.proto */
-static PyObject *__Pyx_GetBuiltinName(PyObject *name);
+/* PyObjectCall2Args.proto */
+static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
 
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
@@ -1124,17 +1091,64 @@ static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_ve
 static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #endif
 
+/* PyThreadStateGet.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
+#define __Pyx_PyThreadState_assign  __pyx_tstate = __Pyx_PyThreadState_Current;
+#define __Pyx_PyErr_Occurred()  __pyx_tstate->curexc_type
+#else
+#define __Pyx_PyThreadState_declare
+#define __Pyx_PyThreadState_assign
+#define __Pyx_PyErr_Occurred()  PyErr_Occurred()
+#endif
+
+/* PyErrFetchRestore.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_Clear() __Pyx_ErrRestore(NULL, NULL, NULL)
+#define __Pyx_ErrRestoreWithState(type, value, tb)  __Pyx_ErrRestoreInState(PyThreadState_GET(), type, value, tb)
+#define __Pyx_ErrFetchWithState(type, value, tb)    __Pyx_ErrFetchInState(PyThreadState_GET(), type, value, tb)
+#define __Pyx_ErrRestore(type, value, tb)  __Pyx_ErrRestoreInState(__pyx_tstate, type, value, tb)
+#define __Pyx_ErrFetch(type, value, tb)    __Pyx_ErrFetchInState(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#if CYTHON_COMPILING_IN_CPYTHON
+#define __Pyx_PyErr_SetNone(exc) (Py_INCREF(exc), __Pyx_ErrRestore((exc), NULL, NULL))
+#else
+#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
+#endif
+#else
+#define __Pyx_PyErr_Clear() PyErr_Clear()
+#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
+#define __Pyx_ErrRestoreWithState(type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetchWithState(type, value, tb)  PyErr_Fetch(type, value, tb)
+#define __Pyx_ErrRestoreInState(tstate, type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
+#define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
+#endif
+
+/* RaiseException.proto */
+static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
+
+/* PyErrExceptionMatches.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
+#else
+#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
+#endif
+
+/* GetAttr.proto */
+static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
+
+/* GetAttr3.proto */
+static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *, PyObject *, PyObject *);
+
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
 
 /* ImportFrom.proto */
 static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
-
-/* PyObjectCall2Args.proto */
-static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
-
-/* RaiseException.proto */
-static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
 
 /* HasAttr.proto */
 static CYTHON_INLINE int __Pyx_HasAttr(PyObject *, PyObject *);
@@ -1181,6 +1195,15 @@ static int __Pyx_SetVtable(PyObject *dict, void *vtable);
 /* SetupReduce.proto */
 static int __Pyx_setup_reduce(PyObject* type_obj);
 
+/* CalculateMetaclass.proto */
+static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases);
+
+/* Py3ClassCreate.proto */
+static PyObject *__Pyx_Py3MetaclassPrepare(PyObject *metaclass, PyObject *bases, PyObject *name, PyObject *qualname,
+                                           PyObject *mkw, PyObject *modname, PyObject *doc);
+static PyObject *__Pyx_Py3ClassCreate(PyObject *metaclass, PyObject *name, PyObject *bases, PyObject *dict,
+                                      PyObject *mkw, int calculate_metaclass, int allow_py2_metaclass);
+
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
 #define __Pyx_CLineForTraceback(tstate, c_line)  (((CYTHON_CLINE_IN_TRACEBACK)) ? c_line : 0)
@@ -1207,11 +1230,21 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object);
 static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
+/* Print.proto */
+static int __Pyx_Print(PyObject*, PyObject *, int);
+#if CYTHON_COMPILING_IN_PYPY || PY_MAJOR_VERSION >= 3
+static PyObject* __pyx_print = 0;
+static PyObject* __pyx_print_kwargs = 0;
+#endif
+
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
+
+/* PrintOne.proto */
+static int __Pyx_PrintOne(PyObject* stream, PyObject *o);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
@@ -1236,6 +1269,7 @@ static int __Pyx_check_binary_version(void);
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_flist); /* proto*/
+static PyObject *__pyx_f_5flist_5Flist_ls(struct __pyx_obj_5flist_Flist *__pyx_v_self, struct __pyx_opt_args_5flist_5Flist_ls *__pyx_optional_args); /* proto*/
 
 /* Module declarations from 'cflist' */
 
@@ -1247,53 +1281,143 @@ extern int __pyx_module_is_main_flist;
 int __pyx_module_is_main_flist = 0;
 
 /* Implementation of 'flist' */
+static PyObject *__pyx_builtin_RuntimeError;
+static const char __pyx_k__3[] = "/";
+static const char __pyx_k__5[] = "{} {} {} {} {}";
+static const char __pyx_k_ls[] = "ls";
+static const char __pyx_k_os[] = "os";
+static const char __pyx_k_doc[] = "__doc__";
+static const char __pyx_k_end[] = "end";
 static const char __pyx_k_new[] = "__new__";
 static const char __pyx_k_dict[] = "__dict__";
+static const char __pyx_k_file[] = "file";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_path[] = "path";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_Flist[] = "Flist";
+static const char __pyx_k_bpath[] = "bpath";
 static const char __pyx_k_flist[] = "flist";
+static const char __pyx_k_print[] = "print";
 static const char __pyx_k_encode[] = "encode";
+static const char __pyx_k_exists[] = "exists";
+static const char __pyx_k_format[] = "format";
+static const char __pyx_k_getenv[] = "getenv";
 static const char __pyx_k_import[] = "__import__";
+static const char __pyx_k_inited[] = "inited..";
+static const char __pyx_k_isfile[] = "isfile";
+static const char __pyx_k_module[] = "__module__";
 static const char __pyx_k_pickle[] = "pickle";
 static const char __pyx_k_reduce[] = "__reduce__";
+static const char __pyx_k_unlink[] = "unlink";
 static const char __pyx_k_update[] = "update";
+static const char __pyx_k_dirname[] = "dirname";
+static const char __pyx_k_dirpath[] = "dirpath_";
+static const char __pyx_k_listing[] = "listing ";
 static const char __pyx_k_mntpath[] = "mntpath";
+static const char __pyx_k_prepare[] = "__prepare__";
+static const char __pyx_k_basename[] = "basename";
 static const char __pyx_k_bmntpath[] = "bmntpath";
+static const char __pyx_k_exist_ok[] = "exist_ok";
+static const char __pyx_k_filepath[] = "filepath_";
 static const char __pyx_k_getstate[] = "__getstate__";
+static const char __pyx_k_intopath[] = "intopath_";
+static const char __pyx_k_makedirs[] = "makedirs";
 static const char __pyx_k_pyx_type[] = "__pyx_type";
+static const char __pyx_k_qualname[] = "__qualname__";
 static const char __pyx_k_setstate[] = "__setstate__";
+static const char __pyx_k_done_open[] = "done open.";
+static const char __pyx_k_metaclass[] = "__metaclass__";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_pyx_result[] = "__pyx_result";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static const char __pyx_k_PickleError[] = "PickleError";
+static const char __pyx_k_RuntimeError[] = "RuntimeError";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
 static const char __pyx_k_stringsource[] = "stringsource";
+static const char __pyx_k_UPLOADBACKEND[] = "UPLOADBACKEND";
+static const char __pyx_k_flist_created[] = "flist created";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
+static const char __pyx_k_no_database_at[] = "no database at {}";
+static const char __pyx_k_sqlite_db_path[] = "sqlite_db_path";
+static const char __pyx_k_extract_archive[] = "extract/archive";
+static const char __pyx_k_flistdb_sqlite3[] = "{}/flistdb.sqlite3";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_pyx_unpickle_Flist[] = "__pyx_unpickle_Flist";
+static const char __pyx_k_couldn_t_create_flist[] = "couldn't create flist";
+static const char __pyx_k_put_no_such_parent_dir[] = "put no such parent dir.";
+static const char __pyx_k_put_looking_for_directory[] = "put looking for directory";
+static const char __pyx_k_MountPointHasDatabaseAlready[] = "MountPointHasDatabaseAlready";
+static const char __pyx_k_put_could_not_load_local_file[] = "put could not load local file";
+static const char __pyx_k_action_put_requested_filename_a[] = "[+] action: put: requested filename  already exists, overwriting: ";
+static const char __pyx_k_mount_point_already_contains_db[] = "mount point already contains db";
+static const char __pyx_k_putdir_no_such_parent_directory[] = "putdir no such parent directory";
 static const char __pyx_k_Incompatible_checksums_s_vs_0xd4[] = "Incompatible checksums (%s vs 0xd41d8cd = ())";
+static const char __pyx_k_no_such_directory_file_parent_di[] = "no such directory (file parent directory)";
+static const char __pyx_k_put_could_not_overwrite_existing[] = "put : could not overwrite existing inode";
+static const char __pyx_k_putdir_could_not_load_local_dire[] = "putdir could not load local directory";
 static PyObject *__pyx_n_s_Flist;
 static PyObject *__pyx_kp_s_Incompatible_checksums_s_vs_0xd4;
+static PyObject *__pyx_n_s_MountPointHasDatabaseAlready;
 static PyObject *__pyx_n_s_PickleError;
+static PyObject *__pyx_n_s_RuntimeError;
+static PyObject *__pyx_n_s_UPLOADBACKEND;
+static PyObject *__pyx_kp_s__3;
+static PyObject *__pyx_kp_s__5;
+static PyObject *__pyx_kp_s_action_put_requested_filename_a;
+static PyObject *__pyx_n_s_basename;
 static PyObject *__pyx_n_s_bmntpath;
+static PyObject *__pyx_n_s_bpath;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_kp_s_couldn_t_create_flist;
 static PyObject *__pyx_n_s_dict;
+static PyObject *__pyx_n_s_dirname;
+static PyObject *__pyx_n_s_dirpath;
+static PyObject *__pyx_n_s_doc;
+static PyObject *__pyx_kp_s_done_open;
 static PyObject *__pyx_n_s_encode;
+static PyObject *__pyx_n_s_end;
+static PyObject *__pyx_n_s_exist_ok;
+static PyObject *__pyx_n_s_exists;
+static PyObject *__pyx_kp_s_extract_archive;
+static PyObject *__pyx_n_s_file;
+static PyObject *__pyx_n_s_filepath;
 static PyObject *__pyx_n_s_flist;
+static PyObject *__pyx_kp_s_flist_created;
+static PyObject *__pyx_kp_s_flistdb_sqlite3;
+static PyObject *__pyx_n_s_format;
+static PyObject *__pyx_n_s_getenv;
 static PyObject *__pyx_n_s_getstate;
 static PyObject *__pyx_n_s_import;
+static PyObject *__pyx_kp_s_inited;
+static PyObject *__pyx_n_s_intopath;
+static PyObject *__pyx_n_s_isfile;
+static PyObject *__pyx_kp_s_listing;
+static PyObject *__pyx_n_s_ls;
 static PyObject *__pyx_n_s_main;
+static PyObject *__pyx_n_s_makedirs;
+static PyObject *__pyx_n_s_metaclass;
 static PyObject *__pyx_n_s_mntpath;
+static PyObject *__pyx_n_s_module;
+static PyObject *__pyx_kp_s_mount_point_already_contains_db;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_new;
+static PyObject *__pyx_kp_s_no_database_at;
+static PyObject *__pyx_kp_s_no_such_directory_file_parent_di;
+static PyObject *__pyx_n_s_os;
 static PyObject *__pyx_n_s_path;
 static PyObject *__pyx_n_s_pickle;
+static PyObject *__pyx_n_s_prepare;
+static PyObject *__pyx_n_s_print;
+static PyObject *__pyx_kp_s_put_could_not_load_local_file;
+static PyObject *__pyx_kp_s_put_could_not_overwrite_existing;
+static PyObject *__pyx_kp_s_put_looking_for_directory;
+static PyObject *__pyx_kp_s_put_no_such_parent_dir;
+static PyObject *__pyx_kp_s_putdir_could_not_load_local_dire;
+static PyObject *__pyx_kp_s_putdir_no_such_parent_directory;
 static PyObject *__pyx_n_s_pyx_PickleError;
 static PyObject *__pyx_n_s_pyx_checksum;
 static PyObject *__pyx_n_s_pyx_result;
@@ -1301,31 +1425,48 @@ static PyObject *__pyx_n_s_pyx_state;
 static PyObject *__pyx_n_s_pyx_type;
 static PyObject *__pyx_n_s_pyx_unpickle_Flist;
 static PyObject *__pyx_n_s_pyx_vtable;
+static PyObject *__pyx_n_s_qualname;
 static PyObject *__pyx_n_s_reduce;
 static PyObject *__pyx_n_s_reduce_cython;
 static PyObject *__pyx_n_s_reduce_ex;
 static PyObject *__pyx_n_s_setstate;
 static PyObject *__pyx_n_s_setstate_cython;
+static PyObject *__pyx_n_s_sqlite_db_path;
 static PyObject *__pyx_kp_s_stringsource;
 static PyObject *__pyx_n_s_test;
+static PyObject *__pyx_n_s_unlink;
 static PyObject *__pyx_n_s_update;
 static int __pyx_pf_5flist_5Flist___init__(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_path, PyObject *__pyx_v_mntpath); /* proto */
-static PyObject *__pyx_pf_5flist_5Flist_2__reduce_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5flist_5Flist_4__setstate_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_14sqlite_db_path___get__(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_2open(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_4commit(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_6close(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_8put(CYTHON_UNUSED struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_filepath_, PyObject *__pyx_v_intopath_); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_10putdir(CYTHON_UNUSED struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_dirpath_, PyObject *__pyx_v_intopath_); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_12__reduce_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5flist_5Flist_14__setstate_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_5flist___pyx_unpickle_Flist(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_tp_new_5flist_Flist(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static __Pyx_CachedCFunction __pyx_umethod_PyString_Type_encode = {0, &__pyx_n_s_encode, 0, 0, 0};
 static PyObject *__pyx_int_222419149;
 static PyObject *__pyx_tuple_;
-static PyObject *__pyx_codeobj__2;
+static PyObject *__pyx_tuple__2;
+static PyObject *__pyx_tuple__4;
+static PyObject *__pyx_tuple__6;
+static PyObject *__pyx_tuple__7;
+static PyObject *__pyx_tuple__8;
+static PyObject *__pyx_tuple__9;
+static PyObject *__pyx_tuple__10;
+static PyObject *__pyx_tuple__11;
+static PyObject *__pyx_codeobj__12;
 /* Late includes */
 
-/* "flist.pyx":4
+/* "flist.pyx":8
  * 
  * cdef class Flist:
  *     def __init__(self, path, mntpath):             # <<<<<<<<<<<<<<
  *         self.path = path
- *         self.mntpath = mntpath
+ *         self.bpath = self.path.encode()
  */
 
 /* Python wrapper */
@@ -1359,11 +1500,11 @@ static int __pyx_pw_5flist_5Flist_1__init__(PyObject *__pyx_v_self, PyObject *__
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_mntpath)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 4, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 8, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 4, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 8, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1376,7 +1517,7 @@ static int __pyx_pw_5flist_5Flist_1__init__(PyObject *__pyx_v_self, PyObject *__
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 4, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 8, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("flist.Flist.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -1397,57 +1538,87 @@ static int __pyx_pf_5flist_5Flist___init__(struct __pyx_obj_5flist_Flist *__pyx_
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "flist.pyx":5
+  /* "flist.pyx":9
  * cdef class Flist:
  *     def __init__(self, path, mntpath):
  *         self.path = path             # <<<<<<<<<<<<<<
+ *         self.bpath = self.path.encode()
+ *         self.mntpath = mntpath
+ */
+  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_path, __pyx_v_path) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
+
+  /* "flist.pyx":10
+ *     def __init__(self, path, mntpath):
+ *         self.path = path
+ *         self.bpath = self.path.encode()             # <<<<<<<<<<<<<<
  *         self.mntpath = mntpath
  *         self.bmntpath = mntpath.encode()
  */
-  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_path, __pyx_v_path) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bpath, __pyx_t_1) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "flist.pyx":6
- *     def __init__(self, path, mntpath):
+  /* "flist.pyx":11
  *         self.path = path
+ *         self.bpath = self.path.encode()
  *         self.mntpath = mntpath             # <<<<<<<<<<<<<<
  *         self.bmntpath = mntpath.encode()
  * 
  */
-  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_mntpath, __pyx_v_mntpath) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_mntpath, __pyx_v_mntpath) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
 
-  /* "flist.pyx":7
- *         self.path = path
+  /* "flist.pyx":12
+ *         self.bpath = self.path.encode()
  *         self.mntpath = mntpath
  *         self.bmntpath = mntpath.encode()             # <<<<<<<<<<<<<<
  * 
- *     cdef init(self, str flist):
+ * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_mntpath, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 7, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_mntpath, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
     }
   }
-  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath, __pyx_t_1) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__Pyx_PyObject_SetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath, __pyx_t_1) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "flist.pyx":4
+  /* "flist.pyx":8
  * 
  * cdef class Flist:
  *     def __init__(self, path, mntpath):             # <<<<<<<<<<<<<<
  *         self.path = path
- *         self.mntpath = mntpath
+ *         self.bpath = self.path.encode()
  */
 
   /* function exit code */
@@ -1464,8 +1635,8 @@ static int __pyx_pf_5flist_5Flist___init__(struct __pyx_obj_5flist_Flist *__pyx_
   return __pyx_r;
 }
 
-/* "flist.pyx":9
- *         self.bmntpath = mntpath.encode()
+/* "flist.pyx":15
+ * 
  * 
  *     cdef init(self, str flist):             # <<<<<<<<<<<<<<
  *         cdef char* flistpath
@@ -1485,42 +1656,42 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
   char *__pyx_t_2;
   __Pyx_RefNannySetupContext("init", 0);
 
-  /* "flist.pyx":11
+  /* "flist.pyx":17
  *     cdef init(self, str flist):
  *         cdef char* flistpath
  *         bflist = flist.encode()             # <<<<<<<<<<<<<<
  *         flistpath = bflist
  *         cdef char* mntpath
  */
-  __pyx_t_1 = __Pyx_CallUnboundCMethod0(&__pyx_umethod_PyString_Type_encode, __pyx_v_flist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CallUnboundCMethod0(&__pyx_umethod_PyString_Type_encode, __pyx_v_flist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bflist = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "flist.pyx":12
+  /* "flist.pyx":18
  *         cdef char* flistpath
  *         bflist = flist.encode()
  *         flistpath = bflist             # <<<<<<<<<<<<<<
  *         cdef char* mntpath
  *         mntpath = self.bmntpath
  */
-  __pyx_t_2 = __Pyx_PyObject_AsWritableString(__pyx_v_bflist); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_AsWritableString(__pyx_v_bflist); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 18, __pyx_L1_error)
   __pyx_v_flistpath = __pyx_t_2;
 
-  /* "flist.pyx":14
+  /* "flist.pyx":20
  *         flistpath = bflist
  *         cdef char* mntpath
  *         mntpath = self.bmntpath             # <<<<<<<<<<<<<<
  *         cdef cflist.flist_db_t *database = cflist.libflist_db_sqlite_init(mntpath)
  *         database.open(database)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_AsWritableString(__pyx_t_1); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_AsWritableString(__pyx_t_1); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L1_error)
   __pyx_v_mntpath = __pyx_t_2;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "flist.pyx":15
+  /* "flist.pyx":21
  *         cdef char* mntpath
  *         mntpath = self.bmntpath
  *         cdef cflist.flist_db_t *database = cflist.libflist_db_sqlite_init(mntpath)             # <<<<<<<<<<<<<<
@@ -1529,7 +1700,7 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
  */
   __pyx_v_database = libflist_db_sqlite_init(__pyx_v_mntpath);
 
-  /* "flist.pyx":16
+  /* "flist.pyx":22
  *         mntpath = self.bmntpath
  *         cdef cflist.flist_db_t *database = cflist.libflist_db_sqlite_init(mntpath)
  *         database.open(database)             # <<<<<<<<<<<<<<
@@ -1538,7 +1709,7 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
  */
   (void)(__pyx_v_database->open(__pyx_v_database));
 
-  /* "flist.pyx":18
+  /* "flist.pyx":24
  *         database.open(database)
  * 
  *         cdef cflist.flist_ctx_t* ctx = cflist.libflist_context_create(database, NULL)             # <<<<<<<<<<<<<<
@@ -1547,35 +1718,44 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
  */
   __pyx_v_ctx = libflist_context_create(__pyx_v_database, NULL);
 
-  /* "flist.pyx":20
+  /* "flist.pyx":26
  *         cdef cflist.flist_ctx_t* ctx = cflist.libflist_context_create(database, NULL)
  * 
  *         cdef cflist.dirnode_t *root = cflist.libflist_dirnode_create("", "")             # <<<<<<<<<<<<<<
+ * 
  *         cflist.libflist_dirnode_free(root)
- *         database.close(database)
  */
   __pyx_v_root = libflist_dirnode_create(((char *)""), ((char *)""));
 
-  /* "flist.pyx":21
- * 
+  /* "flist.pyx":28
  *         cdef cflist.dirnode_t *root = cflist.libflist_dirnode_create("", "")
+ * 
  *         cflist.libflist_dirnode_free(root)             # <<<<<<<<<<<<<<
  *         database.close(database)
- * 
+ *         print("inited..")
  */
   libflist_dirnode_free(__pyx_v_root);
 
-  /* "flist.pyx":22
- *         cdef cflist.dirnode_t *root = cflist.libflist_dirnode_create("", "")
+  /* "flist.pyx":29
+ * 
  *         cflist.libflist_dirnode_free(root)
  *         database.close(database)             # <<<<<<<<<<<<<<
+ *         print("inited..")
  * 
- *     # def open(flist):
  */
   __pyx_v_database->close(__pyx_v_database);
 
-  /* "flist.pyx":9
- *         self.bmntpath = mntpath.encode()
+  /* "flist.pyx":30
+ *         cflist.libflist_dirnode_free(root)
+ *         database.close(database)
+ *         print("inited..")             # <<<<<<<<<<<<<<
+ * 
+ *     @property
+ */
+  if (__Pyx_PrintOne(0, __pyx_kp_s_inited) < 0) __PYX_ERR(0, 30, __pyx_L1_error)
+
+  /* "flist.pyx":15
+ * 
  * 
  *     cdef init(self, str flist):             # <<<<<<<<<<<<<<
  *         cdef char* flistpath
@@ -1596,6 +1776,2114 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
   return __pyx_r;
 }
 
+/* "flist.pyx":33
+ * 
+ *     @property
+ *     def sqlite_db_path(self):             # <<<<<<<<<<<<<<
+ *         return "{}/flistdb.sqlite3".format(self.mntpath)
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_14sqlite_db_path_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_14sqlite_db_path_1__get__(PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_r = __pyx_pf_5flist_5Flist_14sqlite_db_path___get__(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_14sqlite_db_path___get__(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  __Pyx_RefNannySetupContext("__get__", 0);
+
+  /* "flist.pyx":34
+ *     @property
+ *     def sqlite_db_path(self):
+ *         return "{}/flistdb.sqlite3".format(self.mntpath)             # <<<<<<<<<<<<<<
+ * 
+ *     def open(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_flistdb_sqlite3, __pyx_n_s_format); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_mntpath); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "flist.pyx":33
+ * 
+ *     @property
+ *     def sqlite_db_path(self):             # <<<<<<<<<<<<<<
+ *         return "{}/flistdb.sqlite3".format(self.mntpath)
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("flist.Flist.sqlite_db_path.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":36
+ *         return "{}/flistdb.sqlite3".format(self.mntpath)
+ * 
+ *     def open(self):             # <<<<<<<<<<<<<<
+ *         os.makedirs(self.mntpath, exist_ok=True)
+ *         if os.path.exists(self.sqlite_db_path):
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_3open(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_3open(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("open (wrapper)", 0);
+  __pyx_r = __pyx_pf_5flist_5Flist_2open(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_2open(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
+  char *__pyx_v_done;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_5;
+  char *__pyx_t_6;
+  char *__pyx_t_7;
+  __Pyx_RefNannySetupContext("open", 0);
+
+  /* "flist.pyx":37
+ * 
+ *     def open(self):
+ *         os.makedirs(self.mntpath, exist_ok=True)             # <<<<<<<<<<<<<<
+ *         if os.path.exists(self.sqlite_db_path):
+ *             raise MountPointHasDatabaseAlready("mount point already contains db")
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_makedirs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_mntpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_exist_ok, Py_True) < 0) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "flist.pyx":38
+ *     def open(self):
+ *         os.makedirs(self.mntpath, exist_ok=True)
+ *         if os.path.exists(self.sqlite_db_path):             # <<<<<<<<<<<<<<
+ *             raise MountPointHasDatabaseAlready("mount point already contains db")
+ * 
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_exists); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sqlite_db_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_4 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (unlikely(__pyx_t_5)) {
+
+    /* "flist.pyx":39
+ *         os.makedirs(self.mntpath, exist_ok=True)
+ *         if os.path.exists(self.sqlite_db_path):
+ *             raise MountPointHasDatabaseAlready("mount point already contains db")             # <<<<<<<<<<<<<<
+ * 
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_MountPointHasDatabaseAlready); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+      if (likely(__pyx_t_3)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_1, function);
+      }
+    }
+    __pyx_t_4 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_3, __pyx_kp_s_mount_point_already_contains_db) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_kp_s_mount_point_already_contains_db);
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 39, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_Raise(__pyx_t_4, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __PYX_ERR(0, 39, __pyx_L1_error)
+
+    /* "flist.pyx":38
+ *     def open(self):
+ *         os.makedirs(self.mntpath, exist_ok=True)
+ *         if os.path.exists(self.sqlite_db_path):             # <<<<<<<<<<<<<<
+ *             raise MountPointHasDatabaseAlready("mount point already contains db")
+ * 
+ */
+  }
+
+  /* "flist.pyx":41
+ *             raise MountPointHasDatabaseAlready("mount point already contains db")
+ * 
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)             # <<<<<<<<<<<<<<
+ *         if not done:
+ *             raise RuntimeError("extract/archive")
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bpath); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_4); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_7 = __Pyx_PyObject_AsWritableString(__pyx_t_1); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_v_done = libflist_archive_extract(__pyx_t_6, __pyx_t_7);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "flist.pyx":42
+ * 
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)
+ *         if not done:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("extract/archive")
+ * 
+ */
+  __pyx_t_5 = ((!(__pyx_v_done != 0)) != 0);
+  if (unlikely(__pyx_t_5)) {
+
+    /* "flist.pyx":43
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)
+ *         if not done:
+ *             raise RuntimeError("extract/archive")             # <<<<<<<<<<<<<<
+ * 
+ *         print("done open.")
+ */
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 43, __pyx_L1_error)
+
+    /* "flist.pyx":42
+ * 
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)
+ *         if not done:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("extract/archive")
+ * 
+ */
+  }
+
+  /* "flist.pyx":45
+ *             raise RuntimeError("extract/archive")
+ * 
+ *         print("done open.")             # <<<<<<<<<<<<<<
+ * 
+ *     def commit(self):
+ */
+  if (__Pyx_PrintOne(0, __pyx_kp_s_done_open) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+
+  /* "flist.pyx":36
+ *         return "{}/flistdb.sqlite3".format(self.mntpath)
+ * 
+ *     def open(self):             # <<<<<<<<<<<<<<
+ *         os.makedirs(self.mntpath, exist_ok=True)
+ *         if os.path.exists(self.sqlite_db_path):
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("flist.Flist.open", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":47
+ *         print("done open.")
+ * 
+ *     def commit(self):             # <<<<<<<<<<<<<<
+ *         os.unlink(self.path)
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_5commit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_5commit(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("commit (wrapper)", 0);
+  __pyx_r = __pyx_pf_5flist_5Flist_4commit(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_4commit(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
+  char *__pyx_v_done;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  char *__pyx_t_5;
+  char *__pyx_t_6;
+  int __pyx_t_7;
+  __Pyx_RefNannySetupContext("commit", 0);
+
+  /* "flist.pyx":48
+ * 
+ *     def commit(self):
+ *         os.unlink(self.path)             # <<<<<<<<<<<<<<
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ *         if not done:
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unlink); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "flist.pyx":49
+ *     def commit(self):
+ *         os.unlink(self.path)
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)             # <<<<<<<<<<<<<<
+ *         if not done:
+ *             raise RuntimeError("couldn't create flist")
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_5 = __Pyx_PyObject_AsWritableString(__pyx_t_1); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = __Pyx_PyObject_AsWritableString(__pyx_t_3); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_v_done = libflist_archive_create(__pyx_t_5, __pyx_t_6);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "flist.pyx":50
+ *         os.unlink(self.path)
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ *         if not done:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("couldn't create flist")
+ *         print("flist created")
+ */
+  __pyx_t_7 = ((!(__pyx_v_done != 0)) != 0);
+  if (unlikely(__pyx_t_7)) {
+
+    /* "flist.pyx":51
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ *         if not done:
+ *             raise RuntimeError("couldn't create flist")             # <<<<<<<<<<<<<<
+ *         print("flist created")
+ * 
+ */
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 51, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __PYX_ERR(0, 51, __pyx_L1_error)
+
+    /* "flist.pyx":50
+ *         os.unlink(self.path)
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ *         if not done:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("couldn't create flist")
+ *         print("flist created")
+ */
+  }
+
+  /* "flist.pyx":52
+ *         if not done:
+ *             raise RuntimeError("couldn't create flist")
+ *         print("flist created")             # <<<<<<<<<<<<<<
+ * 
+ *     def close(self):
+ */
+  if (__Pyx_PrintOne(0, __pyx_kp_s_flist_created) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+
+  /* "flist.pyx":47
+ *         print("done open.")
+ * 
+ *     def commit(self):             # <<<<<<<<<<<<<<
+ *         os.unlink(self.path)
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("flist.Flist.commit", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":54
+ *         print("flist created")
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         if os.path.isfile(self.sqlite_db_path):
+ *             os.unlink(self.sqlite_db_path)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_7close(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_7close(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("close (wrapper)", 0);
+  __pyx_r = __pyx_pf_5flist_5Flist_6close(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_6close(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_5;
+  __Pyx_RefNannySetupContext("close", 0);
+
+  /* "flist.pyx":55
+ * 
+ *     def close(self):
+ *         if os.path.isfile(self.sqlite_db_path):             # <<<<<<<<<<<<<<
+ *             os.unlink(self.sqlite_db_path)
+ *         else:
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_isfile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sqlite_db_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__pyx_t_5) {
+
+    /* "flist.pyx":56
+ *     def close(self):
+ *         if os.path.isfile(self.sqlite_db_path):
+ *             os.unlink(self.sqlite_db_path)             # <<<<<<<<<<<<<<
+ *         else:
+ *             print("no database at {}".format(self.sqlite_db_path))
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unlink); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sqlite_db_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_4 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_4)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "flist.pyx":55
+ * 
+ *     def close(self):
+ *         if os.path.isfile(self.sqlite_db_path):             # <<<<<<<<<<<<<<
+ *             os.unlink(self.sqlite_db_path)
+ *         else:
+ */
+    goto __pyx_L3;
+  }
+
+  /* "flist.pyx":58
+ *             os.unlink(self.sqlite_db_path)
+ *         else:
+ *             print("no database at {}".format(self.sqlite_db_path))             # <<<<<<<<<<<<<<
+ * 
+ *     cdef ls(self, path="/"):
+ */
+  /*else*/ {
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_no_database_at, __pyx_n_s_format); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sqlite_db_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_4 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_4)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+  __pyx_L3:;
+
+  /* "flist.pyx":54
+ *         print("flist created")
+ * 
+ *     def close(self):             # <<<<<<<<<<<<<<
+ *         if os.path.isfile(self.sqlite_db_path):
+ *             os.unlink(self.sqlite_db_path)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("flist.Flist.close", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":60
+ *             print("no database at {}".format(self.sqlite_db_path))
+ * 
+ *     cdef ls(self, path="/"):             # <<<<<<<<<<<<<<
+ *         bthepath = path.encode()
+ *         cdef char* dirpath = bthepath
+ */
+
+static PyObject *__pyx_f_5flist_5Flist_ls(struct __pyx_obj_5flist_Flist *__pyx_v_self, struct __pyx_opt_args_5flist_5Flist_ls *__pyx_optional_args) {
+  PyObject *__pyx_v_path = ((PyObject *)__pyx_kp_s__3);
+  PyObject *__pyx_v_bthepath = NULL;
+  char *__pyx_v_dirpath;
+  PyObject *__pyx_v_mntpath = NULL;
+  flist_db_t *__pyx_v_database;
+  CYTHON_UNUSED flist_ctx_t *__pyx_v_ctx;
+  dirnode_t *__pyx_v_dirnode;
+  inode_t *__pyx_v_inode;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  char *__pyx_t_4;
+  int __pyx_t_5;
+  inode_t *__pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10 = NULL;
+  int __pyx_t_11;
+  PyObject *__pyx_t_12 = NULL;
+  __Pyx_RefNannySetupContext("ls", 0);
+  if (__pyx_optional_args) {
+    if (__pyx_optional_args->__pyx_n > 0) {
+      __pyx_v_path = __pyx_optional_args->path;
+    }
+  }
+
+  /* "flist.pyx":61
+ * 
+ *     cdef ls(self, path="/"):
+ *         bthepath = path.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* dirpath = bthepath
+ *         mntpath = self.bmntpath
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_path, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_bthepath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":62
+ *     cdef ls(self, path="/"):
+ *         bthepath = path.encode()
+ *         cdef char* dirpath = bthepath             # <<<<<<<<<<<<<<
+ *         mntpath = self.bmntpath
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bthepath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_v_dirpath = __pyx_t_4;
+
+  /* "flist.pyx":63
+ *         bthepath = path.encode()
+ *         cdef char* dirpath = bthepath
+ *         mntpath = self.bmntpath             # <<<<<<<<<<<<<<
+ * 
+ *         print("listing ", path)
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bmntpath); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_mntpath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":65
+ *         mntpath = self.bmntpath
+ * 
+ *         print("listing ", path)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_kp_s_listing);
+  __Pyx_GIVEREF(__pyx_kp_s_listing);
+  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_s_listing);
+  __Pyx_INCREF(__pyx_v_path);
+  __Pyx_GIVEREF(__pyx_v_path);
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_path);
+  if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "flist.pyx":69
+ * 
+ * 
+ *         cdef cflist.flist_db_t *database = cflist.libflist_db_sqlite_init(mntpath)             # <<<<<<<<<<<<<<
+ *         database.open(database)
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_mntpath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_v_database = libflist_db_sqlite_init(__pyx_t_4);
+
+  /* "flist.pyx":70
+ * 
+ *         cdef cflist.flist_db_t *database = cflist.libflist_db_sqlite_init(mntpath)
+ *         database.open(database)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef cflist.flist_ctx_t* ctx = cflist.libflist_context_create(database, NULL)
+ */
+  (void)(__pyx_v_database->open(__pyx_v_database));
+
+  /* "flist.pyx":72
+ *         database.open(database)
+ * 
+ *         cdef cflist.flist_ctx_t* ctx = cflist.libflist_context_create(database, NULL)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef cflist.dirnode_t *dirnode
+ */
+  __pyx_v_ctx = libflist_context_create(__pyx_v_database, NULL);
+
+  /* "flist.pyx":76
+ *         cdef cflist.dirnode_t *dirnode
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(database, dirpath)             # <<<<<<<<<<<<<<
+ *         if not dirnode:
+ *             raise RuntimeError("ls", "no such directory (file parent directory)");
+ */
+  __pyx_v_dirnode = libflist_dirnode_get(__pyx_v_database, __pyx_v_dirpath);
+
+  /* "flist.pyx":77
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(database, dirpath)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("ls", "no such directory (file parent directory)");
+ * 
+ */
+  __pyx_t_5 = ((!(__pyx_v_dirnode != 0)) != 0);
+  if (unlikely(__pyx_t_5)) {
+
+    /* "flist.pyx":78
+ *         dirnode = cflist.libflist_dirnode_get(database, dirpath)
+ *         if not dirnode:
+ *             raise RuntimeError("ls", "no such directory (file parent directory)");             # <<<<<<<<<<<<<<
+ * 
+ *         # if(cb->jout)
+ */
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 78, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 78, __pyx_L1_error)
+
+    /* "flist.pyx":77
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(database, dirpath)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("ls", "no such directory (file parent directory)");
+ * 
+ */
+  }
+
+  /* "flist.pyx":83
+ *         #     return zf_ls_json(cb, dirnode);
+ *         cdef cflist.inode_t *inode
+ *         inode = dirnode.inode_list             # <<<<<<<<<<<<<<
+ *         while inode != NULL:
+ *             print("{} {} {} {} {}".format(inode.acl.uname, inode.acl.gname, inode.size, inode.name))
+ */
+  __pyx_t_6 = __pyx_v_dirnode->inode_list;
+  __pyx_v_inode = __pyx_t_6;
+
+  /* "flist.pyx":84
+ *         cdef cflist.inode_t *inode
+ *         inode = dirnode.inode_list
+ *         while inode != NULL:             # <<<<<<<<<<<<<<
+ *             print("{} {} {} {} {}".format(inode.acl.uname, inode.acl.gname, inode.size, inode.name))
+ *             inode = inode.next
+ */
+  while (1) {
+    __pyx_t_5 = ((__pyx_v_inode != NULL) != 0);
+    if (!__pyx_t_5) break;
+
+    /* "flist.pyx":85
+ *         inode = dirnode.inode_list
+ *         while inode != NULL:
+ *             print("{} {} {} {} {}".format(inode.acl.uname, inode.acl.gname, inode.size, inode.name))             # <<<<<<<<<<<<<<
+ *             inode = inode.next
+ *             # inode = nextaddr
+ */
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s__5, __pyx_n_s_format); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = __Pyx_PyBytes_FromString(__pyx_v_inode->acl->uname); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_7 = __Pyx_PyBytes_FromString(__pyx_v_inode->acl->gname); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __pyx_t_8 = __Pyx_PyInt_FromSize_t(__pyx_v_inode->size); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_9 = __Pyx_PyBytes_FromString(__pyx_v_inode->name); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_9);
+    __pyx_t_10 = NULL;
+    __pyx_t_11 = 0;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+      __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_2);
+      if (likely(__pyx_t_10)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+        __Pyx_INCREF(__pyx_t_10);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_2, function);
+        __pyx_t_11 = 1;
+      }
+    }
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(__pyx_t_2)) {
+      PyObject *__pyx_temp[5] = {__pyx_t_10, __pyx_t_3, __pyx_t_7, __pyx_t_8, __pyx_t_9};
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 4+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    } else
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
+      PyObject *__pyx_temp[5] = {__pyx_t_10, __pyx_t_3, __pyx_t_7, __pyx_t_8, __pyx_t_9};
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 4+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    } else
+    #endif
+    {
+      __pyx_t_12 = PyTuple_New(4+__pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_12);
+      if (__pyx_t_10) {
+        __Pyx_GIVEREF(__pyx_t_10); PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_10); __pyx_t_10 = NULL;
+      }
+      __Pyx_GIVEREF(__pyx_t_3);
+      PyTuple_SET_ITEM(__pyx_t_12, 0+__pyx_t_11, __pyx_t_3);
+      __Pyx_GIVEREF(__pyx_t_7);
+      PyTuple_SET_ITEM(__pyx_t_12, 1+__pyx_t_11, __pyx_t_7);
+      __Pyx_GIVEREF(__pyx_t_8);
+      PyTuple_SET_ITEM(__pyx_t_12, 2+__pyx_t_11, __pyx_t_8);
+      __Pyx_GIVEREF(__pyx_t_9);
+      PyTuple_SET_ITEM(__pyx_t_12, 3+__pyx_t_11, __pyx_t_9);
+      __pyx_t_3 = 0;
+      __pyx_t_7 = 0;
+      __pyx_t_8 = 0;
+      __pyx_t_9 = 0;
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_12, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    }
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "flist.pyx":86
+ *         while inode != NULL:
+ *             print("{} {} {} {} {}".format(inode.acl.uname, inode.acl.gname, inode.size, inode.name))
+ *             inode = inode.next             # <<<<<<<<<<<<<<
+ *             # inode = nextaddr
+ *         cflist.libflist_dirnode_free(dirnode)
+ */
+    __pyx_t_6 = __pyx_v_inode->next;
+    __pyx_v_inode = __pyx_t_6;
+  }
+
+  /* "flist.pyx":88
+ *             inode = inode.next
+ *             # inode = nextaddr
+ *         cflist.libflist_dirnode_free(dirnode)             # <<<<<<<<<<<<<<
+ * 
+ *     def put(self, filepath_, intopath_):
+ */
+  libflist_dirnode_free(__pyx_v_dirnode);
+
+  /* "flist.pyx":60
+ *             print("no database at {}".format(self.sqlite_db_path))
+ * 
+ *     cdef ls(self, path="/"):             # <<<<<<<<<<<<<<
+ *         bthepath = path.encode()
+ *         cdef char* dirpath = bthepath
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_12);
+  __Pyx_AddTraceback("flist.Flist.ls", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_bthepath);
+  __Pyx_XDECREF(__pyx_v_mntpath);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":90
+ *         cflist.libflist_dirnode_free(dirnode)
+ * 
+ *     def put(self, filepath_, intopath_):             # <<<<<<<<<<<<<<
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bfilepath = filepath_.encode()
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_9put(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_9put(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_filepath_ = 0;
+  PyObject *__pyx_v_intopath_ = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("put (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_filepath,&__pyx_n_s_intopath,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_filepath)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_intopath)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("put", 1, 2, 2, 1); __PYX_ERR(0, 90, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "put") < 0)) __PYX_ERR(0, 90, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_filepath_ = values[0];
+    __pyx_v_intopath_ = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("put", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 90, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("flist.Flist.put", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_5flist_5Flist_8put(((struct __pyx_obj_5flist_Flist *)__pyx_v_self), __pyx_v_filepath_, __pyx_v_intopath_);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_8put(CYTHON_UNUSED struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_filepath_, PyObject *__pyx_v_intopath_) {
+  PyObject *__pyx_v_bfilepath = NULL;
+  CYTHON_UNUSED char *__pyx_v_filepath;
+  PyObject *__pyx_v_bintopath = NULL;
+  char *__pyx_v_intopath;
+  PyObject *__pyx_v_envbackend = NULL;
+  PyObject *__pyx_v_envbackend_encoded = NULL;
+  char *__pyx_v_benvbackend;
+  flist_ctx_t *__pyx_v_ctx;
+  flist_db_t *__pyx_v_backdb;
+  PyObject *__pyx_v_blocalfile = NULL;
+  char *__pyx_v_localfile;
+  char *__pyx_v_filename;
+  PyObject *__pyx_v_bdirpath = NULL;
+  PyObject *__pyx_v_btargetname = NULL;
+  char *__pyx_v_dirpath;
+  char *__pyx_v_targetname;
+  dirnode_t *__pyx_v_dirnode;
+  inode_t *__pyx_v_inode;
+  dirnode_t *__pyx_v_parent;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  char *__pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_t_6;
+  __Pyx_RefNannySetupContext("put", 0);
+
+  /* "flist.pyx":92
+ *     def put(self, filepath_, intopath_):
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bfilepath = filepath_.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* filepath = bfilepath
+ *         bintopath = intopath_.encode()
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_filepath_, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_bfilepath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":93
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bfilepath = filepath_.encode()
+ *         cdef char* filepath = bfilepath             # <<<<<<<<<<<<<<
+ *         bintopath = intopath_.encode()
+ *         cdef char* intopath = bintopath
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bfilepath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_v_filepath = __pyx_t_4;
+
+  /* "flist.pyx":94
+ *         bfilepath = filepath_.encode()
+ *         cdef char* filepath = bfilepath
+ *         bintopath = intopath_.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* intopath = bintopath
+ * 
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_intopath_, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_bintopath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":95
+ *         cdef char* filepath = bfilepath
+ *         bintopath = intopath_.encode()
+ *         cdef char* intopath = bintopath             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bintopath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_v_intopath = __pyx_t_4;
+
+  /* "flist.pyx":98
+ * 
+ * 
+ *         envbackend = os.getenv("UPLOADBACKEND")             # <<<<<<<<<<<<<<
+ *         envbackend_encoded = envbackend.encode()
+ *         cdef char* benvbackend = envbackend_encoded
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_getenv); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_n_s_UPLOADBACKEND) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_n_s_UPLOADBACKEND);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_envbackend = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":99
+ * 
+ *         envbackend = os.getenv("UPLOADBACKEND")
+ *         envbackend_encoded = envbackend.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* benvbackend = envbackend_encoded
+ * 
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_envbackend, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_envbackend_encoded = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":100
+ *         envbackend = os.getenv("UPLOADBACKEND")
+ *         envbackend_encoded = envbackend.encode()
+ *         cdef char* benvbackend = envbackend_encoded             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_envbackend_encoded); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L1_error)
+  __pyx_v_benvbackend = __pyx_t_4;
+
+  /* "flist.pyx":106
+ * 
+ *         cdef cflist.flist_db_t* backdb
+ *         backdb = cflist.libflist_metadata_backend_database_json(benvbackend)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_v_backdb = libflist_metadata_backend_database_json(__pyx_v_benvbackend);
+
+  /* "flist.pyx":109
+ * 
+ * 
+ *         ctx = cflist.libflist_context_create(backdb, NULL)             # <<<<<<<<<<<<<<
+ * 
+ *         ctx.db = backdb
+ */
+  __pyx_v_ctx = libflist_context_create(__pyx_v_backdb, NULL);
+
+  /* "flist.pyx":111
+ *         ctx = cflist.libflist_context_create(backdb, NULL)
+ * 
+ *         ctx.db = backdb             # <<<<<<<<<<<<<<
+ * 
+ *         blocalfile = os.path.basename(filepath_).encode()
+ */
+  __pyx_v_ctx->db = __pyx_v_backdb;
+
+  /* "flist.pyx":113
+ *         ctx.db = backdb
+ * 
+ *         blocalfile = os.path.basename(filepath_).encode()             # <<<<<<<<<<<<<<
+ *         cdef char* localfile = blocalfile
+ *         cdef char* filename = blocalfile
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_basename); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_filepath_) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_filepath_);
+  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_blocalfile = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":114
+ * 
+ *         blocalfile = os.path.basename(filepath_).encode()
+ *         cdef char* localfile = blocalfile             # <<<<<<<<<<<<<<
+ *         cdef char* filename = blocalfile
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_blocalfile); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_v_localfile = __pyx_t_4;
+
+  /* "flist.pyx":115
+ *         blocalfile = os.path.basename(filepath_).encode()
+ *         cdef char* localfile = blocalfile
+ *         cdef char* filename = blocalfile             # <<<<<<<<<<<<<<
+ * 
+ *         bdirpath = os.path.dirname(intopath_).encode()
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_blocalfile); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_v_filename = __pyx_t_4;
+
+  /* "flist.pyx":117
+ *         cdef char* filename = blocalfile
+ * 
+ *         bdirpath = os.path.dirname(intopath_).encode()             # <<<<<<<<<<<<<<
+ *         btargetname = os.path.basename(intopath_).encode()
+ * 
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_dirname); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_2 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_v_intopath_) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_intopath_);
+  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_bdirpath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":118
+ * 
+ *         bdirpath = os.path.dirname(intopath_).encode()
+ *         btargetname = os.path.basename(intopath_).encode()             # <<<<<<<<<<<<<<
+ * 
+ *         cdef char* dirpath = bdirpath
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_basename); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_intopath_) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_intopath_);
+  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_btargetname = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":120
+ *         btargetname = os.path.basename(intopath_).encode()
+ * 
+ *         cdef char* dirpath = bdirpath             # <<<<<<<<<<<<<<
+ *         cdef char* targetname = btargetname
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bdirpath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_v_dirpath = __pyx_t_4;
+
+  /* "flist.pyx":121
+ * 
+ *         cdef char* dirpath = bdirpath
+ *         cdef char* targetname = btargetname             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_btargetname); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_v_targetname = __pyx_t_4;
+
+  /* "flist.pyx":132
+ *         cdef cflist.inode_t *inode
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(backdb, intopath)             # <<<<<<<<<<<<<<
+ *         if not dirnode:
+ *             print("put looking for directory")
+ */
+  __pyx_v_dirnode = libflist_dirnode_get(__pyx_v_backdb, __pyx_v_intopath);
+
+  /* "flist.pyx":133
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(backdb, intopath)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             print("put looking for directory")
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ */
+  __pyx_t_6 = ((!(__pyx_v_dirnode != 0)) != 0);
+  if (__pyx_t_6) {
+
+    /* "flist.pyx":134
+ *         dirnode = cflist.libflist_dirnode_get(backdb, intopath)
+ *         if not dirnode:
+ *             print("put looking for directory")             # <<<<<<<<<<<<<<
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ *             if not dirnode:
+ */
+    if (__Pyx_PrintOne(0, __pyx_kp_s_put_looking_for_directory) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+
+    /* "flist.pyx":135
+ *         if not dirnode:
+ *             print("put looking for directory")
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)             # <<<<<<<<<<<<<<
+ *             if not dirnode:
+ *                 raise RuntimeError("put no such parent dir.")
+ */
+    __pyx_v_dirnode = libflist_dirnode_get(__pyx_v_backdb, __pyx_v_dirpath);
+
+    /* "flist.pyx":136
+ *             print("put looking for directory")
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ *             if not dirnode:             # <<<<<<<<<<<<<<
+ *                 raise RuntimeError("put no such parent dir.")
+ * 
+ */
+    __pyx_t_6 = ((!(__pyx_v_dirnode != 0)) != 0);
+    if (unlikely(__pyx_t_6)) {
+
+      /* "flist.pyx":137
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ *             if not dirnode:
+ *                 raise RuntimeError("put no such parent dir.")             # <<<<<<<<<<<<<<
+ * 
+ *         if targetname == dirnode.fullpath:
+ */
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __PYX_ERR(0, 137, __pyx_L1_error)
+
+      /* "flist.pyx":136
+ *             print("put looking for directory")
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ *             if not dirnode:             # <<<<<<<<<<<<<<
+ *                 raise RuntimeError("put no such parent dir.")
+ * 
+ */
+    }
+
+    /* "flist.pyx":133
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(backdb, intopath)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             print("put looking for directory")
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ */
+  }
+
+  /* "flist.pyx":139
+ *                 raise RuntimeError("put no such parent dir.")
+ * 
+ *         if targetname == dirnode.fullpath:             # <<<<<<<<<<<<<<
+ *             targetname = filename
+ * 
+ */
+  __pyx_t_6 = ((__pyx_v_targetname == __pyx_v_dirnode->fullpath) != 0);
+  if (__pyx_t_6) {
+
+    /* "flist.pyx":140
+ * 
+ *         if targetname == dirnode.fullpath:
+ *             targetname = filename             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __pyx_v_targetname = __pyx_v_filename;
+
+    /* "flist.pyx":139
+ *                 raise RuntimeError("put no such parent dir.")
+ * 
+ *         if targetname == dirnode.fullpath:             # <<<<<<<<<<<<<<
+ *             targetname = filename
+ * 
+ */
+  }
+
+  /* "flist.pyx":143
+ * 
+ * 
+ *         inode = cflist.libflist_inode_from_name(dirnode, targetname)             # <<<<<<<<<<<<<<
+ *         if not inode:
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ */
+  __pyx_v_inode = libflist_inode_from_name(__pyx_v_dirnode, __pyx_v_targetname);
+
+  /* "flist.pyx":144
+ * 
+ *         inode = cflist.libflist_inode_from_name(dirnode, targetname)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):
+ */
+  __pyx_t_6 = ((!(__pyx_v_inode != 0)) != 0);
+  if (__pyx_t_6) {
+
+    /* "flist.pyx":145
+ *         inode = cflist.libflist_inode_from_name(dirnode, targetname)
+ *         if not inode:
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)             # <<<<<<<<<<<<<<
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):
+ *                 raise RuntimeError( "put : could not overwrite existing inode");
+ */
+    __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_targetname); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx_kp_s_action_put_requested_filename_a);
+    __Pyx_GIVEREF(__pyx_kp_s_action_put_requested_filename_a);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_kp_s_action_put_requested_filename_a);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_1);
+    __pyx_t_1 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "flist.pyx":146
+ *         if not inode:
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):             # <<<<<<<<<<<<<<
+ *                 raise RuntimeError( "put : could not overwrite existing inode");
+ * 
+ */
+    __pyx_t_6 = ((!(libflist_directory_rm_inode(__pyx_v_dirnode, __pyx_v_inode) != 0)) != 0);
+    if (unlikely(__pyx_t_6)) {
+
+      /* "flist.pyx":147
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):
+ *                 raise RuntimeError( "put : could not overwrite existing inode");             # <<<<<<<<<<<<<<
+ * 
+ *             cflist.libflist_inode_free(inode)
+ */
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __PYX_ERR(0, 147, __pyx_L1_error)
+
+      /* "flist.pyx":146
+ *         if not inode:
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):             # <<<<<<<<<<<<<<
+ *                 raise RuntimeError( "put : could not overwrite existing inode");
+ * 
+ */
+    }
+
+    /* "flist.pyx":149
+ *                 raise RuntimeError( "put : could not overwrite existing inode");
+ * 
+ *             cflist.libflist_inode_free(inode)             # <<<<<<<<<<<<<<
+ * 
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)
+ */
+    libflist_inode_free(__pyx_v_inode);
+
+    /* "flist.pyx":144
+ * 
+ *         inode = cflist.libflist_inode_from_name(dirnode, targetname)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):
+ */
+  }
+
+  /* "flist.pyx":151
+ *             cflist.libflist_inode_free(inode)
+ * 
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)             # <<<<<<<<<<<<<<
+ *         if not inode:
+ *             raise RuntimeError("put could not load local file")
+ */
+  __pyx_v_inode = libflist_inode_from_localfile(__pyx_v_localfile, __pyx_v_dirnode, __pyx_v_ctx);
+
+  /* "flist.pyx":152
+ * 
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("put could not load local file")
+ * 
+ */
+  __pyx_t_6 = ((!(__pyx_v_inode != 0)) != 0);
+  if (unlikely(__pyx_t_6)) {
+
+    /* "flist.pyx":153
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)
+ *         if not inode:
+ *             raise RuntimeError("put could not load local file")             # <<<<<<<<<<<<<<
+ * 
+ *         cflist.libflist_inode_rename(inode, targetname)
+ */
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 153, __pyx_L1_error)
+
+    /* "flist.pyx":152
+ * 
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("put could not load local file")
+ * 
+ */
+  }
+
+  /* "flist.pyx":155
+ *             raise RuntimeError("put could not load local file")
+ * 
+ *         cflist.libflist_inode_rename(inode, targetname)             # <<<<<<<<<<<<<<
+ * 
+ *         cflist.libflist_dirnode_appends_inode(dirnode, inode)
+ */
+  (void)(libflist_inode_rename(__pyx_v_inode, __pyx_v_targetname));
+
+  /* "flist.pyx":157
+ *         cflist.libflist_inode_rename(inode, targetname)
+ * 
+ *         cflist.libflist_dirnode_appends_inode(dirnode, inode)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef cflist.dirnode_t *parent
+ */
+  (void)(libflist_dirnode_appends_inode(__pyx_v_dirnode, __pyx_v_inode));
+
+  /* "flist.pyx":160
+ * 
+ *         cdef cflist.dirnode_t *parent
+ *         parent = cflist.libflist_dirnode_get_parent(backdb, dirnode)             # <<<<<<<<<<<<<<
+ *         cflist.libflist_serial_dirnode_commit(dirnode, ctx, parent)
+ *         cflist.libflist_dirnode_free(parent)
+ */
+  __pyx_v_parent = libflist_dirnode_get_parent(__pyx_v_backdb, __pyx_v_dirnode);
+
+  /* "flist.pyx":161
+ *         cdef cflist.dirnode_t *parent
+ *         parent = cflist.libflist_dirnode_get_parent(backdb, dirnode)
+ *         cflist.libflist_serial_dirnode_commit(dirnode, ctx, parent)             # <<<<<<<<<<<<<<
+ *         cflist.libflist_dirnode_free(parent)
+ *         cflist.libflist_dirnode_free(dirnode)
+ */
+  libflist_serial_dirnode_commit(__pyx_v_dirnode, __pyx_v_ctx, __pyx_v_parent);
+
+  /* "flist.pyx":162
+ *         parent = cflist.libflist_dirnode_get_parent(backdb, dirnode)
+ *         cflist.libflist_serial_dirnode_commit(dirnode, ctx, parent)
+ *         cflist.libflist_dirnode_free(parent)             # <<<<<<<<<<<<<<
+ *         cflist.libflist_dirnode_free(dirnode)
+ * 
+ */
+  libflist_dirnode_free(__pyx_v_parent);
+
+  /* "flist.pyx":163
+ *         cflist.libflist_serial_dirnode_commit(dirnode, ctx, parent)
+ *         cflist.libflist_dirnode_free(parent)
+ *         cflist.libflist_dirnode_free(dirnode)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  libflist_dirnode_free(__pyx_v_dirnode);
+
+  /* "flist.pyx":90
+ *         cflist.libflist_dirnode_free(dirnode)
+ * 
+ *     def put(self, filepath_, intopath_):             # <<<<<<<<<<<<<<
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bfilepath = filepath_.encode()
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("flist.Flist.put", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_bfilepath);
+  __Pyx_XDECREF(__pyx_v_bintopath);
+  __Pyx_XDECREF(__pyx_v_envbackend);
+  __Pyx_XDECREF(__pyx_v_envbackend_encoded);
+  __Pyx_XDECREF(__pyx_v_blocalfile);
+  __Pyx_XDECREF(__pyx_v_bdirpath);
+  __Pyx_XDECREF(__pyx_v_btargetname);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "flist.pyx":167
+ * 
+ * 
+ *     def putdir(self, dirpath_, intopath_):             # <<<<<<<<<<<<<<
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bdirpath = dirpath_.encode()
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5flist_5Flist_11putdir(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_11putdir(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_dirpath_ = 0;
+  PyObject *__pyx_v_intopath_ = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("putdir (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_dirpath,&__pyx_n_s_intopath,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dirpath)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_intopath)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("putdir", 1, 2, 2, 1); __PYX_ERR(0, 167, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "putdir") < 0)) __PYX_ERR(0, 167, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_dirpath_ = values[0];
+    __pyx_v_intopath_ = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("putdir", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 167, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("flist.Flist.putdir", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_5flist_5Flist_10putdir(((struct __pyx_obj_5flist_Flist *)__pyx_v_self), __pyx_v_dirpath_, __pyx_v_intopath_);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5flist_5Flist_10putdir(CYTHON_UNUSED struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v_dirpath_, PyObject *__pyx_v_intopath_) {
+  PyObject *__pyx_v_bdirpath = NULL;
+  char *__pyx_v_localdir;
+  PyObject *__pyx_v_bintopath = NULL;
+  char *__pyx_v_destdir;
+  PyObject *__pyx_v_envbackend = NULL;
+  PyObject *__pyx_v_envbackend_encoded = NULL;
+  char *__pyx_v_benvbackend;
+  flist_ctx_t *__pyx_v_ctx;
+  flist_db_t *__pyx_v_backdb;
+  dirnode_t *__pyx_v_dirnode;
+  inode_t *__pyx_v_inode;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  char *__pyx_t_4;
+  int __pyx_t_5;
+  __Pyx_RefNannySetupContext("putdir", 0);
+
+  /* "flist.pyx":169
+ *     def putdir(self, dirpath_, intopath_):
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bdirpath = dirpath_.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* localdir = bdirpath
+ *         bintopath = intopath_.encode()
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_dirpath_, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_bdirpath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":170
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bdirpath = dirpath_.encode()
+ *         cdef char* localdir = bdirpath             # <<<<<<<<<<<<<<
+ *         bintopath = intopath_.encode()
+ *         cdef char* destdir = bintopath
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bdirpath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_v_localdir = __pyx_t_4;
+
+  /* "flist.pyx":171
+ *         bdirpath = dirpath_.encode()
+ *         cdef char* localdir = bdirpath
+ *         bintopath = intopath_.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* destdir = bintopath
+ * 
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_intopath_, __pyx_n_s_encode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_bintopath = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":172
+ *         cdef char* localdir = bdirpath
+ *         bintopath = intopath_.encode()
+ *         cdef char* destdir = bintopath             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_bintopath); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 172, __pyx_L1_error)
+  __pyx_v_destdir = __pyx_t_4;
+
+  /* "flist.pyx":175
+ * 
+ * 
+ *         envbackend = os.getenv("UPLOADBACKEND")             # <<<<<<<<<<<<<<
+ *         envbackend_encoded = envbackend.encode()
+ *         cdef char* benvbackend = envbackend_encoded
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_getenv); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_n_s_UPLOADBACKEND) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_n_s_UPLOADBACKEND);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_envbackend = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":176
+ * 
+ *         envbackend = os.getenv("UPLOADBACKEND")
+ *         envbackend_encoded = envbackend.encode()             # <<<<<<<<<<<<<<
+ *         cdef char* benvbackend = envbackend_encoded
+ * 
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_envbackend, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_envbackend_encoded = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "flist.pyx":177
+ *         envbackend = os.getenv("UPLOADBACKEND")
+ *         envbackend_encoded = envbackend.encode()
+ *         cdef char* benvbackend = envbackend_encoded             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyObject_AsWritableString(__pyx_v_envbackend_encoded); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_v_benvbackend = __pyx_t_4;
+
+  /* "flist.pyx":183
+ * 
+ *         cdef cflist.flist_db_t* backdb
+ *         backdb = cflist.libflist_metadata_backend_database_json(benvbackend)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_v_backdb = libflist_metadata_backend_database_json(__pyx_v_benvbackend);
+
+  /* "flist.pyx":186
+ * 
+ * 
+ *         ctx = cflist.libflist_context_create(backdb, NULL)             # <<<<<<<<<<<<<<
+ * 
+ *         ctx.db = backdb
+ */
+  __pyx_v_ctx = libflist_context_create(__pyx_v_backdb, NULL);
+
+  /* "flist.pyx":188
+ *         ctx = cflist.libflist_context_create(backdb, NULL)
+ * 
+ *         ctx.db = backdb             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_v_ctx->db = __pyx_v_backdb;
+
+  /* "flist.pyx":194
+ *         cdef cflist.inode_t *inode
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(ctx.db, destdir)             # <<<<<<<<<<<<<<
+ *         if not dirnode:
+ *             raise RuntimeError("putdir no such parent directory")
+ */
+  __pyx_v_dirnode = libflist_dirnode_get(__pyx_v_ctx->db, __pyx_v_destdir);
+
+  /* "flist.pyx":195
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(ctx.db, destdir)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("putdir no such parent directory")
+ * 
+ */
+  __pyx_t_5 = ((!(__pyx_v_dirnode != 0)) != 0);
+  if (unlikely(__pyx_t_5)) {
+
+    /* "flist.pyx":196
+ *         dirnode = cflist.libflist_dirnode_get(ctx.db, destdir)
+ *         if not dirnode:
+ *             raise RuntimeError("putdir no such parent directory")             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 196, __pyx_L1_error)
+
+    /* "flist.pyx":195
+ * 
+ *         dirnode = cflist.libflist_dirnode_get(ctx.db, destdir)
+ *         if not dirnode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("putdir no such parent directory")
+ * 
+ */
+  }
+
+  /* "flist.pyx":199
+ * 
+ * 
+ *         inode = cflist.libflist_inode_from_localdir(localdir, dirnode, ctx)             # <<<<<<<<<<<<<<
+ *         if not inode:
+ *             raise RuntimeError("putdir could not load local directory")
+ */
+  __pyx_v_inode = libflist_inode_from_localdir(__pyx_v_localdir, __pyx_v_dirnode, __pyx_v_ctx);
+
+  /* "flist.pyx":200
+ * 
+ *         inode = cflist.libflist_inode_from_localdir(localdir, dirnode, ctx)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("putdir could not load local directory")
+ * 
+ */
+  __pyx_t_5 = ((!(__pyx_v_inode != 0)) != 0);
+  if (unlikely(__pyx_t_5)) {
+
+    /* "flist.pyx":201
+ *         inode = cflist.libflist_inode_from_localdir(localdir, dirnode, ctx)
+ *         if not inode:
+ *             raise RuntimeError("putdir could not load local directory")             # <<<<<<<<<<<<<<
+ * 
+ *         cflist.libflist_stats_dump(&ctx.stats)
+ */
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 201, __pyx_L1_error)
+
+    /* "flist.pyx":200
+ * 
+ *         inode = cflist.libflist_inode_from_localdir(localdir, dirnode, ctx)
+ *         if not inode:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("putdir could not load local directory")
+ * 
+ */
+  }
+
+  /* "flist.pyx":203
+ *             raise RuntimeError("putdir could not load local directory")
+ * 
+ *         cflist.libflist_stats_dump(&ctx.stats)             # <<<<<<<<<<<<<<
+ *         cflist.libflist_dirnode_free(dirnode)
+ * 
+ */
+  libflist_stats_dump((&__pyx_v_ctx->stats));
+
+  /* "flist.pyx":204
+ * 
+ *         cflist.libflist_stats_dump(&ctx.stats)
+ *         cflist.libflist_dirnode_free(dirnode)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  libflist_dirnode_free(__pyx_v_dirnode);
+
+  /* "flist.pyx":167
+ * 
+ * 
+ *     def putdir(self, dirpath_, intopath_):             # <<<<<<<<<<<<<<
+ *         #/opt/0-flist/zflist/zflist put /tmp/config-err-uhZViD /
+ *         bdirpath = dirpath_.encode()
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("flist.Flist.putdir", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_bdirpath);
+  __Pyx_XDECREF(__pyx_v_bintopath);
+  __Pyx_XDECREF(__pyx_v_envbackend);
+  __Pyx_XDECREF(__pyx_v_envbackend_encoded);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
 /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
  *     cdef tuple state
@@ -1603,19 +3891,19 @@ static PyObject *__pyx_f_5flist_5Flist_init(struct __pyx_obj_5flist_Flist *__pyx
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5flist_5Flist_3__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_5flist_5Flist_3__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_5flist_5Flist_13__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_13__reduce_cython__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5flist_5Flist_2__reduce_cython__(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
+  __pyx_r = __pyx_pf_5flist_5Flist_12__reduce_cython__(((struct __pyx_obj_5flist_Flist *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5flist_5Flist_2__reduce_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
+static PyObject *__pyx_pf_5flist_5Flist_12__reduce_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self) {
   PyObject *__pyx_v_state = 0;
   PyObject *__pyx_v__dict = 0;
   int __pyx_v_use_setstate;
@@ -1829,19 +4117,19 @@ static PyObject *__pyx_pf_5flist_5Flist_2__reduce_cython__(struct __pyx_obj_5fli
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5flist_5Flist_5__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state); /*proto*/
-static PyObject *__pyx_pw_5flist_5Flist_5__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pw_5flist_5Flist_15__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state); /*proto*/
+static PyObject *__pyx_pw_5flist_5Flist_15__setstate_cython__(PyObject *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5flist_5Flist_4__setstate_cython__(((struct __pyx_obj_5flist_Flist *)__pyx_v_self), ((PyObject *)__pyx_v___pyx_state));
+  __pyx_r = __pyx_pf_5flist_5Flist_14__setstate_cython__(((struct __pyx_obj_5flist_Flist *)__pyx_v_self), ((PyObject *)__pyx_v___pyx_state));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5flist_5Flist_4__setstate_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_5flist_5Flist_14__setstate_cython__(struct __pyx_obj_5flist_Flist *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2270,10 +4558,24 @@ static void __pyx_tp_dealloc_5flist_Flist(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
+static PyObject *__pyx_getprop_5flist_5Flist_sqlite_db_path(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_5flist_5Flist_14sqlite_db_path_1__get__(o);
+}
+
 static PyMethodDef __pyx_methods_5flist_Flist[] = {
-  {"__reduce_cython__", (PyCFunction)__pyx_pw_5flist_5Flist_3__reduce_cython__, METH_NOARGS, 0},
-  {"__setstate_cython__", (PyCFunction)__pyx_pw_5flist_5Flist_5__setstate_cython__, METH_O, 0},
+  {"open", (PyCFunction)__pyx_pw_5flist_5Flist_3open, METH_NOARGS, 0},
+  {"commit", (PyCFunction)__pyx_pw_5flist_5Flist_5commit, METH_NOARGS, 0},
+  {"close", (PyCFunction)__pyx_pw_5flist_5Flist_7close, METH_NOARGS, 0},
+  {"put", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5flist_5Flist_9put, METH_VARARGS|METH_KEYWORDS, 0},
+  {"putdir", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5flist_5Flist_11putdir, METH_VARARGS|METH_KEYWORDS, 0},
+  {"__reduce_cython__", (PyCFunction)__pyx_pw_5flist_5Flist_13__reduce_cython__, METH_NOARGS, 0},
+  {"__setstate_cython__", (PyCFunction)__pyx_pw_5flist_5Flist_15__setstate_cython__, METH_O, 0},
   {0, 0, 0, 0}
+};
+
+static struct PyGetSetDef __pyx_getsets_5flist_Flist[] = {
+  {(char *)"sqlite_db_path", __pyx_getprop_5flist_5Flist_sqlite_db_path, 0, (char *)0, 0},
+  {0, 0, 0, 0, 0}
 };
 
 static PyTypeObject __pyx_type_5flist_Flist = {
@@ -2311,7 +4613,7 @@ static PyTypeObject __pyx_type_5flist_Flist = {
   0, /*tp_iternext*/
   __pyx_methods_5flist_Flist, /*tp_methods*/
   0, /*tp_members*/
-  0, /*tp_getset*/
+  __pyx_getsets_5flist_Flist, /*tp_getset*/
   0, /*tp_base*/
   0, /*tp_dict*/
   0, /*tp_descr_get*/
@@ -2385,20 +4687,63 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Flist, __pyx_k_Flist, sizeof(__pyx_k_Flist), 0, 0, 1, 1},
   {&__pyx_kp_s_Incompatible_checksums_s_vs_0xd4, __pyx_k_Incompatible_checksums_s_vs_0xd4, sizeof(__pyx_k_Incompatible_checksums_s_vs_0xd4), 0, 0, 1, 0},
+  {&__pyx_n_s_MountPointHasDatabaseAlready, __pyx_k_MountPointHasDatabaseAlready, sizeof(__pyx_k_MountPointHasDatabaseAlready), 0, 0, 1, 1},
   {&__pyx_n_s_PickleError, __pyx_k_PickleError, sizeof(__pyx_k_PickleError), 0, 0, 1, 1},
+  {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
+  {&__pyx_n_s_UPLOADBACKEND, __pyx_k_UPLOADBACKEND, sizeof(__pyx_k_UPLOADBACKEND), 0, 0, 1, 1},
+  {&__pyx_kp_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 0},
+  {&__pyx_kp_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 0},
+  {&__pyx_kp_s_action_put_requested_filename_a, __pyx_k_action_put_requested_filename_a, sizeof(__pyx_k_action_put_requested_filename_a), 0, 0, 1, 0},
+  {&__pyx_n_s_basename, __pyx_k_basename, sizeof(__pyx_k_basename), 0, 0, 1, 1},
   {&__pyx_n_s_bmntpath, __pyx_k_bmntpath, sizeof(__pyx_k_bmntpath), 0, 0, 1, 1},
+  {&__pyx_n_s_bpath, __pyx_k_bpath, sizeof(__pyx_k_bpath), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_kp_s_couldn_t_create_flist, __pyx_k_couldn_t_create_flist, sizeof(__pyx_k_couldn_t_create_flist), 0, 0, 1, 0},
   {&__pyx_n_s_dict, __pyx_k_dict, sizeof(__pyx_k_dict), 0, 0, 1, 1},
+  {&__pyx_n_s_dirname, __pyx_k_dirname, sizeof(__pyx_k_dirname), 0, 0, 1, 1},
+  {&__pyx_n_s_dirpath, __pyx_k_dirpath, sizeof(__pyx_k_dirpath), 0, 0, 1, 1},
+  {&__pyx_n_s_doc, __pyx_k_doc, sizeof(__pyx_k_doc), 0, 0, 1, 1},
+  {&__pyx_kp_s_done_open, __pyx_k_done_open, sizeof(__pyx_k_done_open), 0, 0, 1, 0},
   {&__pyx_n_s_encode, __pyx_k_encode, sizeof(__pyx_k_encode), 0, 0, 1, 1},
+  {&__pyx_n_s_end, __pyx_k_end, sizeof(__pyx_k_end), 0, 0, 1, 1},
+  {&__pyx_n_s_exist_ok, __pyx_k_exist_ok, sizeof(__pyx_k_exist_ok), 0, 0, 1, 1},
+  {&__pyx_n_s_exists, __pyx_k_exists, sizeof(__pyx_k_exists), 0, 0, 1, 1},
+  {&__pyx_kp_s_extract_archive, __pyx_k_extract_archive, sizeof(__pyx_k_extract_archive), 0, 0, 1, 0},
+  {&__pyx_n_s_file, __pyx_k_file, sizeof(__pyx_k_file), 0, 0, 1, 1},
+  {&__pyx_n_s_filepath, __pyx_k_filepath, sizeof(__pyx_k_filepath), 0, 0, 1, 1},
   {&__pyx_n_s_flist, __pyx_k_flist, sizeof(__pyx_k_flist), 0, 0, 1, 1},
+  {&__pyx_kp_s_flist_created, __pyx_k_flist_created, sizeof(__pyx_k_flist_created), 0, 0, 1, 0},
+  {&__pyx_kp_s_flistdb_sqlite3, __pyx_k_flistdb_sqlite3, sizeof(__pyx_k_flistdb_sqlite3), 0, 0, 1, 0},
+  {&__pyx_n_s_format, __pyx_k_format, sizeof(__pyx_k_format), 0, 0, 1, 1},
+  {&__pyx_n_s_getenv, __pyx_k_getenv, sizeof(__pyx_k_getenv), 0, 0, 1, 1},
   {&__pyx_n_s_getstate, __pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
+  {&__pyx_kp_s_inited, __pyx_k_inited, sizeof(__pyx_k_inited), 0, 0, 1, 0},
+  {&__pyx_n_s_intopath, __pyx_k_intopath, sizeof(__pyx_k_intopath), 0, 0, 1, 1},
+  {&__pyx_n_s_isfile, __pyx_k_isfile, sizeof(__pyx_k_isfile), 0, 0, 1, 1},
+  {&__pyx_kp_s_listing, __pyx_k_listing, sizeof(__pyx_k_listing), 0, 0, 1, 0},
+  {&__pyx_n_s_ls, __pyx_k_ls, sizeof(__pyx_k_ls), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
+  {&__pyx_n_s_makedirs, __pyx_k_makedirs, sizeof(__pyx_k_makedirs), 0, 0, 1, 1},
+  {&__pyx_n_s_metaclass, __pyx_k_metaclass, sizeof(__pyx_k_metaclass), 0, 0, 1, 1},
   {&__pyx_n_s_mntpath, __pyx_k_mntpath, sizeof(__pyx_k_mntpath), 0, 0, 1, 1},
+  {&__pyx_n_s_module, __pyx_k_module, sizeof(__pyx_k_module), 0, 0, 1, 1},
+  {&__pyx_kp_s_mount_point_already_contains_db, __pyx_k_mount_point_already_contains_db, sizeof(__pyx_k_mount_point_already_contains_db), 0, 0, 1, 0},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_new, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
+  {&__pyx_kp_s_no_database_at, __pyx_k_no_database_at, sizeof(__pyx_k_no_database_at), 0, 0, 1, 0},
+  {&__pyx_kp_s_no_such_directory_file_parent_di, __pyx_k_no_such_directory_file_parent_di, sizeof(__pyx_k_no_such_directory_file_parent_di), 0, 0, 1, 0},
+  {&__pyx_n_s_os, __pyx_k_os, sizeof(__pyx_k_os), 0, 0, 1, 1},
   {&__pyx_n_s_path, __pyx_k_path, sizeof(__pyx_k_path), 0, 0, 1, 1},
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
+  {&__pyx_n_s_prepare, __pyx_k_prepare, sizeof(__pyx_k_prepare), 0, 0, 1, 1},
+  {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
+  {&__pyx_kp_s_put_could_not_load_local_file, __pyx_k_put_could_not_load_local_file, sizeof(__pyx_k_put_could_not_load_local_file), 0, 0, 1, 0},
+  {&__pyx_kp_s_put_could_not_overwrite_existing, __pyx_k_put_could_not_overwrite_existing, sizeof(__pyx_k_put_could_not_overwrite_existing), 0, 0, 1, 0},
+  {&__pyx_kp_s_put_looking_for_directory, __pyx_k_put_looking_for_directory, sizeof(__pyx_k_put_looking_for_directory), 0, 0, 1, 0},
+  {&__pyx_kp_s_put_no_such_parent_dir, __pyx_k_put_no_such_parent_dir, sizeof(__pyx_k_put_no_such_parent_dir), 0, 0, 1, 0},
+  {&__pyx_kp_s_putdir_could_not_load_local_dire, __pyx_k_putdir_could_not_load_local_dire, sizeof(__pyx_k_putdir_could_not_load_local_dire), 0, 0, 1, 0},
+  {&__pyx_kp_s_putdir_no_such_parent_directory, __pyx_k_putdir_no_such_parent_directory, sizeof(__pyx_k_putdir_no_such_parent_directory), 0, 0, 1, 0},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_result, __pyx_k_pyx_result, sizeof(__pyx_k_pyx_result), 0, 0, 1, 1},
@@ -2406,33 +4751,127 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pyx_type, __pyx_k_pyx_type, sizeof(__pyx_k_pyx_type), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_unpickle_Flist, __pyx_k_pyx_unpickle_Flist, sizeof(__pyx_k_pyx_unpickle_Flist), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
+  {&__pyx_n_s_qualname, __pyx_k_qualname, sizeof(__pyx_k_qualname), 0, 0, 1, 1},
   {&__pyx_n_s_reduce, __pyx_k_reduce, sizeof(__pyx_k_reduce), 0, 0, 1, 1},
   {&__pyx_n_s_reduce_cython, __pyx_k_reduce_cython, sizeof(__pyx_k_reduce_cython), 0, 0, 1, 1},
   {&__pyx_n_s_reduce_ex, __pyx_k_reduce_ex, sizeof(__pyx_k_reduce_ex), 0, 0, 1, 1},
   {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
   {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
+  {&__pyx_n_s_sqlite_db_path, __pyx_k_sqlite_db_path, sizeof(__pyx_k_sqlite_db_path), 0, 0, 1, 1},
   {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
+  {&__pyx_n_s_unlink, __pyx_k_unlink, sizeof(__pyx_k_unlink), 0, 0, 1, 1},
   {&__pyx_n_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
+  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 43, __pyx_L1_error)
   return 0;
+  __pyx_L1_error:;
+  return -1;
 }
 
 static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
+  /* "flist.pyx":43
+ *         done = cflist.libflist_archive_extract(self.bpath, self.bmntpath)
+ *         if not done:
+ *             raise RuntimeError("extract/archive")             # <<<<<<<<<<<<<<
+ * 
+ *         print("done open.")
+ */
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_s_extract_archive); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple_);
+  __Pyx_GIVEREF(__pyx_tuple_);
+
+  /* "flist.pyx":51
+ *         done = cflist.libflist_archive_create(self.bpath, self.bmntpath)
+ *         if not done:
+ *             raise RuntimeError("couldn't create flist")             # <<<<<<<<<<<<<<
+ *         print("flist created")
+ * 
+ */
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_s_couldn_t_create_flist); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
+
+  /* "flist.pyx":78
+ *         dirnode = cflist.libflist_dirnode_get(database, dirpath)
+ *         if not dirnode:
+ *             raise RuntimeError("ls", "no such directory (file parent directory)");             # <<<<<<<<<<<<<<
+ * 
+ *         # if(cb->jout)
+ */
+  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_n_s_ls, __pyx_kp_s_no_such_directory_file_parent_di); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
+
+  /* "flist.pyx":137
+ *             dirnode = cflist.libflist_dirnode_get(backdb, dirpath)
+ *             if not dirnode:
+ *                 raise RuntimeError("put no such parent dir.")             # <<<<<<<<<<<<<<
+ * 
+ *         if targetname == dirnode.fullpath:
+ */
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_put_no_such_parent_dir); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
+
+  /* "flist.pyx":147
+ *             print("[+] action: put: requested filename  already exists, overwriting: ", targetname)
+ *             if not cflist.libflist_directory_rm_inode(dirnode, inode):
+ *                 raise RuntimeError( "put : could not overwrite existing inode");             # <<<<<<<<<<<<<<
+ * 
+ *             cflist.libflist_inode_free(inode)
+ */
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_put_could_not_overwrite_existing); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
+
+  /* "flist.pyx":153
+ *         inode = cflist.libflist_inode_from_localfile(localfile, dirnode, ctx)
+ *         if not inode:
+ *             raise RuntimeError("put could not load local file")             # <<<<<<<<<<<<<<
+ * 
+ *         cflist.libflist_inode_rename(inode, targetname)
+ */
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_put_could_not_load_local_file); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 153, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
+
+  /* "flist.pyx":196
+ *         dirnode = cflist.libflist_dirnode_get(ctx.db, destdir)
+ *         if not dirnode:
+ *             raise RuntimeError("putdir no such parent directory")             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_putdir_no_such_parent_directory); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
+
+  /* "flist.pyx":201
+ *         inode = cflist.libflist_inode_from_localdir(localdir, dirnode, ctx)
+ *         if not inode:
+ *             raise RuntimeError("putdir could not load local directory")             # <<<<<<<<<<<<<<
+ * 
+ *         cflist.libflist_stats_dump(&ctx.stats)
+ */
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_s_putdir_could_not_load_local_dire); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
+
   /* "(tree fragment)":1
  * def __pyx_unpickle_Flist(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_tuple_ = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple_)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple_);
-  __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Flist, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Flist, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -2487,16 +4926,17 @@ static int __Pyx_modinit_type_init_code(void) {
   /*--- Type init code ---*/
   __pyx_vtabptr_5flist_Flist = &__pyx_vtable_5flist_Flist;
   __pyx_vtable_5flist_Flist.init = (PyObject *(*)(struct __pyx_obj_5flist_Flist *, PyObject *))__pyx_f_5flist_5Flist_init;
-  if (PyType_Ready(&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_vtable_5flist_Flist.ls = (PyObject *(*)(struct __pyx_obj_5flist_Flist *, struct __pyx_opt_args_5flist_5Flist_ls *__pyx_optional_args))__pyx_f_5flist_5Flist_ls;
+  if (PyType_Ready(&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_5flist_Flist.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_5flist_Flist.tp_dictoffset && __pyx_type_5flist_Flist.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_5flist_Flist.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_5flist_Flist.tp_dict, __pyx_vtabptr_5flist_Flist) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Flist, (PyObject *)&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_5flist_Flist.tp_dict, __pyx_vtabptr_5flist_Flist) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Flist, (PyObject *)&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_5flist_Flist) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __pyx_ptype_5flist_Flist = &__pyx_type_5flist_Flist;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -2622,6 +5062,9 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_flist(PyObject *__pyx_pyinit_modul
 #endif
 {
   PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
   __Pyx_RefNannyDeclarations
   #if CYTHON_PEP489_MULTI_PHASE_INIT
   if (__pyx_m) {
@@ -2726,6 +5169,41 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
+  /* "flist.pyx":2
+ * cimport cflist
+ * import os             # <<<<<<<<<<<<<<
+ * 
+ * class MountPointHasDatabaseAlready(Exception):
+ */
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_os, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_os, __pyx_t_1) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "flist.pyx":4
+ * import os
+ * 
+ * class MountPointHasDatabaseAlready(Exception):             # <<<<<<<<<<<<<<
+ *     pass
+ * 
+ */
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
+  __Pyx_GIVEREF(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
+  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
+  __pyx_t_2 = __Pyx_CalculateMetaclass(NULL, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_Py3MetaclassPrepare(__pyx_t_2, __pyx_t_1, __pyx_n_s_MountPointHasDatabaseAlready, __pyx_n_s_MountPointHasDatabaseAlready, (PyObject *) NULL, __pyx_n_s_flist, (PyObject *) NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_Py3ClassCreate(__pyx_t_2, __pyx_n_s_MountPointHasDatabaseAlready, __pyx_t_1, __pyx_t_3, NULL, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_MountPointHasDatabaseAlready, __pyx_t_4) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
   /* "(tree fragment)":1
  * def __pyx_unpickle_Flist(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
@@ -2738,8 +5216,8 @@ if (!__Pyx_RefNanny) {
 
   /* "flist.pyx":1
  * cimport cflist             # <<<<<<<<<<<<<<
+ * import os
  * 
- * cdef class Flist:
  */
   __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -2751,6 +5229,9 @@ if (!__Pyx_RefNanny) {
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
   if (__pyx_m) {
     if (__pyx_d) {
       __Pyx_AddTraceback("init flist", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -2787,6 +5268,34 @@ end:
     return (__Pyx_RefNannyAPIStruct *)r;
 }
 #endif
+
+/* PyObjectGetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro))
+        return tp->tp_getattro(obj, attr_name);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_getattr))
+        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
+#endif
+    return PyObject_GetAttr(obj, attr_name);
+}
+#endif
+
+/* GetBuiltinName */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
+    PyObject* result = __Pyx_PyObject_GetAttrStr(__pyx_b, name);
+    if (unlikely(!result)) {
+        PyErr_Format(PyExc_NameError,
+#if PY_MAJOR_VERSION >= 3
+            "name '%U' is not defined", name);
+#else
+            "name '%.200s' is not defined", PyString_AS_STRING(name));
+#endif
+    }
+    return result;
+}
 
 /* RaiseArgTupleInvalid */
 static void __Pyx_RaiseArgtupleInvalid(
@@ -2941,20 +5450,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
         return tp->tp_setattr(obj, PyString_AS_STRING(attr_name), value);
 #endif
     return PyObject_SetAttr(obj, attr_name, value);
-}
-#endif
-
-/* PyObjectGetAttrStr */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro))
-        return tp->tp_getattro(obj, attr_name);
-#if PY_MAJOR_VERSION < 3
-    if (likely(tp->tp_getattr))
-        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
-#endif
-    return PyObject_GetAttr(obj, attr_name);
 }
 #endif
 
@@ -3241,94 +5736,32 @@ bad:
     return result;
 }
 
-/* PyErrExceptionMatches */
-#if CYTHON_FAST_THREAD_STATE
-static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(tuple);
-#if PY_MAJOR_VERSION >= 3
-    for (i=0; i<n; i++) {
-        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
+/* PyObjectCall2Args */
+static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
+    PyObject *args, *result = NULL;
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(function)) {
+        PyObject *args[2] = {arg1, arg2};
+        return __Pyx_PyFunction_FastCall(function, args, 2);
     }
-#endif
-    for (i=0; i<n; i++) {
-        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(function)) {
+        PyObject *args[2] = {arg1, arg2};
+        return __Pyx_PyCFunction_FastCall(function, args, 2);
     }
-    return 0;
-}
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
-    PyObject *exc_type = tstate->curexc_type;
-    if (exc_type == err) return 1;
-    if (unlikely(!exc_type)) return 0;
-    if (unlikely(PyTuple_Check(err)))
-        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
-    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
-}
-#endif
-
-/* PyErrFetchRestore */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    tmp_type = tstate->curexc_type;
-    tmp_value = tstate->curexc_value;
-    tmp_tb = tstate->curexc_traceback;
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = tb;
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-}
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-    *type = tstate->curexc_type;
-    *value = tstate->curexc_value;
-    *tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-}
-#endif
-
-/* GetAttr */
-static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *o, PyObject *n) {
-#if CYTHON_USE_TYPE_SLOTS
-#if PY_MAJOR_VERSION >= 3
-    if (likely(PyUnicode_Check(n)))
-#else
-    if (likely(PyString_Check(n)))
-#endif
-        return __Pyx_PyObject_GetAttrStr(o, n);
-#endif
-    return PyObject_GetAttr(o, n);
-}
-
-/* GetAttr3 */
-static PyObject *__Pyx_GetAttr3Default(PyObject *d) {
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    if (unlikely(!__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
-        return NULL;
-    __Pyx_PyErr_Clear();
-    Py_INCREF(d);
-    return d;
-}
-static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *o, PyObject *n, PyObject *d) {
-    PyObject *r = __Pyx_GetAttr(o, n);
-    return (likely(r)) ? r : __Pyx_GetAttr3Default(d);
-}
-
-/* GetBuiltinName */
-static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
-    PyObject* result = __Pyx_PyObject_GetAttrStr(__pyx_b, name);
-    if (unlikely(!result)) {
-        PyErr_Format(PyExc_NameError,
-#if PY_MAJOR_VERSION >= 3
-            "name '%U' is not defined", name);
-#else
-            "name '%.200s' is not defined", PyString_AS_STRING(name));
-#endif
-    }
+    #endif
+    args = PyTuple_New(2);
+    if (unlikely(!args)) goto done;
+    Py_INCREF(arg1);
+    PyTuple_SET_ITEM(args, 0, arg1);
+    Py_INCREF(arg2);
+    PyTuple_SET_ITEM(args, 1, arg2);
+    Py_INCREF(function);
+    result = __Pyx_PyObject_Call(function, args, NULL);
+    Py_DECREF(args);
+    Py_DECREF(function);
+done:
     return result;
 }
 
@@ -3393,113 +5826,29 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
     return __Pyx_GetBuiltinName(name);
 }
 
-/* Import */
-static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
-    PyObject *empty_list = 0;
-    PyObject *module = 0;
-    PyObject *global_dict = 0;
-    PyObject *empty_dict = 0;
-    PyObject *list;
-    #if PY_MAJOR_VERSION < 3
-    PyObject *py_import;
-    py_import = __Pyx_PyObject_GetAttrStr(__pyx_b, __pyx_n_s_import);
-    if (!py_import)
-        goto bad;
-    #endif
-    if (from_list)
-        list = from_list;
-    else {
-        empty_list = PyList_New(0);
-        if (!empty_list)
-            goto bad;
-        list = empty_list;
-    }
-    global_dict = PyModule_GetDict(__pyx_m);
-    if (!global_dict)
-        goto bad;
-    empty_dict = PyDict_New();
-    if (!empty_dict)
-        goto bad;
-    {
-        #if PY_MAJOR_VERSION >= 3
-        if (level == -1) {
-            if (strchr(__Pyx_MODULE_NAME, '.')) {
-                module = PyImport_ImportModuleLevelObject(
-                    name, global_dict, empty_dict, list, 1);
-                if (!module) {
-                    if (!PyErr_ExceptionMatches(PyExc_ImportError))
-                        goto bad;
-                    PyErr_Clear();
-                }
-            }
-            level = 0;
-        }
-        #endif
-        if (!module) {
-            #if PY_MAJOR_VERSION < 3
-            PyObject *py_level = PyInt_FromLong(level);
-            if (!py_level)
-                goto bad;
-            module = PyObject_CallFunctionObjArgs(py_import,
-                name, global_dict, empty_dict, list, py_level, (PyObject *)NULL);
-            Py_DECREF(py_level);
-            #else
-            module = PyImport_ImportModuleLevelObject(
-                name, global_dict, empty_dict, list, level);
-            #endif
-        }
-    }
-bad:
-    #if PY_MAJOR_VERSION < 3
-    Py_XDECREF(py_import);
-    #endif
-    Py_XDECREF(empty_list);
-    Py_XDECREF(empty_dict);
-    return module;
+/* PyErrFetchRestore */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    tmp_type = tstate->curexc_type;
+    tmp_value = tstate->curexc_value;
+    tmp_tb = tstate->curexc_traceback;
+    tstate->curexc_type = type;
+    tstate->curexc_value = value;
+    tstate->curexc_traceback = tb;
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
 }
-
-/* ImportFrom */
-static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
-    PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
-    if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Format(PyExc_ImportError,
-        #if PY_MAJOR_VERSION < 3
-            "cannot import name %.230s", PyString_AS_STRING(name));
-        #else
-            "cannot import name %S", name);
-        #endif
-    }
-    return value;
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    *type = tstate->curexc_type;
+    *value = tstate->curexc_value;
+    *tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
 }
-
-/* PyObjectCall2Args */
-static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
-    PyObject *args, *result = NULL;
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(function)) {
-        PyObject *args[2] = {arg1, arg2};
-        return __Pyx_PyFunction_FastCall(function, args, 2);
-    }
-    #endif
-    #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(function)) {
-        PyObject *args[2] = {arg1, arg2};
-        return __Pyx_PyCFunction_FastCall(function, args, 2);
-    }
-    #endif
-    args = PyTuple_New(2);
-    if (unlikely(!args)) goto done;
-    Py_INCREF(arg1);
-    PyTuple_SET_ITEM(args, 0, arg1);
-    Py_INCREF(arg2);
-    PyTuple_SET_ITEM(args, 1, arg2);
-    Py_INCREF(function);
-    result = __Pyx_PyObject_Call(function, args, NULL);
-    Py_DECREF(args);
-    Py_DECREF(function);
-done:
-    return result;
-}
+#endif
 
 /* RaiseException */
 #if PY_MAJOR_VERSION < 3
@@ -3659,6 +6008,138 @@ bad:
     return;
 }
 #endif
+
+/* PyErrExceptionMatches */
+#if CYTHON_FAST_THREAD_STATE
+static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
+    Py_ssize_t i, n;
+    n = PyTuple_GET_SIZE(tuple);
+#if PY_MAJOR_VERSION >= 3
+    for (i=0; i<n; i++) {
+        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
+    }
+#endif
+    for (i=0; i<n; i++) {
+        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
+    }
+    return 0;
+}
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
+    PyObject *exc_type = tstate->curexc_type;
+    if (exc_type == err) return 1;
+    if (unlikely(!exc_type)) return 0;
+    if (unlikely(PyTuple_Check(err)))
+        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
+    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
+}
+#endif
+
+/* GetAttr */
+static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *o, PyObject *n) {
+#if CYTHON_USE_TYPE_SLOTS
+#if PY_MAJOR_VERSION >= 3
+    if (likely(PyUnicode_Check(n)))
+#else
+    if (likely(PyString_Check(n)))
+#endif
+        return __Pyx_PyObject_GetAttrStr(o, n);
+#endif
+    return PyObject_GetAttr(o, n);
+}
+
+/* GetAttr3 */
+static PyObject *__Pyx_GetAttr3Default(PyObject *d) {
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    if (unlikely(!__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
+        return NULL;
+    __Pyx_PyErr_Clear();
+    Py_INCREF(d);
+    return d;
+}
+static CYTHON_INLINE PyObject *__Pyx_GetAttr3(PyObject *o, PyObject *n, PyObject *d) {
+    PyObject *r = __Pyx_GetAttr(o, n);
+    return (likely(r)) ? r : __Pyx_GetAttr3Default(d);
+}
+
+/* Import */
+static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
+    PyObject *empty_list = 0;
+    PyObject *module = 0;
+    PyObject *global_dict = 0;
+    PyObject *empty_dict = 0;
+    PyObject *list;
+    #if PY_MAJOR_VERSION < 3
+    PyObject *py_import;
+    py_import = __Pyx_PyObject_GetAttrStr(__pyx_b, __pyx_n_s_import);
+    if (!py_import)
+        goto bad;
+    #endif
+    if (from_list)
+        list = from_list;
+    else {
+        empty_list = PyList_New(0);
+        if (!empty_list)
+            goto bad;
+        list = empty_list;
+    }
+    global_dict = PyModule_GetDict(__pyx_m);
+    if (!global_dict)
+        goto bad;
+    empty_dict = PyDict_New();
+    if (!empty_dict)
+        goto bad;
+    {
+        #if PY_MAJOR_VERSION >= 3
+        if (level == -1) {
+            if (strchr(__Pyx_MODULE_NAME, '.')) {
+                module = PyImport_ImportModuleLevelObject(
+                    name, global_dict, empty_dict, list, 1);
+                if (!module) {
+                    if (!PyErr_ExceptionMatches(PyExc_ImportError))
+                        goto bad;
+                    PyErr_Clear();
+                }
+            }
+            level = 0;
+        }
+        #endif
+        if (!module) {
+            #if PY_MAJOR_VERSION < 3
+            PyObject *py_level = PyInt_FromLong(level);
+            if (!py_level)
+                goto bad;
+            module = PyObject_CallFunctionObjArgs(py_import,
+                name, global_dict, empty_dict, list, py_level, (PyObject *)NULL);
+            Py_DECREF(py_level);
+            #else
+            module = PyImport_ImportModuleLevelObject(
+                name, global_dict, empty_dict, list, level);
+            #endif
+        }
+    }
+bad:
+    #if PY_MAJOR_VERSION < 3
+    Py_XDECREF(py_import);
+    #endif
+    Py_XDECREF(empty_list);
+    Py_XDECREF(empty_dict);
+    return module;
+}
+
+/* ImportFrom */
+static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
+    PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
+    if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Format(PyExc_ImportError,
+        #if PY_MAJOR_VERSION < 3
+            "cannot import name %.230s", PyString_AS_STRING(name));
+        #else
+            "cannot import name %S", name);
+        #endif
+    }
+    return value;
+}
 
 /* HasAttr */
 static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
@@ -3909,6 +6390,112 @@ GOOD:
     return ret;
 }
 
+/* CalculateMetaclass */
+static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases) {
+    Py_ssize_t i, nbases = PyTuple_GET_SIZE(bases);
+    for (i=0; i < nbases; i++) {
+        PyTypeObject *tmptype;
+        PyObject *tmp = PyTuple_GET_ITEM(bases, i);
+        tmptype = Py_TYPE(tmp);
+#if PY_MAJOR_VERSION < 3
+        if (tmptype == &PyClass_Type)
+            continue;
+#endif
+        if (!metaclass) {
+            metaclass = tmptype;
+            continue;
+        }
+        if (PyType_IsSubtype(metaclass, tmptype))
+            continue;
+        if (PyType_IsSubtype(tmptype, metaclass)) {
+            metaclass = tmptype;
+            continue;
+        }
+        PyErr_SetString(PyExc_TypeError,
+                        "metaclass conflict: "
+                        "the metaclass of a derived class "
+                        "must be a (non-strict) subclass "
+                        "of the metaclasses of all its bases");
+        return NULL;
+    }
+    if (!metaclass) {
+#if PY_MAJOR_VERSION < 3
+        metaclass = &PyClass_Type;
+#else
+        metaclass = &PyType_Type;
+#endif
+    }
+    Py_INCREF((PyObject*) metaclass);
+    return (PyObject*) metaclass;
+}
+
+/* Py3ClassCreate */
+static PyObject *__Pyx_Py3MetaclassPrepare(PyObject *metaclass, PyObject *bases, PyObject *name,
+                                           PyObject *qualname, PyObject *mkw, PyObject *modname, PyObject *doc) {
+    PyObject *ns;
+    if (metaclass) {
+        PyObject *prep = __Pyx_PyObject_GetAttrStr(metaclass, __pyx_n_s_prepare);
+        if (prep) {
+            PyObject *pargs = PyTuple_Pack(2, name, bases);
+            if (unlikely(!pargs)) {
+                Py_DECREF(prep);
+                return NULL;
+            }
+            ns = PyObject_Call(prep, pargs, mkw);
+            Py_DECREF(prep);
+            Py_DECREF(pargs);
+        } else {
+            if (unlikely(!PyErr_ExceptionMatches(PyExc_AttributeError)))
+                return NULL;
+            PyErr_Clear();
+            ns = PyDict_New();
+        }
+    } else {
+        ns = PyDict_New();
+    }
+    if (unlikely(!ns))
+        return NULL;
+    if (unlikely(PyObject_SetItem(ns, __pyx_n_s_module, modname) < 0)) goto bad;
+    if (unlikely(PyObject_SetItem(ns, __pyx_n_s_qualname, qualname) < 0)) goto bad;
+    if (unlikely(doc && PyObject_SetItem(ns, __pyx_n_s_doc, doc) < 0)) goto bad;
+    return ns;
+bad:
+    Py_DECREF(ns);
+    return NULL;
+}
+static PyObject *__Pyx_Py3ClassCreate(PyObject *metaclass, PyObject *name, PyObject *bases,
+                                      PyObject *dict, PyObject *mkw,
+                                      int calculate_metaclass, int allow_py2_metaclass) {
+    PyObject *result, *margs;
+    PyObject *owned_metaclass = NULL;
+    if (allow_py2_metaclass) {
+        owned_metaclass = PyObject_GetItem(dict, __pyx_n_s_metaclass);
+        if (owned_metaclass) {
+            metaclass = owned_metaclass;
+        } else if (likely(PyErr_ExceptionMatches(PyExc_KeyError))) {
+            PyErr_Clear();
+        } else {
+            return NULL;
+        }
+    }
+    if (calculate_metaclass && (!metaclass || PyType_Check(metaclass))) {
+        metaclass = __Pyx_CalculateMetaclass((PyTypeObject*) metaclass, bases);
+        Py_XDECREF(owned_metaclass);
+        if (unlikely(!metaclass))
+            return NULL;
+        owned_metaclass = metaclass;
+    }
+    margs = PyTuple_Pack(3, name, bases, dict);
+    if (unlikely(!margs)) {
+        result = NULL;
+    } else {
+        result = PyObject_Call(metaclass, margs, mkw);
+        Py_DECREF(margs);
+    }
+    Py_XDECREF(owned_metaclass);
+    return result;
+}
+
 /* CLineInTraceback */
 #ifndef CYTHON_CLINE_IN_TRACEBACK
 static int __Pyx_CLineForTraceback(PyThreadState *tstate, int c_line) {
@@ -4138,6 +6725,112 @@ bad:
         return (target_type) value;\
     }
 
+/* Print */
+#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
+static PyObject *__Pyx_GetStdout(void) {
+    PyObject *f = PySys_GetObject((char *)"stdout");
+    if (!f) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+    }
+    return f;
+}
+static int __Pyx_Print(PyObject* f, PyObject *arg_tuple, int newline) {
+    int i;
+    if (!f) {
+        if (!(f = __Pyx_GetStdout()))
+            return -1;
+    }
+    Py_INCREF(f);
+    for (i=0; i < PyTuple_GET_SIZE(arg_tuple); i++) {
+        PyObject* v;
+        if (PyFile_SoftSpace(f, 1)) {
+            if (PyFile_WriteString(" ", f) < 0)
+                goto error;
+        }
+        v = PyTuple_GET_ITEM(arg_tuple, i);
+        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0)
+            goto error;
+        if (PyString_Check(v)) {
+            char *s = PyString_AsString(v);
+            Py_ssize_t len = PyString_Size(v);
+            if (len > 0) {
+                switch (s[len-1]) {
+                    case ' ': break;
+                    case '\f': case '\r': case '\n': case '\t': case '\v':
+                        PyFile_SoftSpace(f, 0);
+                        break;
+                    default:  break;
+                }
+            }
+        }
+    }
+    if (newline) {
+        if (PyFile_WriteString("\n", f) < 0)
+            goto error;
+        PyFile_SoftSpace(f, 0);
+    }
+    Py_DECREF(f);
+    return 0;
+error:
+    Py_DECREF(f);
+    return -1;
+}
+#else
+static int __Pyx_Print(PyObject* stream, PyObject *arg_tuple, int newline) {
+    PyObject* kwargs = 0;
+    PyObject* result = 0;
+    PyObject* end_string;
+    if (unlikely(!__pyx_print)) {
+        __pyx_print = PyObject_GetAttr(__pyx_b, __pyx_n_s_print);
+        if (!__pyx_print)
+            return -1;
+    }
+    if (stream) {
+        kwargs = PyDict_New();
+        if (unlikely(!kwargs))
+            return -1;
+        if (unlikely(PyDict_SetItem(kwargs, __pyx_n_s_file, stream) < 0))
+            goto bad;
+        if (!newline) {
+            end_string = PyUnicode_FromStringAndSize(" ", 1);
+            if (unlikely(!end_string))
+                goto bad;
+            if (PyDict_SetItem(kwargs, __pyx_n_s_end, end_string) < 0) {
+                Py_DECREF(end_string);
+                goto bad;
+            }
+            Py_DECREF(end_string);
+        }
+    } else if (!newline) {
+        if (unlikely(!__pyx_print_kwargs)) {
+            __pyx_print_kwargs = PyDict_New();
+            if (unlikely(!__pyx_print_kwargs))
+                return -1;
+            end_string = PyUnicode_FromStringAndSize(" ", 1);
+            if (unlikely(!end_string))
+                return -1;
+            if (PyDict_SetItem(__pyx_print_kwargs, __pyx_n_s_end, end_string) < 0) {
+                Py_DECREF(end_string);
+                return -1;
+            }
+            Py_DECREF(end_string);
+        }
+        kwargs = __pyx_print_kwargs;
+    }
+    result = PyObject_Call(__pyx_print, arg_tuple, kwargs);
+    if (unlikely(kwargs) && (kwargs != __pyx_print_kwargs))
+        Py_DECREF(kwargs);
+    if (!result)
+        return -1;
+    Py_DECREF(result);
+    return 0;
+bad:
+    if (kwargs != __pyx_print_kwargs)
+        Py_XDECREF(kwargs);
+    return -1;
+}
+#endif
+
 /* CIntToPy */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
     const long neg_one = (long) ((long) 0 - (long) 1), const_zero = (long) 0;
@@ -4357,6 +7050,43 @@ raise_neg_overflow:
         "can't convert negative value to long");
     return (long) -1;
 }
+
+/* PrintOne */
+#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
+static int __Pyx_PrintOne(PyObject* f, PyObject *o) {
+    if (!f) {
+        if (!(f = __Pyx_GetStdout()))
+            return -1;
+    }
+    Py_INCREF(f);
+    if (PyFile_SoftSpace(f, 0)) {
+        if (PyFile_WriteString(" ", f) < 0)
+            goto error;
+    }
+    if (PyFile_WriteObject(o, f, Py_PRINT_RAW) < 0)
+        goto error;
+    if (PyFile_WriteString("\n", f) < 0)
+        goto error;
+    Py_DECREF(f);
+    return 0;
+error:
+    Py_DECREF(f);
+    return -1;
+    /* the line below is just to avoid C compiler
+     * warnings about unused functions */
+    return __Pyx_Print(f, NULL, 0);
+}
+#else
+static int __Pyx_PrintOne(PyObject* stream, PyObject *o) {
+    int res;
+    PyObject* arg_tuple = PyTuple_Pack(1, o);
+    if (unlikely(!arg_tuple))
+        return -1;
+    res = __Pyx_Print(stream, arg_tuple, 1);
+    Py_DECREF(arg_tuple);
+    return res;
+}
+#endif
 
 /* CIntFromPy */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
