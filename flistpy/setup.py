@@ -3,5 +3,5 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 
 setup(
-    ext_modules = cythonize([Extension("flist", ["flist.pyx"], libraries=["flist"])])
+    ext_modules = cythonize([Extension("flist", ["flist.pyx"], libraries=["flist"])], compiler_directives={'language_level' : "3"})
 )
