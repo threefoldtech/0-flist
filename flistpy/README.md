@@ -47,4 +47,5 @@ in there we specify extensions and compiler directives
 ## Notes
 
 - not direct assignment from python strings to `char*` (encode into bytes in another variable and set it to your pointer)
+- if you choose to change LD_LIBRARY_PATH it's not guaranteed to be found in cython context so if any problem try putting it in `/usr/lib`
 
