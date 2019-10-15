@@ -30,6 +30,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "mkdir",    .db = 1, .callback = zf_mkdir,    .help = "create an empty directory (non-recursive)"},
     {.name = "metadata", .db = 1, .callback = zf_metadata, .help = "get or set metadata"},
     {.name = "merge",    .db = 1, .callback = zf_merge,    .help = "merge another flist into the current one"},
+    {.name = "hub",      .db = 0, .callback = zf_hub,      .help = "0-hub command line tools"},
     {.name = "commit",   .db = 0, .callback = zf_commit,   .help = "commit changes to a new flist"},
     {.name = "close",    .db = 0, .callback = zf_close,    .help = "close mountpoint and discard files"},
 };
@@ -53,6 +54,11 @@ int usage(char *basename) {
     fprintf(stderr, "  If you want to upload chunks when inserting files, please set\n");
     fprintf(stderr, "  environment variable ZFLIST_BACKEND to a json backend formatted string,\n");
     fprintf(stderr, "  check backend documentation for more information\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  To use the hub subsystem, you need to specify at least a jwt token\n");
+    fprintf(stderr, "  via the environment variable ZFLIST_HUB_TOKEN, this jwt needs to be\n");
+    fprintf(stderr, "  valid for the hub. In addition, you can specify ZFLIST_HUB_USER if\n");
+    fprintf(stderr, "  your token contains multiple member-of users/organizations.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Available actions:\n");
 

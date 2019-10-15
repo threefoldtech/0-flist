@@ -14,6 +14,7 @@
 #include "tools.h"
 #include "actions.h"
 #include "actions_metadata.h"
+#include "actions_hub.h"
 
 //
 // open
@@ -680,3 +681,46 @@ int zf_merge(zf_callback_t *cb) {
 
     return value;
 }
+
+//
+// put et putdir (memory leak)
+//
+
+//
+// hub
+//
+int zf_hub(zf_callback_t *cb) {
+    if(cb->argc < 2) {
+        zf_error(cb, "hub", "missing hub subcommand");
+        return 1;
+    }
+
+    // checking if token is specified
+    cb->settings->token = getenv("ZFLIST_HUB_TOKEN");
+
+    if(cb->settings->token == NULL || strlen(cb->settings->token) == 0) {
+        zf_error(cb, "hub", "missing hub token");
+        return 1;
+    }
+
+    // checking if a special user is specified
+    cb->settings->user = getenv("ZFLIST_HUB_USER");
+
+    // skipping first argument
+    cb->argc -= 1;
+    cb->argv += 1;
+
+    // setting metadata
+    if(strcmp(cb->argv[0], "upload") == 0)
+        return zf_hub_upload(cb);
+
+    else if(strcmp(cb->argv[0], "promote") == 0)
+        return zf_hub_promote(cb);
+
+    else if(strcmp(cb->argv[0], "symlink") == 0)
+        return zf_hub_symlink(cb);
+
+    zf_error(cb, "hub", "unknown hub subcommand");
+    return 1;
+}
+

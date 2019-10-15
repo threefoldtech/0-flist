@@ -18,4 +18,6 @@
     int zf_putdir(zf_callback_t *cb);
     int zf_metadata(zf_callback_t *cb);
     int zf_merge(zf_callback_t *cb);
+
+    int zf_hub(zf_callback_t *cb);
 #endif

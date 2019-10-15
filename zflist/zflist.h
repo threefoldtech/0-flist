@@ -1,6 +1,8 @@
 #ifndef ZFLIST_H
     #define ZFLIST_H
 
+    #define ZFLIST_VERSION  "1.0"
+
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
     #else
@@ -10,12 +12,13 @@
     #define discard __attribute__((cleanup(__cleanup_free)))
 
     typedef struct zfe_settings_t {
-        char *mnt;         // temporary-point directory
+        char *mnt;           // temporary-point directory
 
         char *backendhost;   // backend host
         int backendport;     // backend port
         char *bpass;         // backend password
-        char *token;         // 0-hub gateway jwt token
+        char *token;         // 0-hub jwt token
+        char *user;          // 0-hub active user
 
     } zfe_settings_t;
 
