@@ -12,7 +12,9 @@
 #include "zflist.h"
 #include "tools.h"
 
-#define ZFLIST_HUB_BASEURL "https://hub.grid.tf"
+#define discard_http __attribute__((cleanup(__cleanup_http)))
+
+#define ZFLIST_HUB_BASEURL "https://playground.hub.grid.tf"
 
 // /api/flist/me/upload
 #define ZFLIST_HUB_UPLOAD    ZFLIST_HUB_BASEURL "/api/flist/me/upload"
@@ -26,6 +28,9 @@
 // /api/flist/me/<source>/link/<linkname>
 #define ZFLIST_HUB_SYMLINK   ZFLIST_HUB_BASEURL "/api/flist/me/%s/link/%s"
 
+// /api/flist/me
+#define ZFLIST_HUB_SELF      ZFLIST_HUB_BASEURL "/api/flist/me"
+
 
 //
 // internal curl handling
@@ -37,6 +42,17 @@ typedef struct curl_t {
     size_t length;
 
 } curl_t;
+
+typedef struct http_t {
+    long code;
+    char *body;
+
+} http_t;
+
+void __cleanup_http(void *ptr) {
+    http_t *http = (http_t *) ptr;
+    free(http->body);
+}
 
 static size_t zf_curl_body(char *ptr, size_t size, size_t nmemb, void *userdata) {
 	curl_t *curl = (curl_t *) userdata;
@@ -51,9 +67,13 @@ static size_t zf_curl_body(char *ptr, size_t size, size_t nmemb, void *userdata)
 	return size * nmemb;
 }
 
-static int zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
+static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
     char *cookies = NULL;
-    long httpcode;
+
+    http_t response = {
+        .code = 0,
+        .body = NULL
+    };
 
     curl_t curl = {
         .handler = NULL,
@@ -64,21 +84,12 @@ static int zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
 
     curl.handler = curl_easy_init();
 
-    // building cookies
-    if(!(cookies = calloc(sizeof(char), strlen(cb->settings->token) + 14)))
-        zf_diep(cb, "cookies: calloc");
-
-    strcat(cookies, "caddyoauth=");
-    strcat(cookies, cb->settings->token);
-    strcat(cookies, "; ");
-
     if(cb->settings->user) {
-        if(!(cookies = realloc(cookies, strlen(cookies) + strlen(cb->settings->user) + 14)))
-            zf_diep(cb, "cookies: realloc");
+        if(!(cookies = calloc(sizeof(char), strlen(cb->settings->user) + 14)))
+            zf_diep(cb, "cookies: calloc");
 
         strcat(cookies, "active-user=");
         strcat(cookies, cb->settings->user);
-        strcat(cookies, ";");
     }
 
     debug("[+] hub: target: %s\n", url);
@@ -99,7 +110,11 @@ static int zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
     curl_easy_setopt(curl.handler, CURLOPT_WRITEDATA, &curl);
     curl_easy_setopt(curl.handler, CURLOPT_WRITEFUNCTION, zf_curl_body);
     curl_easy_setopt(curl.handler, CURLOPT_USERAGENT, "zflist/" ZFLIST_VERSION);
-    curl_easy_setopt(curl.handler, CURLOPT_COOKIE, cookies);
+    curl_easy_setopt(curl.handler, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
+    curl_easy_setopt(curl.handler, CURLOPT_XOAUTH2_BEARER, cb->settings->token);
+
+    if(cookies)
+        curl_easy_setopt(curl.handler, CURLOPT_COOKIE, cookies);
 
     #ifdef FLIST_DEBUG
     // curl_easy_setopt(curl.handler, CURLOPT_VERBOSE, 1);
@@ -108,16 +123,17 @@ static int zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
     debug("[+] hub: sending request\n");
 
     curl.code = curl_easy_perform(curl.handler);
-    curl_easy_getinfo(curl.handler, CURLINFO_RESPONSE_CODE, &httpcode);
 
-    printf("[+] response [%ld]: %s", httpcode, curl.body);
+    curl_easy_getinfo(curl.handler, CURLINFO_RESPONSE_CODE, &response.code);
+    response.body = curl.body;
+
+    printf("[+] response [%ld]: %s", response.code, response.body);
 
     // cleaning
     curl_easy_cleanup(curl.handler);
-    free(curl.body);
     free(cookies);
 
-    return 0;
+    return response;
 }
 
 static char *zf_extension(char *str) {
@@ -130,28 +146,90 @@ static char *zf_extension(char *str) {
 }
 
 //
+// authentication checker
+//
+int zf_json_strcmp(json_t *root, char *key, char *value) {
+    json_t *entry;
+
+    if(!(entry = json_object_get(root, key)))
+        return 1;
+
+    if(strcmp(json_string_value(entry), value) != 0)
+        return 1;
+
+    return 0;
+}
+
+int zf_hub_authcheck(zf_callback_t *cb) {
+    json_t *root;
+    json_error_t error;
+    discard_http http_t response;
+
+    debug("[+] hub: checking authentication\n");
+
+    response = zf_hub_curl(cb, ZFLIST_HUB_SELF, NULL);
+    if(response.body == NULL)
+        return 0;
+
+    if(response.code != 200) {
+        // zf_error(cb, "authentication", "invalid response code");
+        return 0;
+    }
+
+    debug("[+] hub: authentication: %s", response.body);
+
+    if(!(root = json_loads(response.body, 0, &error))) {
+        zf_error(cb, "authentication", "could not parse server response");
+        return 0;
+    }
+
+    if(zf_json_strcmp(root, "status", "success")) {
+        json_decref(root);
+        return 0;
+    }
+
+    json_t *payload, *username;
+
+    payload = json_object_get(root, "payload");
+    username = json_object_get(payload, "username");
+
+    debug("[+] hub: authenticated as: %s\n", json_string_value(username));
+
+    json_decref(root);
+
+    return 1;
+}
+
+
+//
 // subcommands callback
 //
 int zf_hub_upload(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error(cb, "hub", "missing arguments: source filename");
+        zf_error(cb, "hub", "missing arguments: hub <source> <filename>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "authentication failed");
         return 1;
     }
 
     char *filename = cb->argv[1];
+    discard_http http_t response;
 
     if(strcmp(zf_extension(filename), ".flist") == 0)
-        zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename);
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename);
 
     if(strcmp(zf_extension(filename), ".gz") == 0)
-        zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename);
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename);
 
     return 0;
 }
 
 int zf_hub_promote(zf_callback_t *cb) {
     if(cb->argc != 3) {
-        zf_error(cb, "hub", "missing arguments: repo/file target");
+        zf_error(cb, "hub", "missing arguments: hub <repo/file> <target>");
         return 1;
     }
 
@@ -160,6 +238,12 @@ int zf_hub_promote(zf_callback_t *cb) {
         return 1;
     }
 
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
     char *sourcerepo = dirname(strdup(cb->argv[1]));
     char *sourcefile = strrchr(cb->argv[1], '/') + 1;
     char *localname = cb->argv[2];
@@ -168,7 +252,7 @@ int zf_hub_promote(zf_callback_t *cb) {
     debug("[+] hub: promote: %s/%s -> %s\n", sourcerepo, sourcefile, localname);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_PROMOTE, sourcerepo, sourcefile, localname);
-    zf_hub_curl(cb, endpoint, NULL);
+    response = zf_hub_curl(cb, endpoint, NULL);
 
     free(sourcerepo);
 
@@ -177,10 +261,16 @@ int zf_hub_promote(zf_callback_t *cb) {
 
 int zf_hub_symlink(zf_callback_t *cb) {
     if(cb->argc != 3) {
-        zf_error(cb, "hub", "missing arguments: source linkname");
+        zf_error(cb, "hub", "missing arguments: hub <source> <linkname>");
         return 1;
     }
 
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
     char *source = cb->argv[1];
     char *linkname = cb->argv[2];
     char endpoint[1024];
@@ -188,7 +278,7 @@ int zf_hub_symlink(zf_callback_t *cb) {
     debug("[+] hub: symlink: you/%s -> %s\n", source, linkname);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_SYMLINK, source, linkname);
-    zf_hub_curl(cb, endpoint, NULL);
+    response = zf_hub_curl(cb, endpoint, NULL);
 
     return 0;
 }
