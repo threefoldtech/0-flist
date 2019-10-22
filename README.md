@@ -109,6 +109,23 @@ Available actions:
   close           close mountpoint and discard files
 ```
 
+# Example
+
+How to create an flist, upload playloads and upload flist into playground hub:
+```
+export ZFLIST_MNT=/tmp/zflistmnt
+export ZFLIST_BACKEND='{"host": "playground.hub.grid.tf", "port": 9910}'
+export ZFLIST_HUB_TOKEN=eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVC....
+
+zflist init
+zflist putdir /tmp/20191021_150741 /
+zflist commit /tmp/committed-flist.flist
+zflist hub upload /tmp/committed-flist.flist
+
+
+[+] response [200]: {"payload": {"timing": {}, "name": "committed-flist.flist", "files": {"regular": 890, "directory": 2, "symlink": 0, "failure": 0, "special": 0}}, "status": "success"}
+```
+
 # Repository Owner
 - [Maxime Daniel](https://github.com/maxux), Telegram: [@maxux](http://t.me/maxux)
 
