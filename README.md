@@ -90,6 +90,15 @@ Usage: ./zflist [temporary-point] open <filename>
   First, you need to -open- an flist, then you can do some -edit-
   and finally you can -commit- (close) your changes to a new flist.
 
+  If you want to upload chunks when inserting files, please set
+  environment variable ZFLIST_BACKEND to a json backend formatted string,
+  check backend documentation for more information
+
+  To use the hub subsystem, you need to specify at least a jwt token
+  via the environment variable ZFLIST_HUB_TOKEN, this jwt needs to be
+  valid for the hub. In addition, you can specify ZFLIST_HUB_USER if
+  your token contains multiple member-of users/organizations.
+
 Available actions:
   open            open an flist to enable editing
   init            initialize an empty flist to enable editing
@@ -105,6 +114,7 @@ Available actions:
   mkdir           create an empty directory (non-recursive)
   metadata        get or set metadata
   merge           merge another flist into the current one
+  hub             0-hub command line tools
   commit          commit changes to a new flist
   close           close mountpoint and discard files
 ```
