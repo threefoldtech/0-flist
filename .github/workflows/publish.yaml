@@ -6,6 +6,11 @@ jobs:
     name: Release zflist
     runs-on: ubuntu-latest
     steps:
+    - name: Debug
+      run: |
+          find $HOME
+          false
+
     - name: Install dependencies
       run: |
         sudo apt-get update
