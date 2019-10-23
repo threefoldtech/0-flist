@@ -1,0 +1,51 @@
+name: Release zflist
+on: push
+
+jobs:
+  release:
+    name: Release zflist
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git libsnappy-dev libz-dev \
+            libtar-dev libb2-dev autoconf libtool libjansson-dev \
+            libhiredis-dev libsqlite3-dev libssl-dev
+    
+    - name: Clone capnp-c
+      working-directory: 
+      run: |
+        git clone https://github.com/opensourcerouting/c-capnproto
+        cd ./c-capnproto
+        git submodule update --init --recursive
+
+    - name: Configure capnp-c
+      working-directory: ./c-capnproto
+      run: |
+        autoreconf -f -i -s
+        ./configure
+
+    - name: Build capnp-c
+      working-directory: ./c-capnproto
+      run: |
+        make -j 3
+        sudo make install
+        sudo ldconfig
+
+    - name: Build libcurl
+      run: |
+        echo libcurl
+ 
+    - name: Build libflist
+      run: |
+        echo libflist
+ 
+    - name: Build zflist binary
+      run: |
+        echo zflist
+ 
+    - name: Publish to the hub
+      run: |
+        echo publish
+ 
