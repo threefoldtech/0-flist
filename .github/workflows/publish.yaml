@@ -6,8 +6,14 @@ jobs:
     name: Release zflist
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@master
+    
     - name: Debug
       run: |
+          set
+          ls $GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE
+          git status
           find $HOME
           false
 
