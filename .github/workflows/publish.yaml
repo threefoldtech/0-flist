@@ -70,7 +70,10 @@ jobs:
         cp zflist /tmp/zflist
         strip -s /tmp/zflist
  
-    - name: Publish to the hub
-      run: |
-        md5sum /tmp/zflist
- 
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: maxux/zflist
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
