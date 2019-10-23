@@ -6,17 +6,9 @@ jobs:
     name: Release zflist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
+    - name: Checkout source code
+      uses: actions/checkout@master
     
-    - name: Debug
-      run: |
-          set
-          ls $GITHUB_WORKSPACE
-          cd $GITHUB_WORKSPACE
-          git status
-          find $HOME
-          false
-
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -44,19 +36,41 @@ jobs:
         sudo make install
         sudo ldconfig
 
-    - name: Build libcurl
+    - name: Clone libcurl
       run: |
-        echo libcurl
+        git clone --depth=1 -b curl-7_62_0 https://github.com/curl/curl
+
+    - name: Configure libcurl
+      working-directory: ./curl
+      run: |
+        autoreconf -f -i -s
+        ./configure --disable-debug --enable-optimize --disable-curldebug --disable-symbol-hiding --disable-rt \
+          --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict \
+          --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher \
+          --disable-manual --disable-libcurl-option --disable-sspi --disable-ntlm-wb --without-brotli --without-librtmp --without-winidn \
+          --disable-threaded-resolver \
+          --with-openssl
+
+    - name: Build libcurl
+      working-directory: ./curl
+      run: |
+        make -j 3
+        sudo make install
+        sudo ldconfig
  
     - name: Build libflist
+      working-directory: ${{ github.workspace }}/libflist
       run: |
-        echo libflist
+        make
  
     - name: Build zflist binary
+      working-directory: ${{ github.workspace }}/zflist
       run: |
-        echo zflist
+        make production
+        cp zflist /tmp/zflist
+        strip -s /tmp/zflist
  
     - name: Publish to the hub
       run: |
-        echo publish
+        md5sum /tmp/zflist
  
