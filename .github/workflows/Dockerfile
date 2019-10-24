@@ -1,3 +1,3 @@
-FROM alpine:latest
+FROM frolvlad/alpine-glibc
 
-COPY . /opt/
+COPY zflist/zflist /usr/local/bin/
