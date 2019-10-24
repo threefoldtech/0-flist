@@ -76,4 +76,5 @@ jobs:
         name: maxux/zflist
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+        dockerfile: ${{ github.workspace }}/.github/workflows/Dockerfile
 
