@@ -1,3 +1,3 @@
 FROM alpine:latest
 
-COPY /tmp/zflist /bin/
+COPY /github/workspace/zflist /bin/

@@ -67,8 +67,8 @@ jobs:
       working-directory: ${{ github.workspace }}/zflist
       run: |
         make production
-        cp zflist /tmp/zflist
-        strip -s /tmp/zflist
+        cp zflist $GITHUB_WORKSPACE/zflist
+        strip -s $GITHUB_WORKSPACE/zflist
  
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
