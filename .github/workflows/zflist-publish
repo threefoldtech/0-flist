@@ -4,5 +4,5 @@ export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 zflist init
 zflist putdir $INPUT_ROOT /
 zflist commit /tmp/$INPUT_NAME
-zflist hub upload /tmp/$ZFLIST_NAME
+zflist hub upload /tmp/$INPUT_NAME
 
