@@ -315,12 +315,14 @@ inode_t *flist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_
     FTS* fs = NULL;
     FTSENT *fentry = NULL;
     char *ftsargv[2] = {localdir, NULL};
-    char *tmpsrc = dirname(strdup(localdir));
+    discard char *tmpsrc = dirname(strdup(localdir));
     inode_t *inode = NULL;
     dirnode_t *workingdir = parent;
 
-    if(strcmp(tmpsrc, "/") == 0)
-        tmpsrc = "";
+    if(strcmp(tmpsrc, "/") == 0) {
+        free(tmpsrc);
+        tmpsrc = strdup("");
+    }
 
     //
     // first pass:
@@ -412,9 +414,6 @@ inode_t *flist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_
     }
 
     fts_close(fs);
-
-    // cleaning
-    free(tmpsrc);
 
     return inode;
 }
