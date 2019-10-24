@@ -1,0 +1,27 @@
+#!/bin/bash
+export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
+export ZFLIST_HUB_USER=$INPUT_USER
+
+action=${INPUT_ACTION^^}
+
+if [ "$action" == "PUBLISH" ]; then
+    echo "Initializing new flist"
+    zflist init
+
+    echo "Building the flist"
+    zflist putdir $INPUT_ROOT /
+    zflist commit /tmp/$INPUT_NAME
+
+    echo "Uploading to the hub"
+    zflist hub upload /tmp/$INPUT_NAME
+fi
+
+if [ "$action" == "SYMLINK" ]; then
+    echo "Symlinking $INPUT_NAME -> $INPUT_TARGET"
+    zflist hub symlink $INPUT_NAME $INPUT_TARGET
+fi
+
+if [ "$action" == "PROMOTE" ]; then
+    echo "Promoting $INPUT_NAME -> $INPUT_TARGET"
+    zflist hub promote $INPUT_NAME $INPUT_TARGET
+fi
