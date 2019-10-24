@@ -1,3 +1,3 @@
-FROM frolvlad/alpine-glibc:latest
+FROM ubuntu:latest
 
 COPY zflist/zflist /usr/local/bin/
