@@ -291,6 +291,13 @@ static int fts_compare(const FTSENT **one, const FTSENT **two) {
 
 inode_t *flist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx) {
     struct stat sb;
+    size_t localen = strlen(localdir);
+
+    // removing any training slashes on the localdir
+    while(localdir[localen - 1] == '/') {
+        localdir[localen - 1] = '\0';
+        localen -= 1;
+    }
 
     debug("[+] libflist: adding <%s> into </%s>\n", localdir, parent->fullpath);
     if(stat(localdir, &sb) < 0) {

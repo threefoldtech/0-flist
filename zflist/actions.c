@@ -603,6 +603,11 @@ int zf_putdir(zf_callback_t *cb) {
     char *localdir = cb->argv[1];
     char *destdir = cb->argv[2];
 
+    if(strcmp(localdir, "/") == 0) {
+        zf_error(cb, "putdir", "adding your own root directory is not allowed");
+        return 1;
+    }
+
     debug("[+] action: putdir: looking for directory: %s\n", destdir);
 
     dirnode_t *dirnode;
