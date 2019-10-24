@@ -319,6 +319,9 @@ inode_t *flist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_
     inode_t *inode = NULL;
     dirnode_t *workingdir = parent;
 
+    if(strcmp(tmpsrc, "/") == 0)
+        tmpsrc = "";
+
     //
     // first pass:
     //   creating all directories hierarchy
