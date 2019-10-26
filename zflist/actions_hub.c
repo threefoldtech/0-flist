@@ -203,6 +203,7 @@ int zf_hub_authcheck(zf_callback_t *cb) {
     }
 
     json_t *payload, *username;
+    (void) username; // avoid warning on release code
 
     payload = json_object_get(root, "payload");
     username = json_object_get(payload, "username");
