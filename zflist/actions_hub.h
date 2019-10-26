@@ -4,4 +4,5 @@
     int zf_hub_upload(zf_callback_t *cb);
     int zf_hub_promote(zf_callback_t *cb);
     int zf_hub_symlink(zf_callback_t *cb);
+    int zf_hub_login(zf_callback_t *cb);
 #endif

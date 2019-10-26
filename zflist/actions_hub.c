@@ -31,6 +31,8 @@
 // /api/flist/me
 #define ZFLIST_HUB_SELF      ZFLIST_HUB_BASEURL "/api/flist/me"
 
+// itsyou.online refresh token
+#define ZFLIST_IYO_REFRESH   "https://itsyou.online/v1/oauth/jwt/refresh"
 
 //
 // internal curl handling
@@ -172,6 +174,18 @@ int zf_hub_authcheck(zf_callback_t *cb) {
         return 0;
 
     if(response.code != 200) {
+        discard_http http_t refresh;
+
+        refresh = zf_hub_curl(cb, ZFLIST_IYO_REFRESH, NULL);
+        if(refresh.body == NULL)
+            return 0;
+
+        if(refresh.code == 200) {
+            debug("[+] hub: token refreshed, storing new token\n");
+            cb->settings->token = strdup(refresh.body);
+            return zf_hub_authcheck(cb);
+        }
+
         // zf_error(cb, "authentication", "invalid response code");
         return 0;
     }
@@ -279,6 +293,17 @@ int zf_hub_symlink(zf_callback_t *cb) {
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_SYMLINK, source, linkname);
     response = zf_hub_curl(cb, endpoint, NULL);
+
+    return 0;
+}
+
+int zf_hub_login(zf_callback_t *cb) {
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    debug("[+] hub: authenticated\n");
 
     return 0;
 }
