@@ -129,7 +129,7 @@ static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
     curl_easy_getinfo(curl.handler, CURLINFO_RESPONSE_CODE, &response.code);
     response.body = curl.body;
 
-    printf("[+] response [%ld]: %s", response.code, response.body);
+    debug("[+] response [%ld]: %s", response.code, response.body);
 
     // cleaning
     curl_easy_cleanup(curl.handler);
