@@ -8,7 +8,9 @@ if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
     zflist init
 
-    echo "Building the flist"
+    echo "Building the flist ($INPUT_ROOT)"
+    ls $INPUT_ROOT
+
     zflist putdir $INPUT_ROOT /
     zflist commit /tmp/$INPUT_NAME
 
