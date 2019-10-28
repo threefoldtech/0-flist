@@ -2,6 +2,7 @@
 export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 export ZFLIST_HUB_USER=$INPUT_USER
 
+filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
 if [ "$action" == "PUBLISH" ]; then
@@ -10,18 +11,18 @@ if [ "$action" == "PUBLISH" ]; then
 
     echo "Building the flist (path: $INPUT_ROOT)"
     zflist putdir $INPUT_ROOT /
-    zflist commit /tmp/$INPUT_NAME
+    zflist commit /tmp/$filename
 
     echo "Uploading to the hub"
-    zflist hub upload /tmp/$INPUT_NAME
+    zflist hub upload /tmp/$filename
 fi
 
 if [ "$action" == "SYMLINK" ]; then
-    echo "Symlinking $INPUT_NAME -> $INPUT_TARGET"
-    zflist hub symlink $INPUT_NAME $INPUT_TARGET
+    echo "Symlinking $filename -> $INPUT_TARGET"
+    zflist hub symlink $filename $INPUT_TARGET
 fi
 
 if [ "$action" == "PROMOTE" ]; then
-    echo "Promoting $INPUT_NAME -> $INPUT_TARGET"
-    zflist hub promote $INPUT_NAME $INPUT_TARGET
+    echo "Promoting $filename -> $INPUT_TARGET"
+    zflist hub promote $filename $INPUT_TARGET
 fi
