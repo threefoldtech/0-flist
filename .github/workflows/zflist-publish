@@ -3,6 +3,7 @@ export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 export ZFLIST_HUB_USER=$INPUT_USER
 
 filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
+targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
 if [ "$action" == "PUBLISH" ]; then
@@ -18,11 +19,11 @@ if [ "$action" == "PUBLISH" ]; then
 fi
 
 if [ "$action" == "SYMLINK" ]; then
-    echo "Symlinking $filename -> $INPUT_TARGET"
-    zflist hub symlink $filename $INPUT_TARGET
+    echo "Symlinking $filename -> $targetname"
+    zflist hub symlink $filename $targetname
 fi
 
 if [ "$action" == "PROMOTE" ]; then
-    echo "Promoting $filename -> $INPUT_TARGET"
-    zflist hub promote $filename $INPUT_TARGET
+    echo "Promoting $filename -> $targetname"
+    zflist hub promote $filename $targetname
 fi
