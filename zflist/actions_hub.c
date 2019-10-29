@@ -28,6 +28,12 @@
 // /api/flist/me/<source>/link/<linkname>
 #define ZFLIST_HUB_SYMLINK   ZFLIST_HUB_BASEURL "/api/flist/me/%s/link/%s"
 
+// /api/flist/me/<source>
+#define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
+
+// /api/flist/<repository>/<filename>/light
+#define ZFLIST_HUB_READLINK  ZFLIST_HUB_BASEURL "/api/flist/%s/light"
+
 // /api/flist/me
 #define ZFLIST_HUB_SELF      ZFLIST_HUB_BASEURL "/api/flist/me"
 
@@ -69,7 +75,7 @@ static size_t zf_curl_body(char *ptr, size_t size, size_t nmemb, void *userdata)
 	return size * nmemb;
 }
 
-static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
+static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename, char *method) {
     char *cookies = NULL;
 
     http_t response = {
@@ -107,6 +113,9 @@ static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename) {
 
         curl_easy_setopt(curl.handler, CURLOPT_MIMEPOST, form);
     }
+
+    if(method)
+        curl_easy_setopt(curl.handler, CURLOPT_CUSTOMREQUEST, method);
 
     curl_easy_setopt(curl.handler, CURLOPT_URL, url);
     curl_easy_setopt(curl.handler, CURLOPT_WRITEDATA, &curl);
@@ -169,19 +178,19 @@ int zf_hub_authcheck(zf_callback_t *cb) {
 
     debug("[+] hub: checking authentication\n");
 
-    response = zf_hub_curl(cb, ZFLIST_HUB_SELF, NULL);
+    response = zf_hub_curl(cb, ZFLIST_HUB_SELF, NULL, NULL);
     if(response.body == NULL)
         return 0;
 
     if(response.code != 200) {
         discard_http http_t refresh;
 
-        refresh = zf_hub_curl(cb, ZFLIST_IYO_REFRESH, NULL);
+        refresh = zf_hub_curl(cb, ZFLIST_IYO_REFRESH, NULL, NULL);
         if(refresh.body == NULL)
             return 0;
 
         if(refresh.code == 200) {
-            debug("[+] hub: token refreshed, storing new token\n");
+            debug("\n[+] hub: token refreshed, storing new token\n");
             cb->settings->token = strdup(refresh.body);
             return zf_hub_authcheck(cb);
         }
@@ -234,10 +243,10 @@ int zf_hub_upload(zf_callback_t *cb) {
     discard_http http_t response;
 
     if(strcmp(zf_extension(filename), ".flist") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename);
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename, "POST");
 
     if(strcmp(zf_extension(filename), ".gz") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename);
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename, "POST");
 
     return 0;
 }
@@ -267,7 +276,7 @@ int zf_hub_promote(zf_callback_t *cb) {
     debug("[+] hub: promote: %s/%s -> %s\n", sourcerepo, sourcefile, localname);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_PROMOTE, sourcerepo, sourcefile, localname);
-    response = zf_hub_curl(cb, endpoint, NULL);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     free(sourcerepo);
 
@@ -293,7 +302,7 @@ int zf_hub_symlink(zf_callback_t *cb) {
     debug("[+] hub: symlink: you/%s -> %s\n", source, linkname);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_SYMLINK, source, linkname);
-    response = zf_hub_curl(cb, endpoint, NULL);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;
 }
@@ -305,6 +314,91 @@ int zf_hub_login(zf_callback_t *cb) {
     }
 
     debug("[+] hub: authenticated\n");
+
+    return 0;
+}
+
+int zf_hub_delete(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        zf_error(cb, "hub", "missing arguments: hub <source>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *source = cb->argv[1];
+    char endpoint[1024];
+
+    debug("[+] hub: delete: you/%s\n", source);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_DELETE, source);
+    response = zf_hub_curl(cb, endpoint, NULL, "DELETE");
+
+    return 0;
+}
+
+int zf_hub_readlink(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        zf_error(cb, "hub", "missing arguments: hub <repository>/<linkname>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *linkname = cb->argv[1];
+    char endpoint[1024];
+
+    debug("[+] hub: readlink: %s\n", linkname);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_READLINK, linkname);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    // parse json output
+    json_t *root, *status, *type, *target;
+    json_error_t error;
+
+    if(!(root = json_loads(response.body, 0, &error))) {
+        zf_error(cb, "readlink", "could not parse server response");
+        return 1;
+    }
+
+    if((status = json_object_get(root, "status"))) {
+        status = json_object_get(root, "message");
+        zf_error(cb, "readlink", (char *) json_string_value(status));
+        json_decref(root);
+        return 1;
+    }
+
+    if((type = json_object_get(root, "type")) == NULL) {
+        zf_error(cb, "readlink", "could not load type information");
+        json_decref(root);
+        return 1;
+    }
+
+    if(strcmp(json_string_value(type), "symlink")) {
+        zf_error(cb, "readlink", "requested flist is not a symlink, could not readlink");
+        json_decref(root);
+        return 1;
+    }
+
+    if(!(target = json_object_get(root, "target"))) {
+        zf_error(cb, "readlink", "could not read link target");
+        json_decref(root);
+        return 1;
+    }
+
+    debug("[+] hub: readlink: %s\n", json_string_value(target));
+    printf("%s\n", json_string_value(target));
+
+    json_decref(root);
 
     return 0;
 }
