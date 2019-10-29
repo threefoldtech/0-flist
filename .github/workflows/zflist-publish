@@ -27,3 +27,16 @@ if [ "$action" == "PROMOTE" ]; then
     echo "Promoting $filename -> $targetname"
     zflist hub promote $filename $targetname
 fi
+
+if [ "$action" == "DELETE" ]; then
+    echo "Deleting $filename"
+    zflist hub delete $filename
+fi
+
+if [ "$action" == "READLINK" ]; then
+    echo "Readlink of $filename"
+    readlinkname=$(zflist hub readlink $filename)
+
+    echo ${readlinkname}
+    echo ::set-output name=linkpoint::"${readlinkname}"
+fi
