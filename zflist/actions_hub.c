@@ -14,7 +14,7 @@
 
 #define discard_http __attribute__((cleanup(__cleanup_http)))
 
-#define ZFLIST_HUB_BASEURL "https://playground.hub.grid.tf"
+#define ZFLIST_HUB_BASEURL "https://hub.grid.tf"
 
 // /api/flist/me/upload
 #define ZFLIST_HUB_UPLOAD    ZFLIST_HUB_BASEURL "/api/flist/me/upload"
