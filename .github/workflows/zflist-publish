@@ -1,6 +1,7 @@
 #!/bin/bash
 export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 export ZFLIST_HUB_USER=$INPUT_USER
+export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$INPUT_TOKEN\"}"
 
 filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
