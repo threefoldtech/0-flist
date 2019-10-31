@@ -183,19 +183,7 @@ int zf_hub_authcheck(zf_callback_t *cb) {
         return 0;
 
     if(response.code != 200) {
-        discard_http http_t refresh;
-
-        refresh = zf_hub_curl(cb, ZFLIST_IYO_REFRESH, NULL, NULL);
-        if(refresh.body == NULL)
-            return 0;
-
-        if(refresh.code == 200) {
-            debug("\n[+] hub: token refreshed, storing new token\n");
-            cb->settings->token = strdup(refresh.body);
-            return zf_hub_authcheck(cb);
-        }
-
-        // zf_error(cb, "authentication", "invalid response code");
+        zf_error(cb, "authentication", response.body);
         return 0;
     }
 
@@ -317,6 +305,24 @@ int zf_hub_login(zf_callback_t *cb) {
 
     return 0;
 }
+
+int zf_hub_refresh(zf_callback_t *cb) {
+    discard_http http_t refresh;
+
+    refresh = zf_hub_curl(cb, ZFLIST_IYO_REFRESH, NULL, NULL);
+    if(refresh.body == NULL)
+        return 1;
+
+    if(refresh.code == 200) {
+        debug("\n[+] hub: token refreshed, storing new token\n");
+        printf("%s\n", refresh.body);
+    }
+
+    debug("[+] hub: token refreshed\n");
+
+    return 0;
+}
+
 
 int zf_hub_delete(zf_callback_t *cb) {
     if(cb->argc != 2) {

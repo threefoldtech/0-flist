@@ -7,4 +7,5 @@
     int zf_hub_delete(zf_callback_t *cb);
     int zf_hub_readlink(zf_callback_t *cb);
     int zf_hub_login(zf_callback_t *cb);
+    int zf_hub_refresh(zf_callback_t *cb);
 #endif
