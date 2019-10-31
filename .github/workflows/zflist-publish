@@ -9,6 +9,12 @@ filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
+# force token refreshing
+if [ "$ZFLIST_HUB_TOKEN" != "" ]; then
+    echo "Refreshing hub token"
+    ZFLIST_HUB_TOKEN=$(zflist hub refresh)
+fi
+
 if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
     zflist init
