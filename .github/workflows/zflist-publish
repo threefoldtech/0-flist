@@ -2,8 +2,6 @@
 set -e
 
 export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
-export ZFLIST_HUB_USER=$INPUT_USER
-export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$INPUT_TOKEN\"}"
 
 filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
@@ -14,6 +12,9 @@ if [ "$ZFLIST_HUB_TOKEN" != "" ]; then
     echo "Refreshing hub token"
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 fi
+
+export ZFLIST_HUB_USER=$INPUT_USER
+export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\}"
 
 if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
