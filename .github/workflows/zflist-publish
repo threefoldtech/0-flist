@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 export ZFLIST_HUB_USER=$INPUT_USER
 export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$INPUT_TOKEN\"}"
