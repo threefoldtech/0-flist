@@ -226,8 +226,7 @@ int zf_stat_inode(zf_callback_t *cb, inode_t *inode) {
 
 // looking for global defined backend
 // and set context if possible
-flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
-    flist_db_t *backdb = NULL;
+int zf_backend_detect() {
     char *envbackend;
 
     if(!(envbackend = getenv("ZFLIST_BACKEND"))) {
@@ -236,13 +235,23 @@ flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx) {
         debug("[-] WARNING: file won't be uploaded, but chunks\n");
         debug("[-] WARNING: will be computed and stored\n");
         debug("[-] WARNING:\n");
-        return NULL;
+        return 0;
     }
+
+    return 1;
+}
+
+flist_ctx_t *zf_backend_extract(flist_ctx_t *ctx) {
+    flist_db_t *backdb = NULL;
+    char *envbackend;
 
     debug("[+] backend: detecting backend settings\n");
 
+    if(!(envbackend = getenv("ZFLIST_BACKEND")))
+        return NULL;
+
     if(!(backdb = libflist_metadata_backend_database_json(envbackend))) {
-        fprintf(stderr, "[-] action: put: backend: %s\n", libflist_strerror());
+        fprintf(stderr, "[-] init: backend: %s\n", libflist_strerror());
         return NULL;
     }
 

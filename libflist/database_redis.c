@@ -238,8 +238,15 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         if(token) {
             debug("[+] database: authenticating token\n");
 
-            if(!(reply = redisCommand(db->redis, "AUTH %s", token)))
+            if(!(reply = redisCommand(db->redis, "AUTH %s", token))) {
+                libflist_set_error("could not send auth command");
                 return 1;
+            }
+
+            if(strncmp(reply->str, "OK", 2)) {
+                libflist_set_error("auth: %s", reply->str);
+                return 1;
+            }
         }
 
         if(password) {
@@ -289,7 +296,11 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, ch
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace, password, token);
+    if(database_redis_set_namespace(handler, namespace, password, token)) {
+        // error should have been set
+        database_redis_close(db);
+        return NULL;
+    }
 
     return db;
 }

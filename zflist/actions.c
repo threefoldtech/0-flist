@@ -524,7 +524,9 @@ int zf_put(zf_callback_t *cb) {
     }
 
     // looking for backend
-    zf_backend_detect(cb->ctx);
+    if(zf_backend_detect())
+        if(!(zf_backend_extract(cb->ctx)))
+            return 1;
 
     // building directories
     char *localfile = cb->argv[1];
@@ -597,7 +599,9 @@ int zf_putdir(zf_callback_t *cb) {
     }
 
     // looking for backend
-    zf_backend_detect(cb->ctx);
+    if(zf_backend_detect())
+        if(!(zf_backend_extract(cb->ctx)))
+            return 1;
 
     // building directories
     char *localdir = cb->argv[1];

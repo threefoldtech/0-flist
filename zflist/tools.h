@@ -10,7 +10,8 @@
     void zf_internal_json_init(zf_callback_t *cb);
     void zf_internal_json_finalize(zf_callback_t *cb);
 
-    flist_ctx_t *zf_backend_detect(flist_ctx_t *ctx);
+    int zf_backend_detect();
+    flist_ctx_t *zf_backend_extract(flist_ctx_t *ctx);
 
     int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint);
     int zf_remove_database(zf_callback_t *cb, char *mountpoint);
