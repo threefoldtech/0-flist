@@ -14,7 +14,7 @@ if [ "$ZFLIST_HUB_TOKEN" != "" ]; then
 fi
 
 export ZFLIST_HUB_USER=$INPUT_USER
-export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\}"
+export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
 
 if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
