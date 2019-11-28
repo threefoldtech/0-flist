@@ -39,11 +39,11 @@ if [ "$action" == "RENAME" ]; then
 fi
 
 if [ "$action" == "CROSSLINK" ]; then
-    repository=$(echo $filename | awk -F/ '{ print $1 }')
-    sourcename=$(echo $filename | awk -F/ '{ print $2 }')
+    repository=$(echo $targetname | awk -F/ '{ print $1 }')
+    sourcename=$(echo $targetname | awk -F/ '{ print $2 }')
 
-    echo "Symlinking $repository/$sourcename -> $targetname"
-    zflist hub crosslink $targetname $repository $sourcename
+    echo "Cross-linking $repository/$sourcename -> $filename"
+    zflist hub crosslink $filename $repository $sourcename
 fi
 
 if [ "$action" == "PROMOTE" ]; then
