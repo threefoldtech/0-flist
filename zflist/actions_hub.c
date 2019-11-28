@@ -34,6 +34,9 @@
 // /api/flist/me/<source>
 #define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
 
+// /api/flist/me/<source>/rename/<destination>
+#define ZFLIST_HUB_RENAME    ZFLIST_HUB_BASEURL "/api/flist/me/%s/rename/%s"
+
 // /api/flist/<repository>/<filename>/light
 #define ZFLIST_HUB_READLINK  ZFLIST_HUB_BASEURL "/api/flist/%s/light"
 
@@ -318,6 +321,30 @@ int zf_hub_crosslink(zf_callback_t *cb) {
     debug("[+] hub: cross symlink: you/%s -> %s/%s\n", linkname, repository, source);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_XSYMLINK, linkname, repository, source);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    return 0;
+}
+
+int zf_hub_rename(zf_callback_t *cb) {
+    if(cb->argc != 3) {
+        zf_error(cb, "hub", "missing arguments: rename <source> <newname>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *source = cb->argv[1];
+    char *newname = cb->argv[2];
+    char endpoint[1024];
+
+    debug("[+] hub: rename: you/%s -> you/%s\n", source, newname);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_RENAME, source, newname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;

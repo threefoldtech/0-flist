@@ -735,6 +735,9 @@ int zf_hub(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "delete") == 0)
         return zf_hub_delete(cb);
 
+    else if(strcmp(cb->argv[0], "rename") == 0)
+        return zf_hub_rename(cb);
+
     else if(strcmp(cb->argv[0], "readlink") == 0)
         return zf_hub_readlink(cb);
 
