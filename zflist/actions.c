@@ -729,6 +729,9 @@ int zf_hub(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "symlink") == 0)
         return zf_hub_symlink(cb);
 
+    else if(strcmp(cb->argv[0], "crosslink") == 0)
+        return zf_hub_crosslink(cb);
+
     else if(strcmp(cb->argv[0], "delete") == 0)
         return zf_hub_delete(cb);
 

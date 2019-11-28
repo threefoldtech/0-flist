@@ -28,6 +28,9 @@
 // /api/flist/me/<source>/link/<linkname>
 #define ZFLIST_HUB_SYMLINK   ZFLIST_HUB_BASEURL "/api/flist/me/%s/link/%s"
 
+// /api/flist/me/<linkname>/crosslink/<repository>/<sourcename>
+#define ZFLIST_HUB_XSYMLINK  ZFLIST_HUB_BASEURL "/api/flist/me/%s/crosslink/%s/%s"
+
 // /api/flist/me/<source>
 #define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
 
@@ -290,6 +293,31 @@ int zf_hub_symlink(zf_callback_t *cb) {
     debug("[+] hub: symlink: you/%s -> %s\n", source, linkname);
 
     snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_SYMLINK, source, linkname);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    return 0;
+}
+
+int zf_hub_crosslink(zf_callback_t *cb) {
+    if(cb->argc != 4) {
+        zf_error(cb, "hub", "missing arguments: crosslink <linkname> <repository> <sourcename>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *linkname = cb->argv[1];
+    char *repository = cb->argv[2];
+    char *source = cb->argv[3];
+    char endpoint[1024];
+
+    debug("[+] hub: cross symlink: you/%s -> %s/%s\n", linkname, repository, source);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_XSYMLINK, linkname, repository, source);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;
