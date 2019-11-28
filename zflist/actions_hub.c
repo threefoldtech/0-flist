@@ -221,7 +221,7 @@ int zf_hub_authcheck(zf_callback_t *cb) {
 //
 int zf_hub_upload(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error(cb, "hub", "missing arguments: hub <source> <filename>");
+        zf_error(cb, "hub", "missing arguments: upload <source> <filename>");
         return 1;
     }
 
@@ -244,7 +244,7 @@ int zf_hub_upload(zf_callback_t *cb) {
 
 int zf_hub_promote(zf_callback_t *cb) {
     if(cb->argc != 3) {
-        zf_error(cb, "hub", "missing arguments: hub <repo/file> <target>");
+        zf_error(cb, "hub", "missing arguments: promote <repo/file> <target>");
         return 1;
     }
 
@@ -276,7 +276,7 @@ int zf_hub_promote(zf_callback_t *cb) {
 
 int zf_hub_symlink(zf_callback_t *cb) {
     if(cb->argc != 3) {
-        zf_error(cb, "hub", "missing arguments: hub <source> <linkname>");
+        zf_error(cb, "hub", "missing arguments: symlink <source> <linkname>");
         return 1;
     }
 
@@ -354,7 +354,7 @@ int zf_hub_refresh(zf_callback_t *cb) {
 
 int zf_hub_delete(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error(cb, "hub", "missing arguments: hub <source>");
+        zf_error(cb, "hub", "missing arguments: delete <source>");
         return 1;
     }
 
@@ -377,7 +377,7 @@ int zf_hub_delete(zf_callback_t *cb) {
 
 int zf_hub_readlink(zf_callback_t *cb) {
     if(cb->argc != 2) {
-        zf_error(cb, "hub", "missing arguments: hub <repository>/<linkname>");
+        zf_error(cb, "hub", "missing arguments: readlink <repository>/<linkname>");
         return 1;
     }
 
