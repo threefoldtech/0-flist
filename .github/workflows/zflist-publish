@@ -33,6 +33,14 @@ if [ "$action" == "SYMLINK" ]; then
     zflist hub symlink $filename $targetname
 fi
 
+if [ "$action" == "CROSSLINK" ]; then
+    repository=$(echo $filename | awk -F/ '{ print $1 }')
+    sourcename=$(echo $filename | awk -F/ '{ print $2 }')
+
+    echo "Symlinking $repository/$sourcename -> $targetname"
+    zflist hub crosslink $targetname $repository $sourcename
+fi
+
 if [ "$action" == "PROMOTE" ]; then
     echo "Promoting $filename -> $targetname"
     zflist hub promote $filename $targetname
