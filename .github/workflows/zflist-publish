@@ -33,6 +33,11 @@ if [ "$action" == "SYMLINK" ]; then
     zflist hub symlink $filename $targetname
 fi
 
+if [ "$action" == "RENAME" ]; then
+    echo "Renaming $filename -> $targetname"
+    zflist hub rename $filename $targetname
+fi
+
 if [ "$action" == "CROSSLINK" ]; then
     repository=$(echo $filename | awk -F/ '{ print $1 }')
     sourcename=$(echo $filename | awk -F/ '{ print $2 }')
