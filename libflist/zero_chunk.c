@@ -341,8 +341,10 @@ inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx) {
         flist_chunk_t *chunk;
         inode_chunk_t *ichunk = &chunks->list[i];
 
-        if(!(chunk = libflist_chunk_encrypt(data, buffer->chunksize)))
+        if(!(chunk = libflist_chunk_encrypt(data, buffer->chunksize))) {
+            // FIXME: memory leak
             return NULL;
+        }
 
         ichunk->entryid = buffer_duplicate(&chunk->id);
         ichunk->entrylen = chunk->id.length;
@@ -353,7 +355,9 @@ inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx) {
         // uploading this chunk
         if(ctx && ctx->backend) {
             if(libflist_backend_chunk_commit(ctx->backend, chunk) < 0) {
-                fprintf(stderr, "[-] libflist: chunk: could not upload this chunk\n");
+                // FIXME: memory leak
+                fprintf(stderr, "[-] libflist: chunk: %s\n", libflist_strerror());
+                return NULL;
             }
         }
 

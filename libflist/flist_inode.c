@@ -227,7 +227,8 @@ static inode_t *flist_process_file(const char *iname, const struct stat *sb, con
         inode->type = INODE_FILE;
 
         // computing chunks
-        inode->chunks = libflist_chunks_proceed((char *) realpath, ctx);
+        if(!(inode->chunks = libflist_chunks_proceed((char *) realpath, ctx)))
+            return NULL;
     }
 
     return inode;
