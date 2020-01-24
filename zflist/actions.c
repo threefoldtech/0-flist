@@ -689,13 +689,14 @@ int zf_merge(zf_callback_t *cb) {
     // do the merge
     dirnode_t *merged;
 
-    if(!(merged = libflist_merge(cb->ctx, ctx))) {
+    if((merged = libflist_merge(cb->ctx, ctx))) {
+        libflist_serial_dirnode_commit(merged, cb->ctx, merged);
+        libflist_dirnode_free_recursive(merged);
+
+    } else {
         zf_error(cb, "merge", "error: %s", libflist_strerror());
         value = 1;
     }
-
-    libflist_serial_dirnode_commit(merged, cb->ctx, merged);
-    libflist_dirnode_free_recursive(merged);
 
     // cleanup target context
     zf_internal_cleanup(ctx);
