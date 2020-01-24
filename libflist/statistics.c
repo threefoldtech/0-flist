@@ -24,6 +24,11 @@ size_t libflist_stats_special_add(flist_ctx_t *ctx, size_t amount) {
     return ctx->stats.special;
 }
 
+size_t libflist_stats_failure_add(flist_ctx_t *ctx, size_t amount) {
+    ctx->stats.failure += amount;
+    return ctx->stats.failure;
+}
+
 size_t libflist_stats_size_add(flist_ctx_t *ctx, size_t amount) {
     ctx->stats.size += amount;
     return ctx->stats.size;

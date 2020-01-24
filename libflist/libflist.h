@@ -365,6 +365,7 @@
     size_t libflist_stats_directory_add(flist_ctx_t *ctx, size_t amount);
     size_t libflist_stats_symlink_add(flist_ctx_t *ctx, size_t amount);
     size_t libflist_stats_special_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_failure_add(flist_ctx_t *ctx, size_t amount);
     size_t libflist_stats_size_add(flist_ctx_t *ctx, size_t amount);
     flist_stats_t *libflist_stats_get(flist_ctx_t *ctx);
 

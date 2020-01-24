@@ -369,6 +369,7 @@ static int zf_find_finalize_text(zf_callback_t *cb) {
     printf("  Symbolic links : %lu\n", stats->symlink);
     printf("  Directories    : %lu\n", stats->directory);
     printf("  Special files  : %lu\n", stats->special);
+    printf("  Failure        : %lu\n", stats->failure);
     printf("  Total size     : %.2f MB\n\n", (stats->size / (1024.0 * 1024)));
 
     return 0;
@@ -382,6 +383,7 @@ static int zf_find_finalize_json(zf_callback_t *cb) {
     json_object_set_new(response, "symlink", json_integer(stats->symlink));
     json_object_set_new(response, "directory", json_integer(stats->directory));
     json_object_set_new(response, "special", json_integer(stats->special));
+    json_object_set_new(response, "failure", json_integer(stats->failure));
     json_object_set_new(response, "fullsize", json_integer(stats->size));
 
     return 0;
