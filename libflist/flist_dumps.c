@@ -42,6 +42,10 @@ void libflist_dirnode_dumps(dirnode_t *root) {
     debug("[+]   subdirectories: %lu\n", root->dir_length);
     debug("[+]   inodes: %lu\n", root->inode_length);
 
+    debug("[+] dirnode: aclkey: %s\n", root->acl->key);
+    debug("[+] dirnode:   user: %s, group: %s\n", root->acl->uname, root->acl->gname);
+    debug("[+] dirnode:   mode: %o\n", root->acl->mode);
+
     for(dirnode_t *source = root->dir_list; source; source = source->next) {
         libflist_dirnode_dumps(source);
 
