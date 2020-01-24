@@ -282,9 +282,28 @@ flist_ctx_t *zf_public_backend_extract(flist_ctx_t *ctx) {
 
 
 //
+// integrity checker
+//
+int zf_integrity_check(zf_callback_t *cb, inode_t *inode) {
+    for(size_t i = 0; i < inode->chunks->size; i++) {
+        inode_chunk_t *ichunk = &inode->chunks->list[i];
+        flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
+
+        if(!libflist_backend_exists(cb->ctx->backend, chunk)) {
+            libflist_chunk_free(chunk);
+            return 0;
+        }
+
+        libflist_chunk_free(chunk);
+    }
+
+    return 1;
+}
+
+//
 // find implementaion
 //
-static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
+static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
     dirnode_t *subnode = NULL;
 
     for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
@@ -300,7 +319,7 @@ static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
                 return 1;
             }
 
-            zf_find_recursive_text(cb, subnode);
+            zf_find_recursive_text(cb, subnode, integrity);
             libflist_dirnode_free(subnode);
         }
 
@@ -308,6 +327,9 @@ static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
         if(inode->type == INODE_FILE) {
             libflist_stats_regular_add(cb->ctx, 1);
             libflist_stats_size_add(cb->ctx, inode->size);
+
+            if(integrity && !zf_integrity_check(cb, inode))
+                libflist_stats_failure_add(cb->ctx, 1);
         }
 
         if(inode->type == INODE_SPECIAL)
@@ -320,7 +342,7 @@ static int zf_find_recursive_text(zf_callback_t *cb, dirnode_t *dirnode) {
     return 0;
 }
 
-static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode) {
+static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
     dirnode_t *subnode = NULL;
     char buffer[2048];
 
@@ -345,7 +367,7 @@ static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode) {
                 return 1;
             }
 
-            zf_find_recursive_json(cb, subnode);
+            zf_find_recursive_json(cb, subnode, integrity);
             libflist_dirnode_free(subnode);
         }
 
@@ -353,6 +375,9 @@ static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode) {
         if(inode->type == INODE_FILE) {
             libflist_stats_regular_add(cb->ctx, 1);
             libflist_stats_size_add(cb->ctx, inode->size);
+
+            if(integrity && !zf_integrity_check(cb, inode))
+                libflist_stats_failure_add(cb->ctx, 1);
         }
 
         if(inode->type == INODE_SPECIAL)
@@ -365,7 +390,7 @@ static int zf_find_recursive_json(zf_callback_t *cb, dirnode_t *dirnode) {
     return 0;
 }
 
-int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode) {
+int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
     if(cb->jout) {
         json_t *response = json_object_get(cb->jout, "response");
         json_t *content = json_array();
@@ -373,10 +398,10 @@ int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode) {
         json_object_set(response, "content", content);
         cb->userptr = content;
 
-        return zf_find_recursive_json(cb, dirnode);
+        return zf_find_recursive_json(cb, dirnode, integrity);
     }
 
-    return zf_find_recursive_text(cb, dirnode);
+    return zf_find_recursive_text(cb, dirnode, integrity);
 }
 
 static int zf_find_finalize_text(zf_callback_t *cb) {

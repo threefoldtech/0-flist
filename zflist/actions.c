@@ -395,7 +395,31 @@ int zf_find(zf_callback_t *cb) {
         return 1;
     }
 
-    zf_find_recursive(cb, dirnode);
+    zf_find_recursive(cb, dirnode, 0);
+    zf_find_finalize(cb);
+
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
+//
+// check
+//
+int zf_check(zf_callback_t *cb) {
+    dirnode_t *dirnode;
+
+    if(!(zf_public_backend_extract(cb->ctx))) {
+        zf_error(cb, "check", "backend: %s", libflist_strerror());
+        return 1;
+    }
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, "/"))) {
+        zf_error(cb, "check", "no such root directory");
+        return 1;
+    }
+
+    zf_find_recursive(cb, dirnode, 1);
     zf_find_finalize(cb);
 
     libflist_dirnode_free(dirnode);

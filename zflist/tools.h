@@ -23,7 +23,7 @@
 
     char *zf_inode_typename(inode_type_t type, inode_special_t special);
 
-    int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode);
+    int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode, int integrity);
     int zf_find_finalize(zf_callback_t *cb);
 
     void zf_error(zf_callback_t *cb, char *function, char *message, ...);

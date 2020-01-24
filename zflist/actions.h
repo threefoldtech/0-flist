@@ -12,6 +12,7 @@
     int zf_mkdir(zf_callback_t *cb);
     int zf_ls(zf_callback_t *cb);
     int zf_find(zf_callback_t *cb);
+    int zf_check(zf_callback_t *cb);
     int zf_stat(zf_callback_t *cb);
     int zf_cat(zf_callback_t *cb);
     int zf_put(zf_callback_t *cb);
