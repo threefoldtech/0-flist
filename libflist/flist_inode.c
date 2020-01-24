@@ -352,7 +352,7 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
 
         // adding this new directory
         if(!(inode = libflist_inode_from_localfile(fentry->fts_path, localparent, ctx))) {
-            fprintf(stderr, "[-] libflist: local directory: could not create inode\n");
+            fprintf(stderr, "[-] libflist: local directory: could not create inode (pass 1)\n");
             return NULL;
         }
 
@@ -409,7 +409,7 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
         }
 
         if(!(inode = libflist_inode_from_localfile(fentry->fts_path, workingdir, ctx))) {
-            fprintf(stderr, "[-] libflist: local directory: could not create inode\n");
+            fprintf(stderr, "[-] libflist: local directory: could not create inode (pass 2)\n");
             return NULL;
         }
 
