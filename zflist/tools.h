@@ -12,6 +12,7 @@
 
     int zf_backend_detect();
     flist_ctx_t *zf_backend_extract(flist_ctx_t *ctx);
+    flist_ctx_t *zf_public_backend_extract(flist_ctx_t *ctx);
 
     int zf_open_file(zf_callback_t *cb, char *filename, char *endpoint);
     int zf_remove_database(zf_callback_t *cb, char *mountpoint);

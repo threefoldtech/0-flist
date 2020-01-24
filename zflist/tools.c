@@ -263,6 +263,24 @@ flist_ctx_t *zf_backend_extract(flist_ctx_t *ctx) {
     return ctx;
 }
 
+flist_ctx_t *zf_public_backend_extract(flist_ctx_t *ctx) {
+    flist_db_t *backdb = NULL;
+
+    debug("[+] backend: detecting public backend settings\n");
+
+    if(!(backdb = libflist_metadata_backend_database(ctx->db)))
+        return NULL;
+
+    // updating context
+    if(!(ctx->backend = libflist_backend_init(backdb, "/")))
+        return NULL;
+
+    debug("[+] backend: public connected and attached to context\n");
+
+    return ctx;
+}
+
+
 //
 // find implementaion
 //

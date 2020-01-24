@@ -487,14 +487,10 @@ int zf_cat(zf_callback_t *cb) {
         return 1;
     }
 
-    flist_db_t *backdb;
-
-    if(!(backdb = libflist_metadata_backend_database(cb->ctx->db))) {
+    if(!(zf_public_backend_extract(cb->ctx))) {
         zf_error(cb, "cat", "backend: %s", libflist_strerror());
         return 1;
     }
-
-    flist_backend_t *backend = libflist_backend_init(backdb, "/");
 
     discard char *dirpath = dirname(strdup(cb->argv[1]));
     char *filename = basename(cb->argv[1]);
@@ -526,7 +522,7 @@ int zf_cat(zf_callback_t *cb) {
         inode_chunk_t *ichunk = &inode->chunks->list[i];
         flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
 
-        if(!libflist_backend_download_chunk(backend, chunk)) {
+        if(!libflist_backend_download_chunk(cb->ctx->backend, chunk)) {
             zf_error(cb, "cat", "could not download file: %s", libflist_strerror());
             return 1;
         }
@@ -536,7 +532,6 @@ int zf_cat(zf_callback_t *cb) {
     }
 
     libflist_dirnode_free(dirnode);
-    libflist_backend_free(backend);
 
     return 0;
 }
