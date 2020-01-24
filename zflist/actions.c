@@ -517,6 +517,11 @@ int zf_cat(zf_callback_t *cb) {
         return 1;
     }
 
+    if(inode->type != INODE_FILE) {
+        zf_error(cb, "cat", "requested file is not a regular file");
+        return 1;
+    }
+
     for(size_t i = 0; i < inode->chunks->size; i++) {
         inode_chunk_t *ichunk = &inode->chunks->list[i];
         flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
