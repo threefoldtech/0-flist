@@ -121,7 +121,11 @@ acl_t *libflist_acl_duplicate(acl_t *source) {
 acl_t *flist_acl_from_stat(const struct stat *sb) {
     char *uname = uidstr(getpwuid(sb->st_uid), sb->st_uid);
     char *gname = gidstr(getgrgid(sb->st_gid), sb->st_gid);
-    acl_t *acl = flist_acl_new(uname, gname, sb->st_mode);
+
+    // keep only the permissions mode
+    mode_t mode = sb->st_mode & ~S_IFMT;
+
+    acl_t *acl = flist_acl_new(uname, gname, mode);
 
     free(uname);
     free(gname);
