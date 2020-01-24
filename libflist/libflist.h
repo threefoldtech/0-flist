@@ -230,6 +230,7 @@
     //   which are file payload and chunks
     //
     flist_backend_t *libflist_backend_init(flist_db_t *database, char *rootpath);
+    int libflist_backend_exists(flist_backend_t *context, flist_chunk_t *chunk);
     void libflist_backend_free(flist_backend_t *backend);
 
     flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *filename);
