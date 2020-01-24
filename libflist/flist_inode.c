@@ -268,7 +268,7 @@ inode_t *flist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ct
     char *localdup = NULL;
     inode_t *inode = NULL;
 
-    if(stat(localpath, &sb) < 0) {
+    if(lstat(localpath, &sb) < 0) {
         warnp(localpath);
         return NULL;
     }
