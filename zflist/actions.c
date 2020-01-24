@@ -114,6 +114,23 @@ int zf_close(zf_callback_t *cb) {
 //
 // chmod
 //
+static int zf_chmod_root(zf_callback_t *cb, int newmode) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, "/"))) {
+        zf_error(cb, "chmod", "root directory not found");
+        return 1;
+    }
+
+    dirnode->acl->mode = newmode;
+    libflist_acl_commit(dirnode->acl);
+
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, dirnode);
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
 int zf_chmod(zf_callback_t *cb) {
     if(cb->argc != 3) {
         zf_error(cb, "chmod", "missing mode or filename");
@@ -123,6 +140,11 @@ int zf_chmod(zf_callback_t *cb) {
     debug("[+] action: chmod: setting mode %s on %s\n", cb->argv[1], cb->argv[2]);
 
     int newmode = strtol(cb->argv[1], NULL, 8);
+
+    // special case when changing root directory permissions
+    if(strcmp(cb->argv[2], "/") == 0)
+        return zf_chmod_root(cb, newmode);
+
     discard char *dirpath = dirname(strdup(cb->argv[2]));
     char *filename = basename(cb->argv[2]);
 
