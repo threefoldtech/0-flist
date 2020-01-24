@@ -448,3 +448,12 @@ void zf_dies(zf_callback_t *cb, const char *str) {
     exit(EXIT_FAILURE);
 }
 
+void zf_stats_dump(zf_callback_t *cb) {
+    if(!cb->jout) {
+        // plain text dump
+        libflist_stats_dump(&cb->ctx->stats);
+        return;
+    }
+
+    zf_find_finalize_json(cb);
+}

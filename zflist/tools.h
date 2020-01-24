@@ -31,4 +31,5 @@
     void zf_diep(zf_callback_t *cb, const char *str);
     void zf_dies(zf_callback_t *cb, const char *str);
 
+    void zf_stats_dump(zf_callback_t *cb);
 #endif
