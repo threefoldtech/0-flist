@@ -63,9 +63,9 @@ buffer_t *bufferize(char *filename) {
 
     // file empty, nothing to do
     if(buffer->length == 0) {
-        debug("[-] libflist: chunks: file is empty, nothing to do\n");
-        free(buffer);
-        return NULL;
+        debug("[-] libflist: chunks: file is empty\n");
+        buffer->chunks = 0;
+        return buffer;
     }
 
     buffer->chunks = ceil(buffer->length / (float) buffer->chunksize);
