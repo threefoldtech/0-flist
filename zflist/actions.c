@@ -773,3 +773,25 @@ int zf_hub(zf_callback_t *cb) {
     return 1;
 }
 
+//
+// debug
+//
+int zf_debug(zf_callback_t *cb) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, "/"))) {
+        zf_error(cb, "stat", "no parent directory found");
+        return 1;
+    }
+
+    libflist_dirnode_dumps(dirnode);
+
+    dirnode->acl->mode = 040755;
+    libflist_acl_commit(dirnode->acl);
+
+    libflist_serial_dirnode_commit(dirnode, cb->ctx, dirnode);
+
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
