@@ -17,7 +17,8 @@ static int flist_merge_sync_directories(dirnode_t *local, dirnode_t *target, fli
         dirnode_t *lookup;
 
         if((lookup = flist_dirnode_search(local, subdir->name))) {
-            debug("[+] libflist: dirsync: directory <%s> already exists, skipping\n", subdir->name);
+            debug("[+] libflist: syncdir: directory <%s> already exists, recursive check\n", subdir->name);
+            flist_merge_sync_directories(lookup, subdir, targetctx);
             continue;
         }
 
