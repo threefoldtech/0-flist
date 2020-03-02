@@ -22,7 +22,7 @@ static int flist_merge_sync_directories(dirnode_t *local, dirnode_t *target, fli
             continue;
         }
 
-        debug("[+] libflist: dirsync: appending target: %s\n", subdir->name);
+        debug("[+] libflist: syncdir: appending target: %s\n", subdir->name);
 
         dirnode_t *newdir = flist_dirnode_get_recursive(targetctx->db, subdir->fullpath);
         inode_t *inode = flist_inode_from_dirnode(newdir);
@@ -39,11 +39,11 @@ static int flist_merge_sync_inodes(dirnode_t *local, dirnode_t *target) {
         inode_t *lookup;
 
         if((lookup = flist_inode_search(local, inode->name))) {
-            debug("[+] libflist: syncnode: file <%s> already exists, skipping\n", inode->name);
+            debug("[+] libflist: syncinode: file <%s> already exists, skipping\n", inode->name);
             continue;
         }
 
-        debug("[+] libflist: syncnode: file <%s> not found, duplicating\n", inode->name);
+        debug("[+] libflist: syncinode: file <%s> not found, duplicating\n", inode->name);
         lookup = flist_inode_duplicate(inode);
         flist_dirnode_appends_inode(local, lookup);
     }
@@ -52,11 +52,11 @@ static int flist_merge_sync_inodes(dirnode_t *local, dirnode_t *target) {
         dirnode_t *lookup;
 
         if(!(lookup = flist_dirnode_search(target, subdir->name))) {
-            debug("[+] libflist: syncnode: subdirectory <%s> doesn't exists on target\n", subdir->name);
+            debug("[+] libflist: syncinode: subdirectory <%s> doesn't exists on target\n", subdir->name);
             continue;
         }
 
-        debug("[+] libflist: syncnode: entering subdirectory: %s\n", subdir->fullpath);
+        debug("[+] libflist: syncinode: entering subdirectory: %s\n", subdir->fullpath);
         flist_merge_sync_inodes(subdir, lookup);
     }
 
