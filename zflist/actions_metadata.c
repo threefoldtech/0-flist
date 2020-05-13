@@ -8,6 +8,7 @@
 #include <libgen.h>
 #include <getopt.h>
 #include <capnp_c.h>
+#include <fcntl.h>
 #include "libflist.h"
 #include "zflist.h"
 #include "tools.h"
@@ -489,6 +490,7 @@ int zf_metadata_set_volume(zf_callback_t *cb) {
 //
 static struct option readme_long_options[] = {
     {"license", required_argument, 0, 'l'},
+    {"import",  required_argument, 0, 'i'},
     {"edit",    no_argument,       0, 'e'},
     {"reset",   no_argument,       0, 'r'},
     {"help",    no_argument,       0, 'h'},
@@ -542,9 +544,31 @@ static char *zf_metadata_edit_readme(zf_callback_t *cb, const char *original) {
     return readmeval;
 }
 
+static char *zf_metadata_import_readme(zf_callback_t *cb, char *filename) {
+    int fd;
+    char *buffer;
+
+    if((fd = open(filename, O_RDONLY)) < 0)
+        zf_diep(cb, filename);
+
+    off_t size = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+
+    if(!(buffer = malloc(sizeof(char) * size)))
+        zf_diep(cb, "malloc");
+
+    if(read(fd, buffer, size) != size)
+        zf_diep(cb, "read");
+
+    close(fd);
+
+    return buffer;
+}
+
 int zf_metadata_set_readme(zf_callback_t *cb) {
     int option_index = 0;
     char *license = NULL;
+    char *import = NULL;
     char *newvalue = NULL;
     const char *existing = NULL;
     int edit = 0;
@@ -567,11 +591,16 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
                 license = optarg;
                 break;
 
+            case 'i':
+                import = optarg;
+                break;
+
             case 'h':
                 printf("[+] action: metadata: arguments:\n");
+                printf("[+]   --import      set readme from local file\n");
                 printf("[+]   --edit        edit the readme interactively\n");
                 printf("[+]   --license     set a specific license name\n");
-                printf("[+]   --reset       remove metadata (all volumes)\n");
+                printf("[+]   --reset       remove metadata (clean readme)\n");
                 printf("[+]   --help        show this message\n");
                 return 1;
 
@@ -590,7 +619,17 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
     if(existing)
         debug("[+] action: metadata: existing readme found (%lu bytes)\n", strlen(existing));
 
+    if(import) {
+        debug("[+] action: metadata: importing readme from: %s\n", import);
+
+        newvalue = zf_metadata_import_readme(cb, import);
+        json_object_set_new(root, "readme", json_string(newvalue));
+        free(newvalue);
+    }
+
     if(edit) {
+        debug("[+] action: metadata: inline readme edit\n");
+
         newvalue = zf_metadata_edit_readme(cb, existing);
         json_object_set_new(root, "readme", json_string(newvalue));
         free(newvalue);
