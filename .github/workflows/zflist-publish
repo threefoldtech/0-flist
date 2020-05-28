@@ -63,3 +63,9 @@ if [ "$action" == "READLINK" ]; then
     echo ${readlinkname}
     echo ::set-output name=linkpoint::"${readlinkname}"
 fi
+
+if [ "$action" == "MERGE" ]; then
+    echo "Merging into $filename this list: $targetname"
+    zflist hub merge $filename $targetname
+fi
+
