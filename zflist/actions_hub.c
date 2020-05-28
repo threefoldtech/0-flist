@@ -34,6 +34,9 @@
 // /api/flist/me/<source>
 #define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
 
+// /api/flist/me/merge/<target>
+#define ZFLIST_HUB_MERGE    ZFLIST_HUB_BASEURL "/api/flist/me/merge/%s"
+
 // /api/flist/me/<source>/rename/<destination>
 #define ZFLIST_HUB_RENAME    ZFLIST_HUB_BASEURL "/api/flist/me/%s/rename/%s"
 
@@ -81,7 +84,7 @@ static size_t zf_curl_body(char *ptr, size_t size, size_t nmemb, void *userdata)
 	return size * nmemb;
 }
 
-static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename, char *method) {
+static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *payload, char *method) {
     char *cookies = NULL;
 
     http_t response = {
@@ -108,16 +111,32 @@ static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *filename, char *me
 
     debug("[+] hub: target: %s\n", url);
 
-	if(filename) {
-        debug("[+] hub: sending file: %s\n", filename);
+	if(payload && strcmp(method, "FILE") == 0) {
+        debug("[+] hub: sending file: %s\n", payload);
+
+        method = "POST";
 
         curl_mime *form = curl_mime_init(curl.handler);
         curl_mimepart *field = field = curl_mime_addpart(form);
 
         curl_mime_name(field, "file");
-        curl_mime_filedata(field, filename);
+        curl_mime_filedata(field, payload);
 
         curl_easy_setopt(curl.handler, CURLOPT_MIMEPOST, form);
+    }
+
+    if(payload && strcmp(method, "JSON") == 0) {
+        debug("[+] hub: sending json: %s\n", payload);
+
+        method = "POST";
+        curl_easy_setopt(curl.handler, CURLOPT_POSTFIELDS, payload);
+
+        struct curl_slist *headers = NULL;
+        curl_slist_append(headers, "Accept: application/json");
+        curl_slist_append(headers, "Content-Type: application/json");
+        curl_slist_append(headers, "Charset: utf-8");
+
+        curl_easy_setopt(curl.handler, CURLOPT_HTTPHEADER, headers);
     }
 
     if(method)
@@ -237,10 +256,10 @@ int zf_hub_upload(zf_callback_t *cb) {
     discard_http http_t response;
 
     if(strcmp(zf_extension(filename), ".flist") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename, "POST");
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename, "FILE");
 
     if(strcmp(zf_extension(filename), ".gz") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename, "POST");
+        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename, "FILE");
 
     return 0;
 }
@@ -464,3 +483,46 @@ int zf_hub_readlink(zf_callback_t *cb) {
     return 0;
 }
 
+int zf_hub_merge(zf_callback_t *cb) {
+    if(cb->argc < 4) {
+        zf_error(cb, "hub", "missing arguments: merge <target> <baseflist> <slave-flist> [slave-flist...]");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *target = cb->argv[1];
+    char endpoint[1024];
+
+    debug("[+] hub: merge: you/%s\n", target);
+
+    // building merge json list
+    json_t *root;
+
+    if(!(root = json_array())) {
+        zf_error(cb, "hub", "could not initialize json array");
+        return 1;
+    }
+
+    for(int i = 2; i < cb->argc; i++) {
+        debug("[+] hub: merge: adding: %s\n", cb->argv[i]);
+
+        if(json_array_append_new(root, json_string(cb->argv[i]))) {
+            zf_error(cb, "hub", "could not append flist to the list");
+            return 1;
+        }
+    }
+
+    // dumping the json list
+    char *body = json_dumps(root, JSON_COMPACT);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_MERGE, target);
+
+    response = zf_hub_curl(cb, endpoint, body, "JSON");
+
+    return 0;
+}

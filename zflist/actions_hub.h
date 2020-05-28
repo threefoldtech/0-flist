@@ -7,6 +7,7 @@
     int zf_hub_crosslink(zf_callback_t *cb);
     int zf_hub_rename(zf_callback_t *cb);
     int zf_hub_delete(zf_callback_t *cb);
+    int zf_hub_merge(zf_callback_t *cb);
     int zf_hub_readlink(zf_callback_t *cb);
     int zf_hub_login(zf_callback_t *cb);
     int zf_hub_refresh(zf_callback_t *cb);
