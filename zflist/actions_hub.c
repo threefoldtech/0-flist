@@ -34,6 +34,9 @@
 // /api/flist/me/<source>
 #define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
 
+// /api/flist/me/merge/<target>
+#define ZFLIST_HUB_MERGE    ZFLIST_HUB_BASEURL "/api/flist/me/merge/%s"
+
 // /api/flist/me/<source>/rename/<destination>
 #define ZFLIST_HUB_RENAME    ZFLIST_HUB_BASEURL "/api/flist/me/%s/rename/%s"
 
@@ -480,3 +483,46 @@ int zf_hub_readlink(zf_callback_t *cb) {
     return 0;
 }
 
+int zf_hub_merge(zf_callback_t *cb) {
+    if(cb->argc < 4) {
+        zf_error(cb, "hub", "missing arguments: merge <target> <baseflist> <slave-flist> [slave-flist...]");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *target = cb->argv[1];
+    char endpoint[1024];
+
+    debug("[+] hub: merge: you/%s\n", target);
+
+    // building merge json list
+    json_t *root;
+
+    if(!(root = json_array())) {
+        zf_error(cb, "hub", "could not initialize json array");
+        return 1;
+    }
+
+    for(int i = 2; i < cb->argc; i++) {
+        debug("[+] hub: merge: adding: %s\n", cb->argv[i]);
+
+        if(json_array_append_new(root, json_string(cb->argv[i]))) {
+            zf_error(cb, "hub", "could not append flist to the list");
+            return 1;
+        }
+    }
+
+    // dumping the json list
+    char *body = json_dumps(root, JSON_COMPACT);
+
+    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_MERGE, target);
+
+    response = zf_hub_curl(cb, endpoint, body, "JSON");
+
+    return 0;
+}
