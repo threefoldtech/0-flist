@@ -14,37 +14,38 @@
 
 #define discard_http __attribute__((cleanup(__cleanup_http)))
 
-#define ZFLIST_HUB_BASEURL "https://hub.grid.tf"
+#define zf_api_url_short(cb, buf, fmt) zf_api_url_single(cb, buf, sizeof(buf), fmt)
+#define zf_api_url(cb, buf, fmt, ...) zf_api_url_va(cb, buf, sizeof(buf), fmt, __VA_ARGS__)
 
 // /api/flist/me/upload
-#define ZFLIST_HUB_UPLOAD    ZFLIST_HUB_BASEURL "/api/flist/me/upload"
+#define ZFLIST_HUB_UPLOAD    "/api/flist/me/upload"
 
 // /api/flist/me/upload-flist
-#define ZFLIST_HUB_UPLOADFL  ZFLIST_HUB_BASEURL "/api/flist/me/upload-flist"
+#define ZFLIST_HUB_UPLOADFL  "/api/flist/me/upload-flist"
 
 // /api/flist/me/promote/<sourcerepo>/<sourcefile>/<localname>
-#define ZFLIST_HUB_PROMOTE   ZFLIST_HUB_BASEURL "/api/flist/me/promote/%s/%s/%s"
+#define ZFLIST_HUB_PROMOTE   "/api/flist/me/promote/%s/%s/%s"
 
 // /api/flist/me/<source>/link/<linkname>
-#define ZFLIST_HUB_SYMLINK   ZFLIST_HUB_BASEURL "/api/flist/me/%s/link/%s"
+#define ZFLIST_HUB_SYMLINK   "/api/flist/me/%s/link/%s"
 
 // /api/flist/me/<linkname>/crosslink/<repository>/<sourcename>
-#define ZFLIST_HUB_XSYMLINK  ZFLIST_HUB_BASEURL "/api/flist/me/%s/crosslink/%s/%s"
+#define ZFLIST_HUB_XSYMLINK  "/api/flist/me/%s/crosslink/%s/%s"
 
 // /api/flist/me/<source>
-#define ZFLIST_HUB_DELETE    ZFLIST_HUB_BASEURL "/api/flist/me/%s"
+#define ZFLIST_HUB_DELETE    "/api/flist/me/%s"
 
 // /api/flist/me/merge/<target>
-#define ZFLIST_HUB_MERGE    ZFLIST_HUB_BASEURL "/api/flist/me/merge/%s"
+#define ZFLIST_HUB_MERGE     "/api/flist/me/merge/%s"
 
 // /api/flist/me/<source>/rename/<destination>
-#define ZFLIST_HUB_RENAME    ZFLIST_HUB_BASEURL "/api/flist/me/%s/rename/%s"
+#define ZFLIST_HUB_RENAME    "/api/flist/me/%s/rename/%s"
 
 // /api/flist/<repository>/<filename>/light
-#define ZFLIST_HUB_READLINK  ZFLIST_HUB_BASEURL "/api/flist/%s/light"
+#define ZFLIST_HUB_READLINK  "/api/flist/%s/light"
 
 // /api/flist/me
-#define ZFLIST_HUB_SELF      ZFLIST_HUB_BASEURL "/api/flist/me"
+#define ZFLIST_HUB_SELF      "/api/flist/me"
 
 // itsyou.online refresh token
 #define ZFLIST_IYO_REFRESH   "https://itsyou.online/v1/oauth/jwt/refresh"
@@ -182,6 +183,31 @@ static char *zf_extension(char *str) {
 }
 
 //
+// url builder
+//
+char *zf_api_url_single(zf_callback_t *cb, char *buffer, size_t buflen, char *endpoint) {
+    snprintf(buffer, buflen, "%s%s", cb->settings->baseurl, endpoint);
+    return buffer;
+}
+
+char *zf_api_url_va(zf_callback_t *cb, char *buffer, size_t buflen, char *format, ...) {
+    va_list args;
+    int len;
+
+    // copy base url into the url
+    len = snprintf(buffer, buflen, "%s", cb->settings->baseurl);
+
+    // copy endpoint with arguments
+    va_start(args, format);
+    vsnprintf(buffer + len, buflen - len, format, args);
+    va_end(args);
+
+    debug("[+] hub: url created: %s\n", buffer);
+
+    return buffer;
+}
+
+//
 // authentication checker
 //
 int zf_json_strcmp(json_t *root, char *key, char *value) {
@@ -200,10 +226,13 @@ int zf_hub_authcheck(zf_callback_t *cb) {
     json_t *root;
     json_error_t error;
     discard_http http_t response;
+    char endpoint[1024];
 
     debug("[+] hub: checking authentication\n");
 
-    response = zf_hub_curl(cb, ZFLIST_HUB_SELF, NULL, NULL);
+    zf_api_url_short(cb, endpoint, ZFLIST_HUB_SELF);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
     if(response.body == NULL)
         return 0;
 
@@ -254,12 +283,17 @@ int zf_hub_upload(zf_callback_t *cb) {
 
     char *filename = cb->argv[1];
     discard_http http_t response;
+    char endpoint[1024];
 
-    if(strcmp(zf_extension(filename), ".flist") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOADFL, filename, "FILE");
+    if(strcmp(zf_extension(filename), ".flist") == 0) {
+        zf_api_url_short(cb, endpoint, ZFLIST_HUB_UPLOADFL);
+        response = zf_hub_curl(cb, endpoint, filename, "FILE");
+    }
 
-    if(strcmp(zf_extension(filename), ".gz") == 0)
-        response = zf_hub_curl(cb, ZFLIST_HUB_UPLOAD, filename, "FILE");
+    if(strcmp(zf_extension(filename), ".gz") == 0) {
+        zf_api_url_short(cb, endpoint, ZFLIST_HUB_UPLOAD);
+        response = zf_hub_curl(cb, endpoint, filename, "FILE");
+    }
 
     return 0;
 }
@@ -288,7 +322,7 @@ int zf_hub_promote(zf_callback_t *cb) {
 
     debug("[+] hub: promote: %s/%s -> %s\n", sourcerepo, sourcefile, localname);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_PROMOTE, sourcerepo, sourcefile, localname);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_PROMOTE, sourcerepo, sourcefile, localname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     free(sourcerepo);
@@ -314,7 +348,7 @@ int zf_hub_symlink(zf_callback_t *cb) {
 
     debug("[+] hub: symlink: you/%s -> %s\n", source, linkname);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_SYMLINK, source, linkname);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_SYMLINK, source, linkname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;
@@ -339,7 +373,7 @@ int zf_hub_crosslink(zf_callback_t *cb) {
 
     debug("[+] hub: cross symlink: you/%s -> %s/%s\n", linkname, repository, source);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_XSYMLINK, linkname, repository, source);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_XSYMLINK, linkname, repository, source);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;
@@ -363,7 +397,7 @@ int zf_hub_rename(zf_callback_t *cb) {
 
     debug("[+] hub: rename: you/%s -> you/%s\n", source, newname);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_RENAME, source, newname);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_RENAME, source, newname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     return 0;
@@ -415,7 +449,7 @@ int zf_hub_delete(zf_callback_t *cb) {
 
     debug("[+] hub: delete: you/%s\n", source);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_DELETE, source);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_DELETE, source);
     response = zf_hub_curl(cb, endpoint, NULL, "DELETE");
 
     return 0;
@@ -438,7 +472,7 @@ int zf_hub_readlink(zf_callback_t *cb) {
 
     debug("[+] hub: readlink: %s\n", linkname);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_READLINK, linkname);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_READLINK, linkname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
     // parse json output
@@ -520,7 +554,7 @@ int zf_hub_merge(zf_callback_t *cb) {
     // dumping the json list
     char *body = json_dumps(root, JSON_COMPACT);
 
-    snprintf(endpoint, sizeof(endpoint), ZFLIST_HUB_MERGE, target);
+    zf_api_url(cb, endpoint, ZFLIST_HUB_MERGE, target);
 
     response = zf_hub_curl(cb, endpoint, body, "JSON");
 
