@@ -12,6 +12,7 @@
     #define discard __attribute__((cleanup(__cleanup_free)))
 
     typedef struct zfe_settings_t {
+        char **argv;         // copy of main argv
         char *mnt;           // temporary-point directory
 
         char *backendhost;   // backend host
@@ -39,5 +40,7 @@
         int db;      // does the callback need the db
 
     } zf_cmds_t;
+
+    int usage(char *basename);
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef ZFLIST_ACTIONS_H
     #define ZFLIST_ACTIONS_H
 
+    int zf_help(zf_callback_t *cb);
+
     int zf_open(zf_callback_t *cb);
     int zf_init(zf_callback_t *cb);
     int zf_commit(zf_callback_t *cb);

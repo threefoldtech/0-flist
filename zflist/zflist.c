@@ -35,6 +35,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "hub",      .db = 0, .callback = zf_hub,      .help = "0-hub command line tools"},
     {.name = "commit",   .db = 0, .callback = zf_commit,   .help = "commit changes to a new flist"},
     {.name = "close",    .db = 0, .callback = zf_close,    .help = "close mountpoint and discard files"},
+    {.name = "help",     .db = 0, .callback = zf_help,     .help = "provide more help usage about commands"},
 };
 
 int usage(char *basename) {
@@ -115,6 +116,7 @@ int main(int argc, char *argv[]) {
 
     // reset settings
     memset(&settings, 0, sizeof(zfe_settings_t));
+    settings.argv = argv;
 
     #ifndef FLIST_DEBUG
     // disable library debug in release mode

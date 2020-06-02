@@ -802,6 +802,24 @@ int zf_hub(zf_callback_t *cb) {
 }
 
 //
+// help
+//
+int zf_help(zf_callback_t *cb) {
+    if(cb->argc < 2) {
+        usage(cb->settings->argv[0]);
+        return 0;
+    }
+
+    if(cb->argc == 3) {
+
+    }
+
+    printf("[-] help: unknown command or action\n");
+    return 1;
+}
+
+
+//
 // debug
 //
 int zf_debug(zf_callback_t *cb) {
