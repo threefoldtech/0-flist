@@ -121,11 +121,15 @@ Available actions:
 
 # Example
 
-How to create an flist, upload playloads and upload flist into playground hub:
+How to create an flist, upload playloads and upload flist into playground hub. By default, `zflist`
+will use production hub (`hub.grid.tf`) but you can override that by setting `ZFLIST_HUB` environment
+variable, like below.
+
 ```
 export ZFLIST_MNT=/tmp/zflistmnt
+export ZFLIST_HUB="https://playground.hub.grid.tf"
 export ZFLIST_BACKEND='{"host": "playground.hub.grid.tf", "port": 9910}'
-export ZFLIST_HUB_TOKEN=eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVC....
+export ZFLIST_HUB_TOKEN=kiUTd9jRjgt7QB6lRh2bcpNiC2UqvTLI
 
 zflist init
 zflist putdir /tmp/20191021_150741 /

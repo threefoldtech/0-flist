@@ -135,6 +135,9 @@ int main(int argc, char *argv[]) {
         nargv = argv + 2;
     }
 
+    if(!(settings.baseurl = getenv("ZFLIST_HUB")))
+        settings.baseurl = ZFLIST_HUB_BASEURL;
+
     if(nargc < 1)
         usage(argv[0]);
 

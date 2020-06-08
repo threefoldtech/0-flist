@@ -762,6 +762,8 @@ int zf_hub(zf_callback_t *cb) {
     // checking if a special user is specified
     cb->settings->user = getenv("ZFLIST_HUB_USER");
 
+    debug("[+] hub: baseurl: %s\n", cb->settings->baseurl);
+
     // skipping first argument
     cb->argc -= 1;
     cb->argv += 1;

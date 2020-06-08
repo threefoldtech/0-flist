@@ -3,6 +3,8 @@
 
     #define ZFLIST_VERSION  "1.0"
 
+    #define ZFLIST_HUB_BASEURL   "https://hub.grid.tf"
+
     #ifdef FLIST_DEBUG
         #define debug(...) { printf(__VA_ARGS__); }
     #else
@@ -19,6 +21,7 @@
         char *bpass;         // backend password
         char *token;         // 0-hub jwt token
         char *user;          // 0-hub active user
+        char *baseurl;       // 0-hub base url
 
     } zfe_settings_t;
 
