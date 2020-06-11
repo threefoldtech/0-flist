@@ -72,6 +72,17 @@ zflist commit merged.flist
 
 If `/bin/ls` is on both flist, the file from `first.flist` will be found in `merged.flist`.
 
+# Prefetch
+
+The best part of flist system and concept is the fact that files are downloaded on-the-fly.
+This is really useful for lot of use cases but sometime it's important performance wise to
+get files locally to not spend time downloading on runtime.
+
+With the prefetch action, you can force the system to read all files in a directory and thus,
+downloading all files not availables on the `0-fs` cache.
+
+This action is only interresting when using on top of [`0-fs`](https://github.com/threefoldtech/0-fs).
+
 # Usage
 
 ```

@@ -15,6 +15,7 @@
 #include "actions.h"
 #include "actions_metadata.h"
 #include "actions_hub.h"
+#include "prefetch.h"
 
 //
 // open
@@ -824,6 +825,20 @@ int zf_debug(zf_callback_t *cb) {
     libflist_serial_dirnode_commit(dirnode, cb->ctx, dirnode);
 
     libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
+//
+// prefetch
+//
+int zf_prefetch(zf_callback_t *cb) {
+    if(cb->argc < 2) {
+        zf_error(cb, "prefetch", "missing directory to prefetch");
+        return 1;
+    }
+
+    zf_prefetcher(cb, cb->argv[1]);
 
     return 0;
 }
