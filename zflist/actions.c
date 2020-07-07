@@ -146,7 +146,8 @@ int zf_chmod(zf_callback_t *cb) {
     if(strcmp(cb->argv[2], "/") == 0)
         return zf_chmod_root(cb, newmode);
 
-    discard char *dirpath = dirname(strdup(cb->argv[2]));
+    discard char *argpath = strdup(cb->argv[2]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[2]);
 
     dirnode_t *dirnode;
@@ -189,7 +190,8 @@ int zf_rm(zf_callback_t *cb) {
         return 1;
     }
 
-    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    discard char *argpath = strdup(cb->argv[1]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[1]);
 
     debug("[+] action: rm: removing <%s> from <%s>\n", filename, dirpath);
@@ -517,7 +519,8 @@ int zf_cat(zf_callback_t *cb) {
         return 1;
     }
 
-    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    discard char *argpath = strdup(cb->argv[1]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[1]);
 
     debug("[+] action: cat: looking for: %s in %s\n", filename, dirpath);
@@ -578,7 +581,8 @@ int zf_put(zf_callback_t *cb) {
     // building directories
     char *localfile = cb->argv[1];
     char *filename = basename(localfile);
-    discard char *dirpath = dirname(strdup(cb->argv[2]));
+    discard char *argpath = strdup(cb->argv[2]);
+    char *dirpath = dirname(argpath);
     char *targetname = basename(cb->argv[2]);
 
     // avoid root directory and directory name
