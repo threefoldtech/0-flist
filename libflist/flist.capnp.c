@@ -314,12 +314,12 @@ void set_UserGroup(const struct UserGroup *s, UserGroup_list l, int i) {
 
 ACI_ptr new_ACI(struct capn_segment *s) {
 	ACI_ptr p;
-	p.p = capn_new_struct(s, 8, 3);
+	p.p = capn_new_struct(s, 24, 3);
 	return p;
 }
 ACI_list new_ACI_list(struct capn_segment *s, int len) {
 	ACI_list p;
-	p.p = capn_new_list(s, len, 8, 3);
+	p.p = capn_new_list(s, len, 24, 3);
 	return p;
 }
 void read_ACI(struct ACI *s capnp_unused, ACI_ptr p) {
@@ -330,6 +330,8 @@ void read_ACI(struct ACI *s capnp_unused, ACI_ptr p) {
 	s->mode = capn_read16(p.p, 0);
 	s->rights.p = capn_getp(p.p, 2, 0);
 	s->id = capn_read32(p.p, 4);
+	s->uid = (int64_t) ((int64_t)(capn_read64(p.p, 8)) ^ ((int64_t)((uint64_t) 0xffffffffu << 32) ^ 0xffffffffu));
+	s->gid = (int64_t) ((int64_t)(capn_read64(p.p, 16)) ^ ((int64_t)((uint64_t) 0xffffffffu << 32) ^ 0xffffffffu));
 }
 void write_ACI(const struct ACI *s capnp_unused, ACI_ptr p) {
 	capn_resolve(&p.p);
@@ -339,6 +341,8 @@ void write_ACI(const struct ACI *s capnp_unused, ACI_ptr p) {
 	capn_write16(p.p, 0, s->mode);
 	capn_setp(p.p, 2, s->rights.p);
 	capn_write32(p.p, 4, s->id);
+	capn_write64(p.p, 8, (uint64_t) (s->uid ^ ((int64_t)((uint64_t) 0xffffffffu << 32) ^ 0xffffffffu)));
+	capn_write64(p.p, 16, (uint64_t) (s->gid ^ ((int64_t)((uint64_t) 0xffffffffu << 32) ^ 0xffffffffu)));
 }
 void get_ACI(struct ACI *s, ACI_list l, int i) {
 	ACI_ptr p;

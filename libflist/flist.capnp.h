@@ -176,13 +176,15 @@ struct ACI {
 	uint16_t mode;
 	ACI_Right_list rights;
 	uint32_t id;
+	int64_t uid;
+	int64_t gid;
 };
 
-static const size_t ACI_word_count = 1;
+static const size_t ACI_word_count = 3;
 
 static const size_t ACI_pointer_count = 3;
 
-static const size_t ACI_struct_bytes_count = 32;
+static const size_t ACI_struct_bytes_count = 48;
 
 struct ACI_Right {
 	capn_text right;
