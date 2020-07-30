@@ -58,8 +58,14 @@ char *flist_acl_key(acl_t *acl) {
     // so we fake the same behavior
     sprintf(strmode, "0o%o", acl->mode);
 
+    char *un = acl->uname;
+    char *gn = acl->gname;
+    int64_t uid = acl->uid;
+    int64_t gid = acl->gid;
+    char *mode = strmode + 4;
+
     // intermediate string key
-    if(asprintf(&key, "user:%s\ngroup:%s\nmode:%s\n", acl->uname, acl->gname, strmode + 4) < 0)
+    if(asprintf(&key, "user:%s\ngroup:%s\nmode:%s\nuid:%ld\ngid:%ld", un, gn, mode, uid, gid) < 0)
         diep("asprintf");
 
     // hashing payload
@@ -90,7 +96,7 @@ acl_t *libflist_acl_commit(acl_t *acl) {
     return flist_acl_commit(acl);
 }
 
-acl_t *flist_acl_new(char *uname, char *gname, int mode) {
+acl_t *flist_acl_new(char *uname, char *gname, int mode, int64_t uid, int64_t gid) {
     acl_t *acl;
 
     if(!(acl = malloc(sizeof(acl_t)))) {
@@ -101,17 +107,22 @@ acl_t *flist_acl_new(char *uname, char *gname, int mode) {
     acl->mode = mode;
     acl->uname = strdup(uname);
     acl->gname = strdup(gname);
+    acl->uid = uid;
+    acl->gid = gid;
+
+    // generate key from content
     acl->key = flist_acl_key(acl);
 
     return acl;
 }
 
-acl_t *libflist_acl_new(char *uname, char *gname, int mode) {
-    return flist_acl_new(uname, gname, mode);
+acl_t *libflist_acl_new(char *uname, char *gname, int mode, int64_t uid, int64_t gid) {
+    return flist_acl_new(uname, gname, mode, uid, gid);
 }
 
 acl_t *flist_acl_duplicate(acl_t *source) {
-    return flist_acl_new(source->uname, source->gname, source->mode);
+    acl_t *s = source;
+    return flist_acl_new(s->uname, s->gname, s->mode, s->uid, s->gid);
 }
 
 acl_t *libflist_acl_duplicate(acl_t *source) {
@@ -125,7 +136,7 @@ acl_t *flist_acl_from_stat(const struct stat *sb) {
     // keep only the permissions mode
     mode_t mode = sb->st_mode & ~S_IFMT;
 
-    acl_t *acl = flist_acl_new(uname, gname, mode);
+    acl_t *acl = flist_acl_new(uname, gname, mode, sb->st_uid, sb->st_gid);
 
     free(uname);
     free(gname);

@@ -40,7 +40,7 @@ dirnode_t *flist_dirnode_create(char *fullpath, char *name) {
         directory->fullpath[lf - 1] = '\0';
 
     directory->hashkey = flist_path_key(directory->fullpath);
-    directory->acl = flist_acl_new("root", "root", 0755);
+    directory->acl = flist_acl_new("root", "root", 0755, 0, 0);
 
     return directory;
 }
