@@ -1,11 +1,18 @@
 #ifndef CAPN_AE9223E76351538A
 #define CAPN_AE9223E76351538A
 /* AUTO GENERATED - DO NOT EDIT */
-#include <unistd.h>
 #include <capnp_c.h>
 
 #if CAPN_VERSION != 1
 #error "version mismatch between capnp_c.h and generated code"
+#endif
+
+#ifndef capnp_nowarn
+# ifdef __GNUC__
+#  define capnp_nowarn __extension__
+# else
+#  define capnp_nowarn
+# endif
 #endif
 
 
@@ -117,7 +124,7 @@ struct Inode {
 	capn_text name;
 	uint64_t size;
 	enum Inode_attributes_which attributes_which;
-	union {
+	capnp_nowarn union {
 		SubDir_ptr dir;
 		File_ptr file;
 		Link_ptr link;
