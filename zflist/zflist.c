@@ -22,6 +22,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "find",     .db = 1, .callback = zf_find,     .help = "list full contents of files and directories"},
     {.name = "stat",     .db = 1, .callback = zf_stat,     .help = "dump inode full metadata"},
     {.name = "cat",      .db = 1, .callback = zf_cat,      .help = "print file contents (backend metadata required)"},
+    {.name = "get",      .db = 1, .callback = zf_get,      .help = "download remote file (backend metadata required)"},
     {.name = "put",      .db = 1, .callback = zf_put,      .help = "insert local file into the flist"},
     {.name = "putdir",   .db = 1, .callback = zf_putdir,   .help = "insert local directory into the flist (recursively)"},
     {.name = "chmod",    .db = 1, .callback = zf_chmod,    .help = "change mode of a file (like chmod command)"},

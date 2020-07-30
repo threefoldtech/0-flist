@@ -15,6 +15,7 @@
     int zf_check(zf_callback_t *cb);
     int zf_stat(zf_callback_t *cb);
     int zf_cat(zf_callback_t *cb);
+    int zf_get(zf_callback_t *cb);
     int zf_put(zf_callback_t *cb);
     int zf_putdir(zf_callback_t *cb);
     int zf_metadata(zf_callback_t *cb);

@@ -8,6 +8,9 @@
 #include <libgen.h>
 #include <getopt.h>
 #include <capnp_c.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "libflist.h"
 #include "zflist.h"
 #include "filesystem.h"
@@ -146,7 +149,8 @@ int zf_chmod(zf_callback_t *cb) {
     if(strcmp(cb->argv[2], "/") == 0)
         return zf_chmod_root(cb, newmode);
 
-    discard char *dirpath = dirname(strdup(cb->argv[2]));
+    discard char *argpath = strdup(cb->argv[2]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[2]);
 
     dirnode_t *dirnode;
@@ -189,7 +193,8 @@ int zf_rm(zf_callback_t *cb) {
         return 1;
     }
 
-    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    discard char *argpath = strdup(cb->argv[1]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[1]);
 
     debug("[+] action: rm: removing <%s> from <%s>\n", filename, dirpath);
@@ -517,7 +522,8 @@ int zf_cat(zf_callback_t *cb) {
         return 1;
     }
 
-    discard char *dirpath = dirname(strdup(cb->argv[1]));
+    discard char *argpath = strdup(cb->argv[1]);
+    char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[1]);
 
     debug("[+] action: cat: looking for: %s in %s\n", filename, dirpath);
@@ -562,6 +568,74 @@ int zf_cat(zf_callback_t *cb) {
 }
 
 //
+// get (cat to filename)
+//
+int zf_get(zf_callback_t *cb) {
+    if(cb->argc < 3) {
+        zf_error(cb, "get", "missing filename or destination");
+        return 1;
+    }
+
+    if(!(zf_public_backend_extract(cb->ctx))) {
+        zf_error(cb, "get", "backend: %s", libflist_strerror());
+        return 1;
+    }
+
+    discard char *argpath = strdup(cb->argv[1]);
+    char *dirpath = dirname(argpath);
+    char *filename = basename(cb->argv[1]);
+    char *destination = cb->argv[2];
+
+    debug("[+] action: get: looking for: %s in %s\n", filename, dirpath);
+
+    dirnode_t *dirnode;
+    inode_t *inode;
+
+    // there is no backend and dirnode free
+    // in case of error, it's okay
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, dirpath))) {
+        zf_error(cb, "get", "no such parent directory");
+        return 1;
+    }
+
+    if(!(inode = libflist_inode_from_name(dirnode, filename))) {
+        zf_error(cb, "get", "no such file");
+        return 1;
+    }
+
+    if(inode->type != INODE_FILE) {
+        zf_error(cb, "get", "requested file is not a regular file");
+        return 1;
+    }
+
+    int fd;
+    if((fd = creat(destination, 0664)) < 0)
+        zf_diep(cb, destination);
+
+    for(size_t i = 0; i < inode->chunks->size; i++) {
+        inode_chunk_t *ichunk = &inode->chunks->list[i];
+        flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
+
+        if(!libflist_backend_download_chunk(cb->ctx->backend, chunk)) {
+            zf_error(cb, "get", "could not download file: %s", libflist_strerror());
+            return 1;
+        }
+
+        if(write(fd, chunk->plain.data, chunk->plain.length) != (int) chunk->plain.length)
+            zf_diep(cb, destination);
+
+        libflist_chunk_free(chunk);
+    }
+
+    close(fd);
+
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
+//
 // put
 //
 int zf_put(zf_callback_t *cb) {
@@ -578,7 +652,8 @@ int zf_put(zf_callback_t *cb) {
     // building directories
     char *localfile = cb->argv[1];
     char *filename = basename(localfile);
-    discard char *dirpath = dirname(strdup(cb->argv[2]));
+    discard char *argpath = strdup(cb->argv[2]);
+    char *dirpath = dirname(argpath);
     char *targetname = basename(cb->argv[2]);
 
     // avoid root directory and directory name
