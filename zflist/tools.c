@@ -147,7 +147,9 @@ int zf_stat_inode_json(zf_callback_t *cb, inode_t *inode) {
     json_object_set_new(response, "size", json_integer(inode->size));
     json_object_set_new(response, "mode", json_integer(inode->acl->mode));
     json_object_set_new(response, "user", json_string(inode->acl->uname));
+    json_object_set_new(response, "uid", json_integer(inode->acl->uid));
     json_object_set_new(response, "group", json_string(inode->acl->gname));
+    json_object_set_new(response, "gid", json_integer(inode->acl->gid));
     json_object_set_new(response, "created", json_integer(inode->creation));
     json_object_set_new(response, "modified", json_integer(inode->modification));
 
@@ -183,7 +185,8 @@ static int zf_stat_inode_text(inode_t *inode) {
     printf("Access: (%o/%c", inode->acl->mode, zf_ls_inode_type(inode));
     zf_ls_inode_perm(inode);
 
-    printf(")  UID: %s, GID: %s\n", inode->acl->uname, inode->acl->gname);
+    acl_t *acl = inode->acl;
+    printf(")  UID: %ld (%s), GID: %ld (%s)\n", acl->uid, acl->uname, acl->gid, acl->gname);
 
     printf("Access: %lu\n", inode->modification);
     printf("Create: %lu\n", inode->creation);

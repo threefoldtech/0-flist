@@ -18,6 +18,8 @@
         char *gname;     // group name (group id if not found)
         uint16_t mode;   // integer file mode
         char *key;       // hash of the payload (dedupe in db)
+        int64_t uid;     // hardcoded user id from stat
+        int64_t gid;     // hardcoded group id from stat
 
     } acl_t;
 
@@ -287,7 +289,7 @@
     //
     // flist_acl.c
     //
-    acl_t *libflist_acl_new(char *uname, char *gname, int mode);
+    acl_t *libflist_acl_new(char *uname, char *gname, int mode, int64_t uid, int64_t gid);
     char *libflist_acl_key(acl_t *acl);
     acl_t *libflist_acl_duplicate(acl_t *source);
     acl_t *libflist_acl_commit(acl_t *acl);

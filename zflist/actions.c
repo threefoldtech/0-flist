@@ -351,7 +351,9 @@ static int zf_ls_json(zf_callback_t *cb, dirnode_t *dirnode) {
         json_object_set(entry, "type", json_string(zf_inode_typename(inode->type, inode->stype)));
         json_object_set(entry, "size", json_integer(inode->size));
         json_object_set(entry, "user", json_string(inode->acl->uname));
+        json_object_set(entry, "uid", json_integer(inode->acl->uid));
         json_object_set(entry, "group", json_string(inode->acl->gname));
+        json_object_set(entry, "gid", json_integer(inode->acl->gid));
 
         json_array_append(list, entry);
     }

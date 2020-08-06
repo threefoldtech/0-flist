@@ -28,6 +28,7 @@ void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir) {
 
     debug("[+] inode: aclkey: %s\n", inode->acl->key);
     debug("[+] inode:   user: %s, group: %s\n", inode->acl->uname, inode->acl->gname);
+    debug("[+] inode:   uid: %ld, gid: %ld\n", inode->acl->uid, inode->acl->gid);
     debug("[+] inode:   mode: %o\n", inode->acl->mode);
 
     if(inode->type == INODE_LINK)

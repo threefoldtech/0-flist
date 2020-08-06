@@ -195,6 +195,8 @@ acl_t *flist_serial_get_acl(flist_db_t *database, const char *aclkey) {
     acl->gname = strdup(aci.gname.str);
     acl->mode = aci.mode;
     acl->key = strdup(aclkey);
+    acl->uid = aci.uid;
+    acl->gid = aci.gid;
 
     capn_free(&permsctx);
     database->clean(rawdata);
@@ -215,6 +217,8 @@ void flist_serial_commit_acl(flist_db_t *database, acl_t *acl) {
         .gname = chars_to_text(acl->gname),
         .mode = acl->mode,
         .id = 0,
+        .uid = acl->uid,
+        .gid = acl->gid,
     };
 
     // prepare a writer
