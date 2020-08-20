@@ -50,6 +50,10 @@ int usage(char *basename) {
     fprintf(stderr, "  By default, this tool will print error and information in text format,\n");
     fprintf(stderr, "  you can get a json output by setting ZFLIST_JSON=1 environment variable.\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "  By default, you won't have any progression information, but you can\n");
+    fprintf(stderr, "  get some progression reporting using ZFLIST_PROGRESS=1 environment variable.\n");
+    fprintf(stderr, "  This works using JSON output aswell.\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "  First, you need to -open- an flist, then you can do some -edit-\n");
     fprintf(stderr, "  and finally you can -commit- (close) your changes to a new flist.\n");
     fprintf(stderr, "\n");
