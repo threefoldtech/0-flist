@@ -32,6 +32,7 @@
         char **argv;
         json_t *jout;
         void *userptr;
+        int progress;
 
     } zf_callback_t;
 

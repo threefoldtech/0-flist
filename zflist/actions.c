@@ -649,6 +649,10 @@ int zf_putdir(zf_callback_t *cb) {
         if(!(zf_backend_extract(cb->ctx)))
             return 1;
 
+    // set custom progression report
+    if(cb->progress)
+        libflist_context_set_progress(cb->ctx, cb, zf_progress_putdir_cb);
+
     // building directories
     char *localdir = cb->argv[1];
     char *destdir = cb->argv[2];

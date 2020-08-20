@@ -33,4 +33,6 @@
     void zf_dies(zf_callback_t *cb, const char *str);
 
     void zf_stats_dump(zf_callback_t *cb);
+
+    int zf_progress_putdir_cb(void *pcb, flist_progress_t *p);
 #endif

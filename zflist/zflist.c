@@ -78,6 +78,7 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .ctx = NULL,
         .jout = NULL,
         .userptr = NULL,
+        .progress = 0,
     };
 
     // check whenever json output is requested
@@ -85,6 +86,12 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     if(json && strcmp(json, "1") == 0)
         zf_internal_json_init(&cb);
+
+    // check whenever progression is requested
+    char *progress = getenv("ZFLIST_PROGRESS");
+
+    if(progress && strcmp(progress, "1") == 0)
+        cb.progress = 1;
 
     // open database (if used)
     if(cmd->db)
