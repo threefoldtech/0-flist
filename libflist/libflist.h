@@ -186,11 +186,21 @@
 
     } flist_chunks_t;
 
+    // progression information
+    typedef struct flist_progress_t {
+        char *message;
+        size_t current;
+        size_t total;
+
+    } flist_progress_t;
 
     typedef struct flist_ctx_t {
         flist_db_t *db;
         flist_backend_t *backend;
         flist_stats_t stats;
+
+        void *userptr;
+        int (*progress_cb)(void *userptr, flist_progress_t *progress);
 
     } flist_ctx_t;
 
