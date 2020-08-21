@@ -188,11 +188,21 @@
 
     } flist_chunks_t;
 
+    // progression information
+    typedef struct flist_progress_t {
+        char *message;
+        size_t current;
+        size_t total;
+
+    } flist_progress_t;
 
     typedef struct flist_ctx_t {
         flist_db_t *db;
         flist_backend_t *backend;
         flist_stats_t stats;
+
+        void *userptr;
+        int (*progress_cb)(void *userptr, flist_progress_t *progress);
 
     } flist_ctx_t;
 
@@ -282,6 +292,7 @@
     // flist_tools.c
     //
     flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
+    flist_ctx_t *libflist_context_set_progress(flist_ctx_t *ctx, void *userptr, int (*cb)(void *, flist_progress_t *));
     void libflist_context_free(flist_ctx_t *ctx);
 
     char *libflist_path_key(char *path);

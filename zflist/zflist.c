@@ -52,6 +52,10 @@ int usage(char *basename) {
     fprintf(stderr, "  By default, this tool will print error and information in text format,\n");
     fprintf(stderr, "  you can get a json output by setting ZFLIST_JSON=1 environment variable.\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "  By default, you won't have any progression information, but you can\n");
+    fprintf(stderr, "  get some progression reporting using ZFLIST_PROGRESS=1 environment variable.\n");
+    fprintf(stderr, "  This works using JSON output aswell.\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "  First, you need to -open- an flist, then you can do some -edit-\n");
     fprintf(stderr, "  and finally you can -commit- (close) your changes to a new flist.\n");
     fprintf(stderr, "\n");
@@ -80,6 +84,7 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
         .ctx = NULL,
         .jout = NULL,
         .userptr = NULL,
+        .progress = 0,
     };
 
     // check whenever json output is requested
@@ -87,6 +92,12 @@ int zf_callback(zf_cmds_t *cmd, int argc, char *argv[], zfe_settings_t *settings
 
     if(json && strcmp(json, "1") == 0)
         zf_internal_json_init(&cb);
+
+    // check whenever progression is requested
+    char *progress = getenv("ZFLIST_PROGRESS");
+
+    if(progress && strcmp(progress, "1") == 0)
+        cb.progress = 1;
 
     // open database (if used)
     if(cmd->db)

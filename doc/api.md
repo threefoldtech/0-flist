@@ -190,3 +190,25 @@ flist_backend_t *backend = libflist_backend_init(backdb, "/");
 ```
 
 
+# Progression
+You can request libflist to provide you progression information for some features
+(currently only `libflist_inode_from_localdir`). Later more progression will be added.
+
+In order to get progression on your code, you have to attach a progression callback to
+your flist context:
+```
+libflist_context_set_progress(ctx, &mystruct, progress_callback);
+```
+
+The callback function will be called on each progression update, your callback needs
+to be typed like:
+```
+int progress_callback(void *userptr, flist_progress_t *p) {
+    mystruct_t *x = (mystruct_t *) userptr;
+
+    printf("%s: %lu / %lu\n", p->message, p->current, p->total);
+    return 0;
+}
+```
+
+The `userptr` argument can be whatever you want.

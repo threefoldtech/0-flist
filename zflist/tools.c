@@ -505,3 +505,52 @@ void zf_stats_dump(zf_callback_t *cb) {
 
     zf_find_finalize_json(cb);
 }
+
+//
+// progression
+//
+int zf_progress_json_cb(void *pcb, flist_progress_t *p) {
+    (void) pcb;
+    json_t *root = json_object();
+    discard char *json = NULL;
+
+    json_object_set_new(root, "status", json_string("progress"));
+    json_object_set_new(root, "message", json_string(p->message));
+    json_object_set_new(root, "current", json_integer(p->current));
+    json_object_set_new(root, "total", json_integer(p->total));
+
+    // dump json response object
+    if(!(json = json_dumps(root, 0))) {
+        fprintf(stderr, "zflist: json: could not dumps message\n");
+        return 1;
+    }
+
+    puts(json);
+    fflush(stdout);
+
+    return 0;
+}
+
+
+// putdir text progression
+int zf_progress_putdir_cb(void *pcb, flist_progress_t *p) {
+    zf_callback_t *cb = (zf_callback_t *) pcb;
+
+    if(cb->jout)
+        return zf_progress_json_cb(pcb, p);
+
+    if(p->total == 0) {
+        printf(">> %s\n", p->message);
+        return 0;
+    }
+
+    printf("\r>> %s: %5.1f%%", p->message, ((p->current * 1.0) / p->total) * 100);
+
+    if(p->current == p->total)
+        printf("\n");
+
+    fflush(stdout);
+
+    return 0;
+}
+

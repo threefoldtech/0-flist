@@ -293,6 +293,7 @@ static int fts_compare(const FTSENT **one, const FTSENT **two) {
 inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_ctx_t *ctx) {
     discard char *localdir = NULL;
     struct stat sb;
+    size_t total = 0;
 
     if(!(localdir = realpath(localreldir, NULL))) {
         warnp(localreldir);
@@ -335,7 +336,13 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
     if(!(fs = fts_open(ftsargv, FTS_NOCHDIR | FTS_NOSTAT | FTS_PHYSICAL, &fts_compare)))
         diep(localdir);
 
+    libflist_progress(ctx, "computing hierarchy", 0, 0);
+
     while((fentry = fts_read(fs))) {
+        // update statistics
+        total += 1;
+
+        // skip non directory
         if(fentry->fts_info != FTS_D)
             continue;
 
@@ -379,7 +386,14 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
     // reset working directory
     workingdir = parent;
 
+    // current statistic
+    size_t current = 0;
+
     while((fentry = fts_read(fs))) {
+        // updating statistics
+        current += 1;
+        libflist_progress(ctx, "processing", current, total);
+
         discard char *target = flist_dirnode_virtual_path(parent, fentry->fts_path + strlen(localdir));
 
         debug("[+] libflist: processing: %s -> %s\n", fentry->fts_path, target);

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
+#include "libflist.h"
 #include "verbose.h"
 
 char libflist_internal_error[1024] = "Success";
@@ -97,4 +98,16 @@ void *libflist_bufdup(void *source, size_t length) {
     return buffer;
 }
 
+void libflist_progress(flist_ctx_t *ctx, char *message, size_t current, size_t total) {
+    debug("[+] libflist: progress update: %s [%lu / %lu]\n", message, current, total);
 
+    if(ctx->progress_cb != NULL) {
+        flist_progress_t p = {
+            .message = message,
+            .current = current,
+            .total = total
+        };
+
+        ctx->progress_cb(ctx->userptr, &p);
+    }
+}

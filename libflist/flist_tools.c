@@ -53,7 +53,19 @@ flist_ctx_t *flist_context_create(flist_db_t *db, flist_backend_t *backend) {
     ctx->db = db;
     ctx->backend = backend;
 
+    // init stats to zero
     memset(&ctx->stats, 0x00, sizeof(flist_stats_t));
+
+    // disable progression report
+    ctx->userptr = NULL;
+    ctx->progress_cb = NULL;
+
+    return ctx;
+}
+
+flist_ctx_t *flist_context_set_progress(flist_ctx_t *ctx, void *userptr, int (*cb)(void *, flist_progress_t *)) {
+    ctx->userptr = userptr;
+    ctx->progress_cb = cb;
 
     return ctx;
 }
@@ -96,4 +108,8 @@ flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend) {
 
 void libflist_context_free(flist_ctx_t *ctx) {
     flist_context_free(ctx);
+}
+
+flist_ctx_t *libflist_context_set_progress(flist_ctx_t *ctx, void *userptr, int (*cb)(void *, flist_progress_t *)) {
+    return flist_context_set_progress(ctx, userptr, cb);
 }
