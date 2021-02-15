@@ -21,7 +21,7 @@ libcurl() {
         --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher \
         --disable-manual --disable-libcurl-option --disable-sspi --disable-ntlm-wb --without-brotli --without-librtmp --without-winidn \
         --disable-threaded-resolver \
-        --without-openssl --with-mbedtls
+        --without-ssl --with-mbedtls
 
     make ${makeopts}
     make install
@@ -45,7 +45,7 @@ capnp() {
 }
 
 zeroflist() {
-    git clone -b development-v2 https://github.com/threefoldtech/0-flist
+    git clone -b development-v2-mbed https://github.com/threefoldtech/0-flist
     pushd 0-flist
 
     pushd libflist
