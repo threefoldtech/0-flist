@@ -44,6 +44,9 @@ int usage(char *basename) {
     fprintf(stderr, "       %s [temporary-point] <action> <arguments>\n", basename);
     fprintf(stderr, "       %s [temporary-point] commit [optional-new-flist]\n", basename);
     fprintf(stderr, "\n");
+    fprintf(stderr, "  zflist: version %s\n", ZFLIST_VERSION);
+    fprintf(stderr, "  libflist: version %s\n", libflist_version());
+    fprintf(stderr, "\n");
     fprintf(stderr, "  The temporary-point should be a directory where temporary files\n");
     fprintf(stderr, "  will be used for keeping tracks of your changes.\n");
     fprintf(stderr, "  You can also use ZFLIST_MNT environment variable to set your\n");
