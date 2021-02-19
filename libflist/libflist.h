@@ -1,6 +1,8 @@
 #ifndef LIBFLIST_H
     #define LIBFLIST_H
 
+    #define LIBFLIST_VERSION  "2.0.0"
+
     //
     // libflist
     //
@@ -225,6 +227,8 @@
 
     char *libflist_hashhex(unsigned char *hash, int length);
     void *libflist_bufdup(void *source, size_t length);
+
+    char *libflist_version();
 
     //
     // archive.c

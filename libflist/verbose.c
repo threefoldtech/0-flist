@@ -8,6 +8,11 @@
 
 char libflist_internal_error[1024] = "Success";
 
+// library version support
+char *libflist_version() {
+    return LIBFLIST_VERSION;
+}
+
 // global static flag to enable or disable
 // debug message on the whole library
 //
