@@ -533,7 +533,7 @@ int zf_progress_json_cb(void *pcb, flist_progress_t *p) {
 
 
 // putdir text progression
-int zf_progress_putdir_cb(void *pcb, flist_progress_t *p) {
+int zf_progress_generic_cb(void *pcb, flist_progress_t *p) {
     zf_callback_t *cb = (zf_callback_t *) pcb;
 
     if(cb->jout)

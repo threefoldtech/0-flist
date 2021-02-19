@@ -34,5 +34,5 @@
 
     void zf_stats_dump(zf_callback_t *cb);
 
-    int zf_progress_putdir_cb(void *pcb, flist_progress_t *p);
+    int zf_progress_generic_cb(void *pcb, flist_progress_t *p);
 #endif

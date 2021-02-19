@@ -583,6 +583,9 @@ int zf_get(zf_callback_t *cb) {
         return 1;
     }
 
+    if(cb->progress)
+        libflist_context_set_progress(cb->ctx, cb, zf_progress_generic_cb);
+
     discard char *argpath = strdup(cb->argv[1]);
     char *dirpath = dirname(argpath);
     char *filename = basename(cb->argv[1]);
@@ -615,9 +618,13 @@ int zf_get(zf_callback_t *cb) {
     if((fd = creat(destination, 0664)) < 0)
         zf_diep(cb, destination);
 
+    libflist_progress(cb->ctx, "fetching file", 0, 0);
+
     for(size_t i = 0; i < inode->chunks->size; i++) {
         inode_chunk_t *ichunk = &inode->chunks->list[i];
         flist_chunk_t *chunk = libflist_chunk_new(ichunk->entryid, ichunk->decipher, NULL, 0);
+
+        libflist_progress(cb->ctx, "downloading chunks", i + 1, inode->chunks->size);
 
         if(!libflist_backend_download_chunk(cb->ctx->backend, chunk)) {
             zf_error(cb, "get", "could not download file: %s", libflist_strerror());
@@ -629,6 +636,8 @@ int zf_get(zf_callback_t *cb) {
 
         libflist_chunk_free(chunk);
     }
+
+    libflist_progress(cb->ctx, "file downloaded", 0, 0);
 
     close(fd);
 
@@ -729,7 +738,7 @@ int zf_putdir(zf_callback_t *cb) {
 
     // set custom progression report
     if(cb->progress)
-        libflist_context_set_progress(cb->ctx, cb, zf_progress_putdir_cb);
+        libflist_context_set_progress(cb->ctx, cb, zf_progress_generic_cb);
 
     // building directories
     char *localdir = cb->argv[1];
