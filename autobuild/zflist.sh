@@ -45,7 +45,7 @@ capnp() {
 }
 
 zeroflist() {
-    git clone -b development-v2-mbedtls https://github.com/threefoldtech/0-flist
+    git clone -b development-v2 https://github.com/threefoldtech/0-flist
     pushd 0-flist
 
     pushd libflist
