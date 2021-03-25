@@ -7,14 +7,19 @@ filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
-# force token refreshing
-if [ "$ZFLIST_HUB_TOKEN" != "" ]; then
+if [ "$INPUT_TOKEN" != "" ]; then
+    # force token refreshing
     echo "Refreshing hub token"
+    export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
+    export ZFLIST_HUB_USER=$INPUT_USER
+    export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
+    
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 fi
 
-export ZFLIST_HUB_USER=$INPUT_USER
-export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
+if [ "$INPUT_TOKEN_THREEFOLD" != "" ]; then
+    export ZFLIST_HUB_TOKEN=$INPUT_TOKEN_THREEFOLD
+fi
 
 if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
