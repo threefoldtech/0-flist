@@ -38,6 +38,11 @@ if [ "$action" == "PUBLISH" ]; then
     zflist hub upload /tmp/$filename
 fi
 
+if [ "$action" == "UPLOAD" ]; then
+    echo "Uploading [$filename] to the hub"
+    zflist hub upload $filename
+fi
+
 if [ "$action" == "SYMLINK" ]; then
     echo "Symlinking $filename -> $targetname"
     zflist hub symlink $filename $targetname
