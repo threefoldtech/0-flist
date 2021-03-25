@@ -5,6 +5,8 @@ filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
+env
+
 if [ "$INPUT_TOKEN" != "" ]; then
     echo "Using legacy itsyou.online token"
 
@@ -20,6 +22,10 @@ fi
 if [ "$INPUT_THREEFOLD" != "" ]; then
     echo "Using threefold connect token"
     export ZFLIST_HUB_TOKEN=$INPUT_THREEFOLD
+fi
+
+if [ "$ZFLIST_HUB_TOKEN" == "" ]; then
+    echo "WARNING: no token found"
 fi
 
 if [ "$action" == "PUBLISH" ]; then
