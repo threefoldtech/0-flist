@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
-
 filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
@@ -17,8 +15,8 @@ if [ "$INPUT_TOKEN" != "" ]; then
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 fi
 
-if [ "$INPUT_TOKEN_THREEFOLD" != "" ]; then
-    export ZFLIST_HUB_TOKEN=$INPUT_TOKEN_THREEFOLD
+if [ "$INPUT_THREEFOLD" != "" ]; then
+    export ZFLIST_HUB_TOKEN=$INPUT_THREEFOLD
 fi
 
 if [ "$action" == "PUBLISH" ]; then
