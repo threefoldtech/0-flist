@@ -5,8 +5,6 @@ filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
-env
-
 if [ "$INPUT_TOKEN" != "" ]; then
     echo "Using legacy itsyou.online token"
 
