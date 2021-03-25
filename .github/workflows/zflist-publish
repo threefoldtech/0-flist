@@ -6,6 +6,8 @@ targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
 if [ "$INPUT_TOKEN" != "" ]; then
+    echo "Using legacy itsyou.online token"
+
     # force token refreshing
     echo "Refreshing hub token"
     export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
@@ -16,6 +18,7 @@ if [ "$INPUT_TOKEN" != "" ]; then
 fi
 
 if [ "$INPUT_THREEFOLD" != "" ]; then
+    echo "Using threefold connect token"
     export ZFLIST_HUB_TOKEN=$INPUT_THREEFOLD
 fi
 
