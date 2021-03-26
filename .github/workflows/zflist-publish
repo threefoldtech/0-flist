@@ -12,9 +12,10 @@ if [ "$INPUT_TOKEN" != "" ]; then
     echo "Refreshing hub token"
     export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
     export ZFLIST_HUB_USER=$INPUT_USER
-    export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
     
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
+
+    export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
 fi
 
 if [ "$INPUT_THREEFOLD" != "" ]; then
