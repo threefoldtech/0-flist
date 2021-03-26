@@ -26,7 +26,7 @@ static char *archive_prepare(char *filename, char *target) {
     if(!(gsrc = gzopen(filename, "r")))
         return libflist_errp(filename);
 
-    if(asprintf(&destination, "%s/%s", target, basename(filename)) < 0)
+    if(asprintf(&destination, "%s/%s.tar.gz", target, basename(filename)) < 0)
         return libflist_errp("asprintf");
 
     if(!(dst = fopen(destination, "w")))
@@ -50,27 +50,31 @@ char *libflist_archive_extract(char *filename, char *target) {
     if(stat(filename, &st))
         return libflist_errp(filename);
 
-    // uncompression tar file to our ramdisk
-    debug("[+] uncompressing archive: %s\n", filename);
+    // uncompression tar file
+    debug("[+] libflist: archive: uncompressing: %s\n", filename);
+    debug("[+] libflist: archive: target: %s\n", target);
     if(!(destination = archive_prepare(filename, target)))
         return libflist_errp("archive_prepare");
 
     // loading tar and extracting contents
-    debug("[+] loading archive: %s\n", destination);
+    debug("[+] libflist: archive: loading: %s\n", destination);
     if(tar_open(&th, destination, NULL, O_RDONLY, 0644, TAR_GNU))
         return libflist_errp("tar_open");
 
     // TODO: ensure security on files
 
-    debug("[+] extracting archive\n");
+    debug("[+] libflist: archive: extracting archive\n");
     if(tar_extract_all(th, target)) {
         libflist_errp("tar_extract_all");
         filename = NULL;
     }
 
     tar_close(th);
+
+    if(unlink(destination) < 0)
+        return libflist_errp("unlink");
+
     free(destination);
-    unlink(destination);
 
     return filename;
 }

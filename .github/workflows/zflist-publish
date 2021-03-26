@@ -1,0 +1,87 @@
+#!/bin/bash
+set -e
+
+filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
+targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
+action=${INPUT_ACTION^^}
+
+if [ "$INPUT_TOKEN" != "" ]; then
+    echo "Using legacy itsyou.online token"
+
+    # force token refreshing
+    echo "Refreshing hub token"
+    export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
+    export ZFLIST_HUB_USER=$INPUT_USER
+    
+    ZFLIST_HUB_TOKEN=$(zflist hub refresh)
+
+    export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
+fi
+
+if [ "$INPUT_THREEFOLD" != "" ]; then
+    echo "Using threefold connect token"
+    export ZFLIST_HUB_TOKEN=$INPUT_THREEFOLD
+fi
+
+if [ "$ZFLIST_HUB_TOKEN" == "" ]; then
+    echo "WARNING: no token found"
+fi
+
+if [ "$action" == "PUBLISH" ]; then
+    echo "Initializing new flist"
+    zflist init
+
+    echo "Building the flist (path: $INPUT_ROOT)"
+    zflist putdir $INPUT_ROOT /
+    zflist commit /tmp/$filename
+
+    echo "Uploading to the hub"
+    zflist hub upload /tmp/$filename
+fi
+
+if [ "$action" == "UPLOAD" ]; then
+    echo "Uploading [$filename] to the hub"
+    zflist hub upload $filename
+fi
+
+if [ "$action" == "SYMLINK" ]; then
+    echo "Symlinking $filename -> $targetname"
+    zflist hub symlink $filename $targetname
+fi
+
+if [ "$action" == "RENAME" ]; then
+    echo "Renaming $filename -> $targetname"
+    zflist hub rename $filename $targetname
+fi
+
+if [ "$action" == "CROSSLINK" ]; then
+    repository=$(echo $targetname | awk -F/ '{ print $1 }')
+    sourcename=$(echo $targetname | awk -F/ '{ print $2 }')
+
+    echo "Cross-linking $repository/$sourcename -> $filename"
+    zflist hub crosslink $filename $repository $sourcename
+fi
+
+if [ "$action" == "PROMOTE" ]; then
+    echo "Promoting $filename -> $targetname"
+    zflist hub promote $filename $targetname
+fi
+
+if [ "$action" == "DELETE" ]; then
+    echo "Deleting $filename"
+    zflist hub delete $filename
+fi
+
+if [ "$action" == "READLINK" ]; then
+    echo "Readlink of $filename"
+    readlinkname=$(zflist hub readlink $filename)
+
+    echo ${readlinkname}
+    echo ::set-output name=linkpoint::"${readlinkname}"
+fi
+
+if [ "$action" == "MERGE" ]; then
+    echo "Merging into $filename this list: $targetname"
+    zflist hub merge $filename $targetname
+fi
+

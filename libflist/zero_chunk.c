@@ -10,6 +10,7 @@
 #include "libflist.h"
 #include "verbose.h"
 #include "xxtea.h"
+#include "flist_tools.h"
 #include "zero_chunk.h"
 
 #define CHUNK_SIZE    1024 * 512    // 512 KB
@@ -35,7 +36,7 @@ static ssize_t file_load(char *filename, buffer_t *buffer) {
     }
 
     buffer->length = file_length(buffer->fp);
-    debug("[+] filesize: %lu bytes\n", buffer->length);
+    debug("[+] libflist: chunks: local filesize: %lu bytes\n", buffer->length);
 
     if(buffer->length == 0)
         return 0;
@@ -60,11 +61,11 @@ buffer_t *bufferize(char *filename) {
     if(file_load(filename, buffer) < 0)
         return NULL;
 
-    // file empty, nothing to do.
+    // file empty, nothing to do
     if(buffer->length == 0) {
-        debug("[-] file is empty, nothing to do.\n");
-        free(buffer);
-        return NULL;
+        debug("[-] libflist: chunks: file is empty\n");
+        buffer->chunks = 0;
+        return buffer;
     }
 
     buffer->chunks = ceil(buffer->length / (float) buffer->chunksize);
@@ -138,10 +139,12 @@ uint8_t *libflist_chunk_hash(const void *buffer, size_t length) {
 // chunks manager
 //
 flist_buffer_t libflist_buffer_new(uint8_t *data, size_t length) {
-    flist_buffer_t buffer = {
-        .data = data,
-        .length = length,
-    };
+    flist_buffer_t buffer;
+
+    // FIXME: allocation failure
+    buffer.length = length;
+    buffer.data = malloc(length);
+    memcpy(buffer.data, data, length);
 
     return buffer;
 }
@@ -158,7 +161,9 @@ flist_chunk_t *libflist_chunk_new(uint8_t *id, uint8_t *cipher, void *data, size
 
     chunk->id = libflist_buffer_new(id, ZEROCHUNK_HASH_LENGTH);
     chunk->cipher = libflist_buffer_new(cipher, ZEROCHUNK_HASH_LENGTH);
-    chunk->plain = libflist_buffer_new(data, datalen);
+
+    if(datalen > 0)
+        chunk->plain = libflist_buffer_new(data, datalen);
 
     return chunk;
 }
@@ -182,7 +187,7 @@ flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
 
     if(libflist_debug_flag) {
         char *inhash = libflist_hashhex(hashkey, ZEROCHUNK_HASH_LENGTH);
-        debug("[+] chunk: encrypt: original hash: %s\n", inhash);
+        debug("[+] libflist: chunk: encrypt: original hash: %s\n", inhash);
         free(inhash);
     }
 
@@ -209,7 +214,7 @@ flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
 
     if(libflist_debug_flag) {
         char *inhash = libflist_hashhex(hashcrypt, ZEROCHUNK_HASH_LENGTH);
-        debug("[+] chunk: encrypt: final hash: %s\n", inhash);
+        debug("[+] libflist: chunk: encrypt: final hash: %s\n", inhash);
         free(inhash);
     }
 
@@ -219,6 +224,10 @@ flist_chunk_t *libflist_chunk_encrypt(const uint8_t *chunk, size_t chunksize) {
     flist_chunk_t *response = libflist_chunk_new(hashcrypt, hashkey, NULL, 0);
     response->encrypted.data = encrypt_data;
     response->encrypted.length = encrypt_length;
+
+    // memory duplicated on chunk object
+    free(hashcrypt);
+    free(hashkey);
 
     return response;
 }
@@ -234,7 +243,7 @@ flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk) {
     // uncrypt payload
     //
     char *key = libflist_hashhex(chunk->cipher.data, chunk->cipher.length);
-    debug("[+] uncrypt %lu buffer, with key: %s\n", chunk->encrypted.length, key);
+    debug("[+] libflist: chunk: uncrypt %lu buffer, with key: %s\n", chunk->encrypted.length, key);
     free(key);
 
     if(!(uncipherdata = xxtea_decrypt_bkey(chunk->encrypted.data, chunk->encrypted.length, chunk->cipher.data, chunk->cipher.length, &uncipherlength))) {
@@ -248,7 +257,7 @@ flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk) {
     size_t uncompressed_length = 0;
     snappy_status status;
 
-    debug("[+] uncompressing %lu bytes\n", uncipherlength);
+    debug("[+] libflist: chunk: uncompressing %lu bytes\n", uncipherlength);
 
     if((status = snappy_uncompressed_length(uncipherdata, uncipherlength, &uncompressed_length)) != SNAPPY_OK) {
         libflist_set_error("snappy uncompression length error: %d", status);
@@ -275,8 +284,8 @@ flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk) {
         char *inhash = libflist_hashhex(integrity, ZEROCHUNK_HASH_LENGTH);
         char *outhash = libflist_hashhex(chunk->cipher.data, chunk->cipher.length);
 
-        debug("[-] integrity check failed: hash mismatch\n");
-        debug("[-] %s <> %s\n", inhash, outhash);
+        debug("[-] libflist: integrity check failed: hash mismatch\n");
+        debug("[-] libflist: %s <> %s\n", inhash, outhash);
         libflist_set_error("chunk integrity mismatch");
 
         free(inhash);
@@ -289,4 +298,116 @@ flist_chunk_t *libflist_chunk_decrypt(flist_chunk_t *chunk) {
     free(uncipherdata);
 
     return chunk;
+}
+
+static uint8_t *buffer_duplicate(flist_buffer_t *input) {
+    uint8_t *copy;
+
+    if(!(copy = malloc(input->length)))
+        diep("libflist: buffer: duplicate: malloc");
+
+    memcpy(copy, input->data, input->length);
+    return copy;
+}
+
+// compute file chunks, if context backend is specified (not NULL), committing
+// the chunk into the backend
+inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx) {
+    buffer_t *buffer;
+    inode_chunks_t *chunks;
+    size_t totalsize = 0;
+
+    // initialize buffer
+    if(!(buffer = bufferize(localfile)))
+        return NULL;
+
+    if(!(chunks = (inode_chunks_t *) calloc(sizeof(inode_chunks_t), 1)))
+        return libflist_errp("chunks: compute: calloc");
+
+    // setting number of expected chunks
+    chunks->size = buffer->chunks;
+    chunks->blocksize = 512; // ignored
+
+    if(!(chunks->list = (inode_chunk_t *) malloc(sizeof(inode_chunk_t) * chunks->size)))
+        diep("libflist: chunks: malloc");
+
+    // processing each chunks
+    debug("[+] libflist: chunks: processing %d chunks\n", buffer->chunks);
+
+    for(int i = 0; i < buffer->chunks; i++) {
+        const unsigned char *data = buffer_next(buffer);
+
+        // encrypting chunk
+        flist_chunk_t *chunk;
+        inode_chunk_t *ichunk = &chunks->list[i];
+
+        if(!(chunk = libflist_chunk_encrypt(data, buffer->chunksize))) {
+            // FIXME: memory leak
+            return NULL;
+        }
+
+        ichunk->entryid = buffer_duplicate(&chunk->id);
+        ichunk->entrylen = chunk->id.length;
+        ichunk->decipher = buffer_duplicate(&chunk->cipher);
+        ichunk->decipherlen = chunk->cipher.length;
+
+        // if context is provided
+        // uploading this chunk
+        if(ctx && ctx->backend) {
+            if(libflist_backend_chunk_commit(ctx->backend, chunk) < 0) {
+                // FIXME: memory leak
+                fprintf(stderr, "[-] libflist: chunk: %s\n", libflist_strerror());
+                return NULL;
+            }
+        }
+
+        totalsize += chunk->encrypted.length;
+
+        libflist_chunk_free(chunk);
+    }
+
+    debug("[+] libflist: chunks: %lu bytes\n", totalsize);
+
+    // cleaning
+    buffer_free(buffer);
+
+    return chunks;
+}
+
+inode_chunks_t *flist_chunks_duplicate(inode_chunks_t *source) {
+    inode_chunks_t *chunks;
+
+	if(!source)
+		return NULL;
+
+    if(!(chunks = malloc(sizeof(inode_chunks_t)))) {
+        libflist_warnp("chunks duplicate malloc");
+        return NULL;
+    }
+
+    chunks->size = source->size;
+    chunks->blocksize = source->blocksize;
+
+    if(!(chunks->list = malloc(sizeof(inode_chunk_t) * chunks->size))) {
+        libflist_warnp("chunks duplicate list");
+        return NULL;
+    }
+
+    for(size_t i = 0; i < source->size; i++) {
+        inode_chunk_t *src = &source->list[i];
+        inode_chunk_t *item = &chunks->list[i];
+
+        item->entryid = flist_memdup(src->entryid, src->entrylen);
+        item->entrylen = src->entrylen;
+
+        item->decipher = flist_memdup(src->decipher, src->decipherlen);
+        item->decipherlen = src->decipherlen;
+    }
+
+    return chunks;
+}
+
+// compute file chunks, without uploading anything
+inode_chunks_t *libflist_chunks_compute(char *localfile) {
+    return libflist_chunks_proceed(localfile, NULL);
 }

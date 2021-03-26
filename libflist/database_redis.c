@@ -148,6 +148,31 @@ static int database_redis_sexists(flist_db_t *database, char *key) {
     return database_redis_exists(database, (uint8_t *) key, strlen(key));
 }
 
+static value_t *database_redis_mdget(flist_db_t *database, char *key) {
+    (void) database;
+    (void) key;
+
+    debug("[-] libflist: database_redis_mdget: not implemented\n");
+    return NULL;
+}
+
+static int database_redis_mdset(flist_db_t *database, char *key, char *payload) {
+    (void) database;
+    (void) key;
+    (void) payload;
+
+    debug("[-] libflist: database_redis_mdset: not implemented\n");
+    return 1;
+}
+
+static int database_redis_mddel(flist_db_t *database, char *key) {
+    (void) database;
+    (void) key;
+
+    debug("[-] libflist: database_redis_mddel: not implemented\n");
+    return 1;
+}
+
 static flist_db_t *database_redis_init_global(flist_db_t *db) {
     // setting global db
     db->type = "REDIS";
@@ -163,6 +188,9 @@ static flist_db_t *database_redis_init_global(flist_db_t *db) {
     db->sget = database_redis_sget;
     db->sset = database_redis_sset;
     db->sexists = database_redis_sexists;
+    db->mdget = database_redis_mdget;
+    db->mdset = database_redis_mdset;
+    db->mddel = database_redis_mddel;
 
     return db;
 }
@@ -202,12 +230,23 @@ static int database_redis_set_namespace(database_redis_t *db, char *namespace, c
         db->internal_get = database_redis_get_zdb;
         db->internal_set = database_redis_set_zdb;
 
+        // fallback to default namespace
+        if(namespace == NULL)
+            namespace = "default";
+
         debug("[+] database: zero-db detected, selecting namespace\n");
         if(token) {
             debug("[+] database: authenticating token\n");
 
-            if(!(reply = redisCommand(db->redis, "AUTH %s", token)))
+            if(!(reply = redisCommand(db->redis, "AUTH %s", token))) {
+                libflist_set_error("could not send auth command");
                 return 1;
+            }
+
+            if(strncmp(reply->str, "OK", 2)) {
+                libflist_set_error("auth: %s", reply->str);
+                return 1;
+            }
         }
 
         if(password) {
@@ -246,16 +285,22 @@ flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *namespace, ch
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnect(host, port)))
+    if(!(handler->redis = redisConnect(host, port))) {
+        database_redis_close(db);
         return libflist_set_error("redis: connect: cannot allocate memory");
+    }
 
     if(handler->redis->err) {
         libflist_set_error("redis: connect: tcp: %s", handler->redis->errstr);
-        redisFree(handler->redis);
+        database_redis_close(db);
         return NULL;
     }
 
-    database_redis_set_namespace(handler, namespace, password, token);
+    if(database_redis_set_namespace(handler, namespace, password, token)) {
+        // error should have been set
+        database_redis_close(db);
+        return NULL;
+    }
 
     return db;
 }
@@ -264,12 +309,14 @@ flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *pas
     flist_db_t *db = database_redis_init();
     database_redis_t *handler = db->handler;
 
-    if(!(handler->redis = redisConnectUnix(socket)))
+    if(!(handler->redis = redisConnectUnix(socket))) {
+        database_redis_close(db);
         return libflist_set_error("redis: connect: unix: cannot allocate memory");
+    }
 
     if(handler->redis->err) {
         libflist_set_error("redis: connect: unix: %s", handler->redis->errstr);
-        redisFree(handler->redis);
+        database_redis_close(db);
         return NULL;
     }
 

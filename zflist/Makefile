@@ -15,8 +15,13 @@ embedded: $(EXEC)
 
 # embeded, static without debug
 production: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
-production: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lssl -lcrypto -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
+production: LDFLAGS += -static-libstdc++ -static-libgcc -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lssl -lcrypto -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 production: $(EXEC)
+
+# embeded, static without debug
+production-mbed: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
+production-mbed: LDFLAGS += -static-libstdc++ -static-libgcc -Wl,-Bstatic -L../libflist -lflist -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lmbedcrypto -lmbedx509 -lmbedtls -lmbedcrypto -lmbedx509 -lmbedtls -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
+production-mbed: $(EXEC)
 
 # shared without debug
 release: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist

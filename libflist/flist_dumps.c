@@ -26,15 +26,10 @@ void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir) {
     debug("[+] inode:   size: %lu bytes (%.2f MB)\n", inode->size, inode->size / (1024 * 1024.0));
     debug("[+] inode:   ctime: %lu, mtime: %lu\n", inode->creation, inode->modification);
 
-    if(inode->racl) {
-        debug("[+] inode:   user: %s, group: %s\n", inode->racl->uname, inode->racl->gname);
-        debug("[+] inode:   mode: %o\n", inode->racl->mode);
-    }
-
-    if(inode->acl.key) {
-        debug("[+] inode:   user: %s, group: %s\n", inode->acl.uname, inode->acl.gname);
-        debug("[+] inode:   mode: %o\n", inode->acl.mode);
-    }
+    debug("[+] inode: aclkey: %s\n", inode->acl->key);
+    debug("[+] inode:   user: %s, group: %s\n", inode->acl->uname, inode->acl->gname);
+    debug("[+] inode:   uid: %ld, gid: %ld\n", inode->acl->uid, inode->acl->gid);
+    debug("[+] inode:   mode: %o\n", inode->acl->mode);
 
     if(inode->type == INODE_LINK)
         debug("[+] inode:   symlink: %s\n", inode->link);
@@ -48,17 +43,34 @@ void libflist_dirnode_dumps(dirnode_t *root) {
     debug("[+]   subdirectories: %lu\n", root->dir_length);
     debug("[+]   inodes: %lu\n", root->inode_length);
 
+    debug("[+] dirnode: aclkey: %s\n", root->acl->key);
+    debug("[+] dirnode:   user: %s, group: %s\n", root->acl->uname, root->acl->gname);
+    debug("[+] dirnode:   mode: %o\n", root->acl->mode);
+
     for(dirnode_t *source = root->dir_list; source; source = source->next) {
         libflist_dirnode_dumps(source);
 
-        if(source->acl.key == NULL && source->racl == NULL)
+        if(source->acl->key == NULL)
             warns("directory aclkey not set");
     }
 
     for(inode_t *inode = root->inode_list; inode; inode = inode->next) {
         libflist_inode_dumps(inode, root);
 
-        if(inode->acl.key == NULL && inode->racl == NULL)
+        if(inode->acl->key == NULL)
             warns("inode aclkey not set");
     }
 }
+
+void libflist_stats_dump(flist_stats_t *stats) {
+    printf("[+]\n");
+    printf("[+]   flist: regular  : %lu\n", stats->regular);
+    printf("[+]   flist: symlink  : %lu\n", stats->symlink);
+    printf("[+]   flist: directory: %lu\n", stats->directory);
+    printf("[+]   flist: special  : %lu\n", stats->special);
+    printf("[+]   flist: failure  : %lu\n", stats->failure);
+    printf("[+]   flist: full size: %lu bytes\n", stats->size);
+    printf("[+]\n");
+}
+
+

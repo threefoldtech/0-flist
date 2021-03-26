@@ -1,7 +1,7 @@
 default: all
 
 release:
-	cd libflist && $(MAKE) $@
+	cd libflist && $(MAKE)
 	cd zflist && $(MAKE) embedded
 	cp zflist/zflist zflist-embedded
 	strip -s zflist-embedded

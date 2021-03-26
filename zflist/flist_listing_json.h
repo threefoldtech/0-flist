@@ -1,7 +1,0 @@
-#ifndef LIBFLIST_LIST_JSON
-    #define LIBFLIST_LIST_JSON
-
-    int flist_json(walker_t *walker, directory_t *root);
-    void flist_json_dump(walker_t *walker);
-    void *flist_json_init();
-#endif

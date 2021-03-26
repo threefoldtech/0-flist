@@ -23,4 +23,5 @@
     void buffer_free(buffer_t *buffer);
 
     // chunk
+    inode_chunks_t *flist_chunks_duplicate(inode_chunks_t *source);
 #endif

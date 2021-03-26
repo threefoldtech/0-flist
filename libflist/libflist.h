@@ -1,61 +1,31 @@
 #ifndef LIBFLIST_H
     #define LIBFLIST_H
 
+    #define LIBFLIST_VERSION  "2.0.0"
+
     //
-    // ---------------------------------------------------------------------
+    // libflist
     //
-    // brace yourself
-    //
-    // most of this file will hurt your eyes...
-    //                    ...for now (I promise, this will change)
-    //                    ...look at the end for a better idea of the futur
-    //
-    // ---------------------------------------------------------------------
+    //   flist main library to create, list, update an flist file
+    //   this file will be more documented with time, but it already changed
+    //   a lot across time and is way more much readable now than before
     //
 
     #include <stdint.h>
     #include <time.h>
+    #include <jansson.h>
 
     typedef struct acl_t {
         char *uname;     // username (user id if not found)
         char *gname;     // group name (group id if not found)
         uint16_t mode;   // integer file mode
         char *key;       // hash of the payload (dedupe in db)
+        int64_t uid;     // hardcoded user id from stat
+        int64_t gid;     // hardcoded group id from stat
 
     } acl_t;
 
-    typedef struct flist_acl_t {
-        char *uname;     // username (user id if not found)
-        char *gname;     // group name (group id if not found)
-        uint16_t mode;   // integer file mode
-
-    } flist_acl_t;
-
-
-    #if 0
-    // link internal type to capnp type directly
-    // this make things easier later
-    typedef enum inode_type_t {
-        INODE_DIRECTORY = Inode_attributes_dir,
-        INODE_FILE = Inode_attributes_file,
-        INODE_LINK = Inode_attributes_link,
-        INODE_SPECIAL = Inode_attributes_special,
-
-    } inode_type_t;
-
-    typedef enum inode_special_t {
-        SOCKET = Special_Type_socket,
-        BLOCK = Special_Type_block,
-        CHARDEV = Special_Type_chardev,
-        FIFOPIPE = Special_Type_fifopipe,
-        UNKNOWN = Special_Type_unknown,
-
-    } inode_special_t;
-    #endif
-
-
-    // link internal type to capnp type directly
-    // this make things easier later
+    // mapping capnp type
     typedef enum inode_type_t {
         INODE_DIRECTORY,
         INODE_FILE,
@@ -95,9 +65,7 @@
         char *name;       // relative inode name (filename)
         char *fullpath;   // full relative path
         size_t size;      // size in byte
-        acl_t acl;        // access control
-
-        flist_acl_t *racl;       // file permissions
+        acl_t *acl;       // access control
 
         inode_type_t type;       // internal file type
         time_t modification;     // modification time
@@ -126,8 +94,7 @@
         char *name;            // directory name
         char *hashkey;         // internal hash (for db)
 
-        acl_t acl;             // access control
-        flist_acl_t *racl;     // read acl
+        acl_t *acl;            // access control
         time_t creation;       // creation time
         time_t modification;   // modification time
 
@@ -163,6 +130,10 @@
         int (*sdel)(struct flist_db_t *db, char *key);
         int (*sexists)(struct flist_db_t *db, char *key);
 
+        value_t* (*mdget)(struct flist_db_t *db, char *key);
+        int (*mdset)(struct flist_db_t *db, char *key, char *data);
+        int (*mddel)(struct flist_db_t *db, char *key);
+
         void (*clean)(value_t *value);
 
     } flist_db_t;
@@ -172,18 +143,6 @@
         REDIS,
 
     } flist_db_type_t;
-
-    // FIXME
-    #include "flist.capnp.h"
-
-    typedef struct directory_t {
-        value_t *value;
-        struct capn ctx;
-        Dir_ptr dirp;
-        struct Dir dir;
-
-    } directory_t;
-
 
     typedef struct flist_backend_t {
         flist_db_t *database;
@@ -231,63 +190,32 @@
 
     } flist_chunks_t;
 
+    // progression information
+    typedef struct flist_progress_t {
+        char *message;
+        size_t current;
+        size_t total;
 
-    typedef struct flist_merge_t {
-        size_t length;
-        char **sources;
+    } flist_progress_t;
 
-    } flist_merge_t;
+    typedef struct flist_ctx_t {
+        flist_db_t *db;
+        flist_backend_t *backend;
+        flist_stats_t stats;
 
-    //
-    // ----------------------
-    // welcome in the jungle
-    // everything here need to be review
-    // and rewritten in a library perspective
-    //
-    // see below for better
+        void *userptr;
+        int (*progress_cb)(void *userptr, flist_progress_t *progress);
 
+    } flist_ctx_t;
 
-    // initialize a backend
-
-
-
-    // hashing
-
-
-
-
-    // convert a binary hash into hexadecimal hash
-
-    dirnode_t *libflist_directory_get(flist_db_t *database, char *path);
-    dirnode_t *libflist_directory_get_recursive(flist_db_t *database, char *path);
-    void inode_free(inode_t *inode);
-
-    directory_t *flist_directory_get(flist_db_t *database, char *key, char *fullpath);
-
-    void flist_directory_close(flist_db_t *database, directory_t *dir);
-
-    char *libflist_path_key(char *path);
-
-    int flist_walk(flist_db_t *database);
-
-    dirnode_t *dirnode_appends_inode(dirnode_t *root, inode_t *inode);
-    dirnode_t *dirnode_lazy_appends_inode(dirnode_t *root, inode_t *inode);
-
-    dirnode_t *dirnode_lazy_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-    dirnode_t *dirnode_appends_dirnode(dirnode_t *root, dirnode_t *dir);
-
-    dirnode_t *dirnode_lazy_duplicate(dirnode_t *source);
-    inode_t *inode_lazy_duplicate(inode_t *source);
-
-    flist_acl_t *libflist_get_permissions(flist_db_t *database, const char *aclkey);
-    flist_acl_t *libflist_racl_to_acl(acl_t *dst, flist_acl_t *src);
-    void inode_acl_persist(flist_db_t *database, acl_t *acl);
+    #define FLIST_ENTRY_KEY_LENGTH  16
+    #define FLIST_ACL_KEY_LENGTH    8
 
     //
-    // --------------------------------------------------
-    // at that point, function are reviewed and handle
-    // error in a library point of view and are exported
-    // here publicly
+    // ------------------------
+    //  public function declaration
+    // ------------------------
+    //
 
     //
     // verbose.c
@@ -300,8 +228,13 @@
     char *libflist_hashhex(unsigned char *hash, int length);
     void *libflist_bufdup(void *source, size_t length);
 
+    char *libflist_version();
+
     //
     // archive.c
+    //
+    //   everything related to tar format (packing and unpacking)
+    //   which is the default base format of flist
     //
     char *libflist_archive_extract(char *filename, char *target);
     char *libflist_archive_create(char *filename, char *source);
@@ -309,28 +242,27 @@
     //
     // backend.c
     //
+    //   everything related to set/get things onto backend database
+    //   which are file payload and chunks
+    //
     flist_backend_t *libflist_backend_init(flist_db_t *database, char *rootpath);
+    int libflist_backend_exists(flist_backend_t *context, flist_chunk_t *chunk);
     void libflist_backend_free(flist_backend_t *backend);
 
     flist_chunks_t *libflist_backend_upload_file(flist_backend_t *context, char *filename);
     flist_chunks_t *libflist_backend_upload_inode(flist_backend_t *backend, char *path, char *filename);
     int libflist_backend_upload_chunk(flist_backend_t *context, flist_chunk_t *chunk);
+    int libflist_backend_chunk_commit(flist_backend_t *context, flist_chunk_t *chunk);
 
     flist_chunk_t *libflist_backend_download_chunk(flist_backend_t *backend, flist_chunk_t *chunk);
 
     void libflist_backend_chunks_free(flist_chunks_t *chunks);
 
     //
-    // workspace.c
-    //
-    char *libflist_workspace_create();
-    char *libflist_workspace_destroy(char *mountpoint);
-
-    char *libflist_ramdisk_create();
-    char *libflist_ramdisk_destroy(char *mountpoint);
-
-    //
     // database_redis.c
+    //
+    //   everything related to redis based database, which include zero-db
+    //   this can be used as backend or as flist temporary database
     //
     flist_db_t *libflist_db_redis_init_tcp(char *host, int port, char *hset, char *password, char *token);
     flist_db_t *libflist_db_redis_init_unix(char *socket, char *namespace, char *password, char *token);
@@ -338,11 +270,20 @@
     //
     // database_sqlite.c
     //
+    //   same as redis, but for sqlite, which is the default backend used for
+    //   flist metadata and entries
+    //
     flist_db_t *libflist_db_sqlite_init(char *rootpath);
 
     //
     // zero_chunk.c
     //
+    //   code used by chunk system, which split, compress and encrypt
+    //   a file (or cat, uncompress and uncrypt), into/from a backend
+    //
+    inode_chunks_t *libflist_chunks_compute(char *localfile);
+    inode_chunks_t *libflist_chunks_proceed(char *localfile, flist_ctx_t *ctx);
+
     uint8_t *libflist_chunk_hash(const void *buffer, size_t length);
 
     flist_chunk_t *libflist_chunk_new(uint8_t *hash, uint8_t *key, void *data, size_t length);
@@ -352,30 +293,97 @@
     void libflist_chunk_free(flist_chunk_t *chunk);
 
     //
-    // flist_write.c
+    // flist_tools.c
     //
-    int libflist_create_excluders_append(char *regex);
-    void libflist_create_excluders_free();
+    flist_ctx_t *libflist_context_create(flist_db_t *db, flist_backend_t *backend);
+    flist_ctx_t *libflist_context_set_progress(flist_ctx_t *ctx, void *userptr, int (*cb)(void *, flist_progress_t *));
+    void libflist_context_free(flist_ctx_t *ctx);
 
+    char *libflist_path_key(char *path);
+
+    //
+    // flist_acl.c
+    //
+    acl_t *libflist_acl_new(char *uname, char *gname, int mode, int64_t uid, int64_t gid);
+    char *libflist_acl_key(acl_t *acl);
+    acl_t *libflist_acl_duplicate(acl_t *source);
+    acl_t *libflist_acl_commit(acl_t *acl);
+    void libflist_acl_free(acl_t *acl);
+
+    //
+    // flist_dirnode.c
+    //
+    dirnode_t *libflist_dirnode_create(char *fullpath, char *name);
     dirnode_t *libflist_dirnode_search(dirnode_t *root, char *dirname);
+    dirnode_t *libflist_dirnode_get(flist_db_t *database, char *path);
+    dirnode_t *libflist_dirnode_get_recursive(flist_db_t *database, char *path);
+    dirnode_t *libflist_dirnode_get_parent(flist_db_t *database, dirnode_t *root);
+    dirnode_t *libflist_dirnode_lookup_dirnode(dirnode_t *root, const char *dirname);
+    dirnode_t *libflist_dirnode_appends_inode(dirnode_t *root, inode_t *inode);
+
+    void libflist_dirnode_free(dirnode_t *dirnode);
+    void libflist_dirnode_free_recursive(dirnode_t *dirnode);
+
+    //
+    // flist_inode.c
+    //
+    inode_t *libflist_inode_mkdir(char *name, dirnode_t *parent);
+    inode_t *libflist_inode_rename(inode_t *inode, char *name);
+    inode_t *libflist_inode_from_localfile(char *localpath, dirnode_t *parent, flist_ctx_t *ctx);
+    inode_t *libflist_inode_from_localdir(char *localdir, dirnode_t *parent, flist_ctx_t *ctx);
     inode_t *libflist_inode_search(dirnode_t *root, char *inodename);
+    inode_t *libflist_inode_from_name(dirnode_t *root, char *filename);
 
-    void libflist_dirnode_commit(dirnode_t *root, flist_db_t *database, dirnode_t *parent, flist_backend_t *backend);
-    char *libflist_inode_acl_key(acl_t *acl);
+    inode_t *libflist_directory_create(dirnode_t *parent, char *name);
+    dirnode_t *libflist_directory_rm_inode(dirnode_t *root, inode_t *target);
+    int libflist_directory_rm_recursively(flist_db_t *database, dirnode_t *dirnode);
 
-    flist_stats_t *libflist_create(flist_db_t *database, const char *root, flist_backend_t *backend);
+    void libflist_inode_free(inode_t *inode);
 
     //
     // flist_merger.c
     //
-    int libflist_merge_list_init(flist_merge_t *merge);
-    int libflist_merge_list_append(flist_merge_t *merge, char *path);
-    int libflist_merge_list_free(flist_merge_t *merge);
-    dirnode_t *libflist_merge(dirnode_t **fulltree, dirnode_t *source);
+    dirnode_t *libflist_merge(flist_ctx_t *source, flist_ctx_t *target);
 
     //
     // flist_dumps.c
     //
+    //   debug functions used to dumps inode, directories, ...
+    //
     void libflist_inode_dumps(inode_t *inode, dirnode_t *rootdir);
     void libflist_dirnode_dumps(dirnode_t *root);
+    void libflist_stats_dump(flist_stats_t *stats);
+
+    //
+    // metadata.c
+    //
+    //   everything related to metadata, which include backend information, ports,
+    //   volumes, readme, etc.
+    //
+    int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload);
+    int libflist_metadata_remove(flist_db_t *database, char *metadata);
+    char *libflist_metadata_get(flist_db_t *database, char *metadata);
+    flist_db_t *libflist_metadata_backend_database(flist_db_t *database);
+    flist_db_t *libflist_metadata_backend_database_json(char *input);
+
+    //
+    // flist_serial.c
+    //
+    //   everything used for serialization and deserialization from/to capnp object
+    //   since capnp can be really a mess, you won't have to deal with this in other place
+    //   than this file, where you can set/read object and use internal struct to deal
+    //   with information (and not with capnp object which are difficult to use)
+    void libflist_serial_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
+    acl_t *libflist_serial_acl_get(flist_db_t *database, const char *aclkey);
+    //
+    // statistics.c
+    //
+    size_t libflist_stats_regular_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_directory_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_symlink_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_special_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_failure_add(flist_ctx_t *ctx, size_t amount);
+    size_t libflist_stats_size_add(flist_ctx_t *ctx, size_t amount);
+    flist_stats_t *libflist_stats_get(flist_ctx_t *ctx);
+
 #endif
