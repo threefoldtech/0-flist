@@ -266,6 +266,16 @@ int zf_hub_authcheck(zf_callback_t *cb) {
     return 1;
 }
 
+static int zf_response_check(http_t *response) {
+    if(response->code != 200) {
+        // response usually contains return line already
+        printf("%s", response->body);
+        return 1;
+    }
+
+    return 0;
+}
+
 
 //
 // subcommands callback
@@ -282,7 +292,7 @@ int zf_hub_upload(zf_callback_t *cb) {
     }
 
     char *filename = cb->argv[1];
-    discard_http http_t response;
+    discard_http http_t response = {.body = NULL};
     char endpoint[1024];
 
     if(strcmp(zf_extension(filename), ".flist") == 0) {
@@ -295,7 +305,7 @@ int zf_hub_upload(zf_callback_t *cb) {
         response = zf_hub_curl(cb, endpoint, filename, "FILE");
     }
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_promote(zf_callback_t *cb) {
@@ -327,7 +337,7 @@ int zf_hub_promote(zf_callback_t *cb) {
 
     free(sourcerepo);
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_symlink(zf_callback_t *cb) {
@@ -351,7 +361,7 @@ int zf_hub_symlink(zf_callback_t *cb) {
     zf_api_url(cb, endpoint, ZFLIST_HUB_SYMLINK, source, linkname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_crosslink(zf_callback_t *cb) {
@@ -376,7 +386,7 @@ int zf_hub_crosslink(zf_callback_t *cb) {
     zf_api_url(cb, endpoint, ZFLIST_HUB_XSYMLINK, linkname, repository, source);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_rename(zf_callback_t *cb) {
@@ -400,7 +410,7 @@ int zf_hub_rename(zf_callback_t *cb) {
     zf_api_url(cb, endpoint, ZFLIST_HUB_RENAME, source, newname);
     response = zf_hub_curl(cb, endpoint, NULL, NULL);
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_login(zf_callback_t *cb) {
@@ -452,7 +462,7 @@ int zf_hub_delete(zf_callback_t *cb) {
     zf_api_url(cb, endpoint, ZFLIST_HUB_DELETE, source);
     response = zf_hub_curl(cb, endpoint, NULL, "DELETE");
 
-    return 0;
+    return zf_response_check(&response);
 }
 
 int zf_hub_readlink(zf_callback_t *cb) {
@@ -528,7 +538,7 @@ int zf_hub_merge(zf_callback_t *cb) {
         return 1;
     }
 
-    discard_http http_t response;
+    discard_http http_t response = {.body = NULL};
     char *target = cb->argv[1];
     char endpoint[1024];
 
@@ -558,5 +568,5 @@ int zf_hub_merge(zf_callback_t *cb) {
 
     response = zf_hub_curl(cb, endpoint, body, "JSON");
 
-    return 0;
+    return zf_response_check(&response);
 }
