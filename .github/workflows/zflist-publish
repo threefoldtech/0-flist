@@ -18,7 +18,6 @@ if [ "$INPUT_TOKEN" != "" ]; then
     if [ "$ZFLIST_HUB_USER" != "" ]; then
         echo "Checking logged in username (expected: $ZFLIST_HUB_USER)"
 
-        set -x
         zflist hub login
         username=$(zflist hub username)
 
@@ -27,8 +26,6 @@ if [ "$INPUT_TOKEN" != "" ]; then
             echo "Error: logged in: $username"
             exit 1
         fi
-
-        set +x
     fi
 
     export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
