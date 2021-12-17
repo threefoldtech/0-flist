@@ -222,11 +222,12 @@ int zf_json_strcmp(json_t *root, char *key, char *value) {
     return 0;
 }
 
-int zf_hub_authcheck(zf_callback_t *cb) {
+char *zf_hub_authcheck_login(zf_callback_t *cb) {
     json_t *root;
     json_error_t error;
     discard_http http_t response;
     char endpoint[1024];
+    char *username;
 
     debug("[+] hub: checking authentication\n");
 
@@ -253,15 +254,34 @@ int zf_hub_authcheck(zf_callback_t *cb) {
         return 0;
     }
 
-    json_t *payload, *username;
-    (void) username; // avoid warning on release code
+    json_t *payload = json_object_get(root, "payload");
 
-    payload = json_object_get(root, "payload");
-    username = json_object_get(payload, "username");
+    json_t *uname;
+    if(!(uname = json_object_get(payload, "username"))) {
+        zf_error(cb, "authentication", "invalid json response");
+        return 0;
+    }
 
-    debug("[+] hub: authenticated as: %s\n", json_string_value(username));
+    if(!(username = strdup(json_string_value(uname)))) {
+        zf_error(cb, "authentication", "invalid username response");
+        return 0;
+    }
+
+    debug("[+] hub: authenticated as: %s\n", username);
 
     json_decref(root);
+
+    return username;
+}
+
+int zf_hub_authcheck(zf_callback_t *cb) {
+    char *username;
+
+    if(!(username = zf_hub_authcheck_login(cb)))
+        return 0;
+
+    // username not needed
+    free(username);
 
     return 1;
 }
@@ -569,4 +589,16 @@ int zf_hub_merge(zf_callback_t *cb) {
     response = zf_hub_curl(cb, endpoint, body, "JSON");
 
     return zf_response_check(&response);
+}
+
+int zf_hub_username(zf_callback_t *cb) {
+    char *username;
+
+    if(!(username = zf_hub_authcheck_login(cb)))
+        return 0;
+
+    printf("%s\n", username);
+    free(username);
+
+    return 1;
 }

@@ -887,6 +887,9 @@ int zf_hub(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "login") == 0)
         return zf_hub_login(cb);
 
+    else if(strcmp(cb->argv[0], "username") == 0)
+        return zf_hub_username(cb);
+
     else if(strcmp(cb->argv[0], "refresh") == 0)
         return zf_hub_refresh(cb);
 
