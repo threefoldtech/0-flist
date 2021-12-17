@@ -595,10 +595,10 @@ int zf_hub_username(zf_callback_t *cb) {
     char *username;
 
     if(!(username = zf_hub_authcheck_login(cb)))
-        return 0;
+        return 1;
 
     printf("%s\n", username);
     free(username);
 
-    return 1;
+    return 0;
 }
