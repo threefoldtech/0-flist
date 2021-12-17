@@ -15,13 +15,20 @@ if [ "$INPUT_TOKEN" != "" ]; then
     
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 
-    zflist hub login
-    username=$(zflist hub username)
+    if [ "$ZFLIST_HUB_USER" != "" ]; then
+        echo "Checking logged in username (expected: $ZFLIST_HUB_USER)"
 
-    if [ "$username" != "$INPUT_USER" ]; then
-        echo "Error: requested username not authorized with this token"
-        echo "Error: logged in: $username, requested: $INPUT_USER"
-        exit 1
+        set -x
+        zflist hub login
+        username=$(zflist hub username)
+
+        if [ "$username" != "$INPUT_USER" ]; then
+            echo "Error: requested username not authorized with this token"
+            echo "Error: logged in: $username"
+            exit 1
+        fi
+
+        set +x
     fi
 
     export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
