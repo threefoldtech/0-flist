@@ -15,7 +15,7 @@ if [ "$INPUT_TOKEN" != "" ]; then
     
     ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 
-    zflist login
+    zflist hub login
     username=$(zflist hub username)
 
     if [ "$username" != "$INPUT_USER" ]; then
