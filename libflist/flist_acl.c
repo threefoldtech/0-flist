@@ -62,7 +62,7 @@ char *flist_acl_key(acl_t *acl) {
     char *gn = acl->gname;
     int64_t uid = acl->uid;
     int64_t gid = acl->gid;
-    char *mode = strmode + 4;
+    char *mode = strmode;
 
     // intermediate string key
     if(asprintf(&key, "user:%s\ngroup:%s\nmode:%s\nuid:%ld\ngid:%ld", un, gn, mode, uid, gid) < 0)
