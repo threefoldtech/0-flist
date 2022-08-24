@@ -80,7 +80,7 @@ static int zf_metadata_get_json(zf_callback_t *cb, char *metaname, char *str) {
     json_t *value;
 
     if(!(value = json_loads(str, 0, &error)))
-        return 1;
+        value = json_string(str);
 
     json_t *metadata = json_object();
 
@@ -641,3 +641,16 @@ int zf_metadata_set_readme(zf_callback_t *cb) {
     return zf_metadata_apply(cb, "readme", root);
 }
 
+
+
+int zf_metadata_set_generic(zf_callback_t *cb) {
+    char *metadata = cb->argv[0];
+    char *value = cb->argv[1];
+
+    if(!libflist_metadata_set(cb->ctx->db, metadata, value)) {
+        zf_error(cb, "metadata", "%s", libflist_strerror());
+        return 1;
+    }
+
+    return 0;
+}

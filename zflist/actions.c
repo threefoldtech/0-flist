@@ -524,8 +524,7 @@ int zf_metadata(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "readme") == 0)
         return zf_metadata_set_readme(cb);
 
-    zf_error(cb, "metadata", "unknown metadata name");
-    return 1;
+    return zf_metadata_set_generic(cb);
 }
 
 //
