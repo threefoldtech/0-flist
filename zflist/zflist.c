@@ -32,6 +32,7 @@ zf_cmds_t zf_commands[] = {
     {.name = "metadata", .db = 1, .callback = zf_metadata, .help = "get or set metadata"},
     {.name = "merge",    .db = 1, .callback = zf_merge,    .help = "merge another flist into the current one"},
     {.name = "check",    .db = 1, .callback = zf_check,    .help = "check archive integrity (chunks valid in the backed)"},
+    {.name = "chunks",   .db = 1, .callback = zf_chunks,   .help = "dumps chunks for all files"},
     {.name = "debug",    .db = 1, .callback = zf_debug,    .help = "provide and apply some debug features"},
     {.name = "prefetch", .db = 0, .callback = zf_prefetch, .help = "read directory contents to fill flist cache"},
     {.name = "hub",      .db = 0, .callback = zf_hub,      .help = "0-hub command line tools"},

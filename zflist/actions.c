@@ -412,6 +412,24 @@ int zf_find(zf_callback_t *cb) {
 }
 
 //
+// chunks dumps
+//
+int zf_chunks(zf_callback_t *cb) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, "/"))) {
+        zf_error(cb, "chunks", "no such root directory");
+        return 1;
+    }
+
+    zf_chunks_recursive(cb, dirnode, 0);
+
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
+//
 // check
 //
 int zf_check(zf_callback_t *cb) {

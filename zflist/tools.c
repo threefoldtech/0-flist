@@ -443,6 +443,101 @@ int zf_find_finalize(zf_callback_t *cb) {
 }
 
 //
+// chunks dumps implementation
+//
+static int zf_chunks_recursive_text(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
+    dirnode_t *subnode = NULL;
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        // if it's a directory, let's walk inside
+        if(inode->type == INODE_DIRECTORY) {
+            libflist_stats_directory_add(cb->ctx, 1);
+
+            if(!(subnode = libflist_dirnode_get(cb->ctx->db, inode->fullpath))) {
+                zf_error(cb, "find", "recursive directory not found");
+                return 1;
+            }
+
+            zf_chunks_recursive_text(cb, subnode, integrity);
+            libflist_dirnode_free(subnode);
+        }
+
+        if(inode->type == INODE_FILE) {
+            if(!inode->chunks || inode->chunks->size == 0)
+                continue;
+
+            for(size_t i = 0; i < inode->chunks->size; i++) {
+                inode_chunk_t *ichunk = &inode->chunks->list[i];
+
+                discard char *hashstr = libflist_hashhex((unsigned char *) ichunk->entryid, ichunk->entrylen);
+
+                printf("%s\n", hashstr);
+            }
+        }
+
+    }
+
+    return 0;
+}
+
+static int zf_chunks_recursive_json(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
+    dirnode_t *subnode = NULL;
+
+    json_t *response = json_object_get(cb->jout, "response");
+    json_t *content = json_object_get(response, "content");
+
+    for(inode_t *inode = dirnode->inode_list; inode; inode = inode->next) {
+        json_t *entry = json_object();
+
+        // if it's a directory, let's walk inside
+        if(inode->type == INODE_DIRECTORY) {
+            libflist_stats_directory_add(cb->ctx, 1);
+
+            if(!(subnode = libflist_dirnode_get(cb->ctx->db, inode->fullpath))) {
+                zf_error(cb, "find", "recursive directory not found");
+                return 1;
+            }
+
+            zf_chunks_recursive_json(cb, subnode, integrity);
+            libflist_dirnode_free(subnode);
+        }
+
+        if(inode->type == INODE_FILE) {
+            if(!inode->chunks || inode->chunks->size == 0)
+                continue;
+
+            for(size_t i = 0; i < inode->chunks->size; i++) {
+                inode_chunk_t *ichunk = &inode->chunks->list[i];
+
+                discard char *hashstr = libflist_hashhex((unsigned char *) ichunk->entryid, ichunk->entrylen);
+
+                entry = json_string(hashstr);
+                json_array_append_new(content, entry);
+            }
+        }
+    }
+
+    return 0;
+}
+
+int zf_chunks_recursive(zf_callback_t *cb, dirnode_t *dirnode, int integrity) {
+    if(cb->jout) {
+        json_t *response = json_object_get(cb->jout, "response");
+        json_t *content = json_array();
+
+        json_object_set(response, "content", content);
+        cb->userptr = content;
+
+        return zf_chunks_recursive_json(cb, dirnode, integrity);
+    }
+
+    return zf_chunks_recursive_text(cb, dirnode, integrity);
+}
+
+
+
+
+//
 // error handling
 //
 static void zf_error_json(zf_callback_t *cb, char *function, char *message, va_list argp) {

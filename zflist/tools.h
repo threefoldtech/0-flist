@@ -26,6 +26,9 @@
     int zf_find_recursive(zf_callback_t *cb, dirnode_t *dirnode, int integrity);
     int zf_find_finalize(zf_callback_t *cb);
 
+    int zf_chunks_recursive(zf_callback_t *cb, dirnode_t *dirnode, int integrity);
+    int zf_chunks_finalize(zf_callback_t *cb);
+
     void zf_error(zf_callback_t *cb, char *function, char *message, ...);
 
     void zf_warnp(zf_callback_t *cb, const char *str);
