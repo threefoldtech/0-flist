@@ -228,6 +228,7 @@
     char *libflist_hashhex(unsigned char *hash, int length);
     void *libflist_bufdup(void *source, size_t length);
 
+    void libflist_progress(flist_ctx_t *ctx, char *message, size_t current, size_t total);
     char *libflist_version();
 
     //

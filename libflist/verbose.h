@@ -17,8 +17,5 @@
     // wrap printf style error definiton
     void *libflist_set_error(const char *format, ...);
 
-    // progression
-    void libflist_progress(flist_ctx_t *ctx, char *message, size_t current, size_t total);
-
     #define debug(...) { if(libflist_debug_flag) { printf(__VA_ARGS__); } }
 #endif
