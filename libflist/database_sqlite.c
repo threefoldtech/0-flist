@@ -68,6 +68,7 @@ static int database_sqlite_optimize(flist_db_t *database) {
         {.target = &db->mdget,  .query = "SELECT value FROM metadata WHERE key = ?1"},
         {.target = &db->mdset,  .query = "REPLACE INTO metadata (key, value) VALUES (?1, ?2)"},
         {.target = &db->mddel,  .query = "DELETE FROM metadata WHERE key = ?1"},
+        {.target = &db->mdlist, .query = "SELECT key FROM metadata"},
     };
 
     for(size_t i = 0; i < sizeof(stmts) / sizeof(struct __stmtop); i++) {
@@ -290,6 +291,34 @@ static int database_sqlite_mddel(flist_db_t *database, char *key) {
     return 0;
 }
 
+static slist_t database_sqlite_mdlist(flist_db_t *database) {
+    database_sqlite_t *db = (database_sqlite_t *) database->handler;
+    int data;
+
+    slist_t value = {
+        .list = malloc(0),
+        .length = 0,
+    };
+
+    sqlite3_reset(db->mdlist);
+
+    while((data = sqlite3_step(db->mdlist)) == SQLITE_ROW) {
+        value.length += 1;
+        value.list = realloc(value.list, value.length * sizeof(char *));
+
+        size_t length = sqlite3_column_bytes(db->mdlist, 0) + 1;
+        value.list[value.length - 1] = malloc(length);
+
+        char *data = (void *) sqlite3_column_text(db->mdlist, 0);
+        strcpy(value.list[value.length - 1], data);
+    }
+
+    if(data == SQLITE_DONE)
+        return value;
+
+    libflist_set_error("get: sqlite3_step: %s", sqlite3_errmsg(db->db));
+    return value;
+}
 
 
 // poor implementation of exists
@@ -358,6 +387,7 @@ flist_db_t *libflist_db_sqlite_init(char *rootpath) {
     db->mdget = database_sqlite_mdget;
     db->mdset = database_sqlite_mdset;
     db->mddel = database_sqlite_mddel;
+    db->mdlist = database_sqlite_mdlist;
 
     return db;
 }

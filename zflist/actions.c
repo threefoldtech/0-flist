@@ -492,10 +492,9 @@ int zf_stat(zf_callback_t *cb) {
 // metadata
 //
 int zf_metadata(zf_callback_t *cb) {
-    if(cb->argc < 2) {
-        zf_error(cb, "metadata", "missing metadata name");
-        return 1;
-    }
+    // list metadata if none defined
+    if(cb->argc < 2)
+        return zf_metadata_list(cb);
 
     // fetching metadata from database
     if(cb->argc == 2)

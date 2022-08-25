@@ -654,3 +654,28 @@ int zf_metadata_set_generic(zf_callback_t *cb) {
 
     return 0;
 }
+
+int zf_metadata_list_json(zf_callback_t *cb, slist_t list) {
+    json_t *names = json_array();
+
+    for(size_t a = 0; a < list.length; a++)
+        json_array_append(names, json_string(list.list[a]));
+
+    json_object_set_new(cb->jout, "response", names);
+
+    libflist_metadata_list_free(&list);
+    return 0;
+}
+
+int zf_metadata_list(zf_callback_t *cb) {
+    slist_t list = libflist_metadata_list(cb->ctx->db);
+
+    if(cb->jout)
+        return zf_metadata_list_json(cb, list);
+
+    for(size_t a = 0; a < list.length; a++)
+        printf("%s\n", list.list[a]);
+
+    libflist_metadata_list_free(&list);
+    return 0;
+}

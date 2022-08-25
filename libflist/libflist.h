@@ -103,6 +103,12 @@
     } dirnode_t;
 
 
+    typedef struct slist_t {
+        char **list;
+        size_t length;
+
+    } slist_t;
+
 
     typedef struct flist_db_value_t {
         void *handler;
@@ -133,6 +139,7 @@
         value_t* (*mdget)(struct flist_db_t *db, char *key);
         int (*mdset)(struct flist_db_t *db, char *key, char *data);
         int (*mddel)(struct flist_db_t *db, char *key);
+        slist_t (*mdlist)(struct flist_db_t *db);
 
         void (*clean)(value_t *value);
 
@@ -364,6 +371,8 @@
     int libflist_metadata_set(flist_db_t *database, char *metadata, char *payload);
     int libflist_metadata_remove(flist_db_t *database, char *metadata);
     char *libflist_metadata_get(flist_db_t *database, char *metadata);
+    slist_t libflist_metadata_list(flist_db_t *database);
+    void libflist_metadata_list_free(slist_t *list);
     flist_db_t *libflist_metadata_backend_database(flist_db_t *database);
     flist_db_t *libflist_metadata_backend_database_json(char *input);
 
@@ -376,6 +385,7 @@
     //   with information (and not with capnp object which are difficult to use)
     void libflist_serial_dirnode_commit(dirnode_t *root, flist_ctx_t *ctx, dirnode_t *parent);
     acl_t *libflist_serial_acl_get(flist_db_t *database, const char *aclkey);
+
     //
     // statistics.c
     //
