@@ -172,6 +172,8 @@ Here are the list of metadata available:
 - Volumes
 - Readme
 
+In addition, any generic metadata can now be set as well.
+
 ## Backend
 
 The flist format contains only metadata about a filesystem, not the file contents. On theses metadata,
@@ -219,3 +221,10 @@ this mountpoint, but this is not needed.
 ## Readme
 
 You can provide an arbitraty text and license name to describe your flist.
+
+## Generic Metadata
+
+You can list, set and get any other value for metadata, eg:
+ - Listing metadata keys available: `./zflist metadata`
+ - Set (or replace) a metadata entry: `./zflist metadata hello world`
+ - Get a metadata entry: `./zflist metadata hello`
