@@ -71,7 +71,7 @@ jobs:
         # strip -s $GITHUB_WORKSPACE/zflist
  
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: maxux/zflist
         username: ${{ secrets.DOCKER_USERNAME }}
