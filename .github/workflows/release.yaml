@@ -1,9 +1,11 @@
-name: Release zflist
-on: push
+name: Build release zflist
+on:  
+  release:
+    types: [created]
 
 jobs:
   release:
-    name: Release zflist
+    name: Release zflist (static dependencies, linked with glibc)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout source code
@@ -67,14 +69,14 @@ jobs:
       working-directory: ${{ github.workspace }}/zflist
       run: |
         make production
-        # cp zflist $GITHUB_WORKSPACE/zflist
-        # strip -s $GITHUB_WORKSPACE/zflist
- 
-    - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@v5
-      with:
-        name: maxux/zflist
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile: ${{ github.workspace }}/.github/workflows/Dockerfile
 
+        version=$(grep ZFLIST_VERSION zflist.h | awk '{ print $3 }' | sed s/'"'//g)
+
+        cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-gnu
+ 
+    - name: Upload the artifacts
+      uses: skx/github-action-publish-binaries@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'zflist-*-linux-amd64-gnu'
