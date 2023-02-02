@@ -75,7 +75,7 @@ jobs:
         cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-gnu
  
     - name: Upload the artifacts
-      uses: skx/github-action-publish-binaries@master
+      uses: skx/github-action-publish-binaries@v5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
