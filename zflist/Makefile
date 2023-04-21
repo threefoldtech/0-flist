@@ -38,6 +38,12 @@ s-embedded: CFLAGS += -std=c99 -W -Wall -O2 -g -DFLIST_DEBUG -I../libflist
 s-embedded: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -ltar -lz -lb2 -lcapnp_c -ljansson -lsnappy -ljansson -lhiredis -fopenmp -lcurl -lssl -lcrypto -lsqlite3 -Wl,-Bdynamic -pthread -lrt -ldl
 s-embedded: $(EXEC)
 
+# static libflist and capnpc, shared all others, without debug
+# this is useful on alpine where only capnpc is not available via apk
+alpine: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
+alpine: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -lcapnp_c -Wl,-Bdynamic -pthread -ltar -lb2 -lz -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3
+alpine: $(EXEC)
+
 # using CXX for snappy in static
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)

@@ -7,6 +7,10 @@ all: CFLAGS += -fPIC -std=c99 -W -Wall -O2 -g
 all: LDFLAGS += -g -pthread -ltar -lb2 -lz -lcapnp_c -lsnappy -lhiredis -fopenmp -lsqlite3
 all: $(LIBRARY).so
 
+# include musl-fts on alpine
+alpine: LDFLAGS += -lfts
+alpine: all
+
 $(LIBRARY).so: $(OBJ)
 	$(CC) -shared -o $@ $^ $(LDFLAGS)
 	ar rcs $(LIBRARY).a $(OBJ)
