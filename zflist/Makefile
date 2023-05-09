@@ -40,9 +40,15 @@ s-embedded: $(EXEC)
 
 # static libflist and capnpc, shared all others, without debug
 # this is useful on alpine where only capnpc is not available via apk
-alpine: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
+alpine: CFLAGS += -std=c99 -W -Wall -O2 -g -I../libflist
 alpine: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -lcapnp_c -Wl,-Bdynamic -pthread -ltar -lb2 -lz -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3 -lfts
 alpine: $(EXEC)
+
+# static without debug, linked with musl
+# binary works on alpine without dependencies
+s-alpine: CFLAGS += -std=c99 -W -Wall -O2 -g -I../libflist
+s-alpine: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -lcapnp_c -ltar -lb2 -lz -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3 -lfts -lssl -lcrypto -lbrotlienc -lbrotlidec -lnghttp2 -lbrotlicommon -Wl,-Bdynamic -pthread -static-libgcc -static-libstdc++
+s-alpine: $(EXEC)
 
 # using CXX for snappy in static
 $(EXEC): $(OBJ)
