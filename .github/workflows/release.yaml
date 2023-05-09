@@ -96,6 +96,8 @@ jobs:
           capnproto-dev hiredis-dev sqlite-dev libb2-dev fts musl-fts-dev linux-headers \
           snappy-dev curl-dev zlib-static sqlite-static curl-static snappy-static \
           openssl-libs-static nghttp2-static brotli-static
+
+        echo "" | gcc -v -E - 2>&1 | grep cc1
     
     - name: Clone capnp-c
       working-directory: 
@@ -149,7 +151,7 @@ jobs:
       working-directory: ${{ github.workspace }}/zflist
       run: |
         make s-alpine
-        strip -w -K 'flist*' -K 'libflist*' zflist
+        strip -w -K 'flist*' -K 'libflist*' -K 'zf*' zflist
 
         version=$(grep ZFLIST_VERSION zflist.h | awk '{ print $3 }' | sed s/'"'//g)
 

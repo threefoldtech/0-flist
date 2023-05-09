@@ -316,13 +316,15 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
     FTS* fs = NULL;
     FTSENT *fentry = NULL;
     char *ftsargv[2] = {localdir, NULL};
-    discard char *tmpsrc = dirname(strdup(localdir));
+    discard char *tmpsrcdup = strdup(localdir);
+    char *tmpsrc = dirname(tmpsrcdup);
     inode_t *inode = NULL;
     dirnode_t *workingdir = parent;
 
     if(strcmp(tmpsrc, "/") == 0) {
-        free(tmpsrc);
-        tmpsrc = strdup("");
+        free(tmpsrcdup);
+        tmpsrcdup = strdup("");
+        tmpsrc = tmpsrcdup;
     }
 
     //
