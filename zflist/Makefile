@@ -40,7 +40,7 @@ s-embedded: $(EXEC)
 
 # static libflist and capnpc, shared all others, without debug
 # this is useful on alpine where only capnpc is not available via apk
-alpine: CFLAGS += -std=c99 -W -Wall -O2 -I../libflist
+alpine: CFLAGS += -std=c99 -W -Wall -O2 -g -I../libflist
 alpine: LDFLAGS += -Wl,-Bstatic -L../libflist -lflist -lcapnp_c -Wl,-Bdynamic -pthread -ltar -lb2 -lz -lsnappy -ljansson -lhiredis -lcurl -fopenmp -lsqlite3 -lfts
 alpine: $(EXEC)
 
