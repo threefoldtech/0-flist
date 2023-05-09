@@ -1,9 +1,7 @@
 name: Build release zflist
 on:
-  push
-
-#release:
-#    types: [created]
+  release:
+    types: [created]
 
 jobs:
   release:
@@ -76,12 +74,12 @@ jobs:
 
         cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-gnu
  
-#    - name: Upload the artifacts
-#      uses: skx/github-action-publish-binaries@master
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      with:
-#        args: 'zflist-*-linux-amd64-gnu'
+    - name: Upload the artifacts
+      uses: skx/github-action-publish-binaries@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'zflist-*-linux-amd64-gnu'
 
   release-musl:
     name: Release zflist (musl, static dependencies)
@@ -157,10 +155,10 @@ jobs:
 
         cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-musl
  
-#    - name: Upload the artifacts
-#      uses: skx/github-action-publish-binaries@master
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      with:
-#        args: 'zflist-*-linux-amd64-musl'
-#
+    - name: Upload the artifacts
+      uses: skx/github-action-publish-binaries@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'zflist-*-linux-amd64-musl'
+
