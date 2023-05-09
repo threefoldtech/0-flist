@@ -116,8 +116,7 @@ jobs:
       working-directory: ./c-capnproto
       run: |
         make -j 3
-        sudo make install
-        sudo ldconfig
+        make install
 
     - name: Fetch libjansson
       run: |
