@@ -350,7 +350,8 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
             continue;
 
         discard char *vpath = flist_dirnode_virtual_path(workingdir, fentry->fts_path + strlen(localdir));
-        discard char *parentpath = dirname(strdup(vpath));
+        discard char *parentdup = strdup(vpath);
+        char *parentpath = dirname(parentdup);
 
         debug("[+] libflist: local directory: adding: %s [%s]\n", fentry->fts_name, parentpath);
 
