@@ -1,7 +1,7 @@
 #ifndef ZFLIST_H
     #define ZFLIST_H
 
-    #define ZFLIST_VERSION  "2.1.0"
+    #define ZFLIST_VERSION  "2.2.1"
 
     #define ZFLIST_HUB_BASEURL   "https://hub.grid.tf"
 

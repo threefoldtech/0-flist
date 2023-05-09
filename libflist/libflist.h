@@ -1,7 +1,7 @@
 #ifndef LIBFLIST_H
     #define LIBFLIST_H
 
-    #define LIBFLIST_VERSION  "2.0.0"
+    #define LIBFLIST_VERSION  "2.0.1"
 
     //
     // libflist
