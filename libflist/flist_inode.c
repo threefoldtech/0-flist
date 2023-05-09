@@ -322,8 +322,9 @@ inode_t *flist_inode_from_localdir(char *localreldir, dirnode_t *parent, flist_c
     dirnode_t *workingdir = parent;
 
     if(strcmp(tmpsrc, "/") == 0) {
-        free(tmpsrc);
-        tmpsrc = strdup("");
+        free(tmpsrcdup);
+        tmpsrcdup = strdup("");
+        tmpsrc = tmpsrcdup;
     }
 
     //
