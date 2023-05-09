@@ -1,7 +1,8 @@
 name: Build release zflist
-on:
-  release:
-    types: [created]
+on: push
+
+#  release:
+#    types: [created]
 
 jobs:
   release:
@@ -74,12 +75,12 @@ jobs:
 
         cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-gnu
  
-    - name: Upload the artifacts
-      uses: skx/github-action-publish-binaries@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        args: 'zflist-*-linux-amd64-gnu'
+#    - name: Upload the artifacts
+#      uses: skx/github-action-publish-binaries@master
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        args: 'zflist-*-linux-amd64-gnu'
 
   release-musl:
     name: Release zflist (musl, static dependencies)
@@ -96,6 +97,8 @@ jobs:
           capnproto-dev hiredis-dev sqlite-dev libb2-dev fts musl-fts-dev linux-headers \
           snappy-dev curl-dev zlib-static sqlite-static curl-static snappy-static \
           openssl-libs-static nghttp2-static brotli-static
+
+        echo "" | gcc -v -E - 2>&1 | grep cc1
     
     - name: Clone capnp-c
       working-directory: 
@@ -155,10 +158,10 @@ jobs:
 
         cp zflist $GITHUB_WORKSPACE/zflist-${version}-linux-amd64-musl
  
-    - name: Upload the artifacts
-      uses: skx/github-action-publish-binaries@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        args: 'zflist-*-linux-amd64-musl'
-
+#    - name: Upload the artifacts
+#      uses: skx/github-action-publish-binaries@master
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        args: 'zflist-*-linux-amd64-musl'
+#
