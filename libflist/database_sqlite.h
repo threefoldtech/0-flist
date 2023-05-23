@@ -16,6 +16,7 @@
         sqlite3_stmt *mdset;
         sqlite3_stmt *mdget;
         sqlite3_stmt *mddel;
+        sqlite3_stmt *mdlist;
 
     } database_sqlite_t;
 

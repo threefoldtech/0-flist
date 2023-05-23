@@ -173,6 +173,14 @@ static int database_redis_mddel(flist_db_t *database, char *key) {
     return 1;
 }
 
+static slist_t database_redis_mdlist(flist_db_t *database) {
+    (void) database;
+    slist_t value = {.list = NULL, .length = 0};
+
+    debug("[-] libflist: database_redis_mdlist: not implemented\n");
+    return value;
+}
+
 static flist_db_t *database_redis_init_global(flist_db_t *db) {
     // setting global db
     db->type = "REDIS";
@@ -191,6 +199,7 @@ static flist_db_t *database_redis_init_global(flist_db_t *db) {
     db->mdget = database_redis_mdget;
     db->mdset = database_redis_mdset;
     db->mddel = database_redis_mddel;
+    db->mdlist = database_redis_mdlist;
 
     return db;
 }

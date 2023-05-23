@@ -9,4 +9,7 @@
     int zf_metadata_set_readme(zf_callback_t *cb);
 
     int zf_metadata_get(zf_callback_t *cb);
+
+    int zf_metadata_set_generic(zf_callback_t *cb);
+    int zf_metadata_list(zf_callback_t *cb);
 #endif

@@ -45,6 +45,16 @@ int libflist_metadata_remove(flist_db_t *database, char *metadata) {
     return 1;
 }
 
+slist_t libflist_metadata_list(flist_db_t *database) {
+    slist_t raw = database->mdlist(database);
+    return raw;
+}
+
+void libflist_metadata_list_free(slist_t *list) {
+    for(size_t a = 0; a < list->length; a++)
+        free(list->list[a]);
+}
+
 flist_db_t *libflist_metadata_backend_database_json(char *input) {
     flist_db_t *backdb;
     json_error_t error;

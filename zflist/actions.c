@@ -412,6 +412,24 @@ int zf_find(zf_callback_t *cb) {
 }
 
 //
+// chunks dumps
+//
+int zf_chunks(zf_callback_t *cb) {
+    dirnode_t *dirnode;
+
+    if(!(dirnode = libflist_dirnode_get(cb->ctx->db, "/"))) {
+        zf_error(cb, "chunks", "no such root directory");
+        return 1;
+    }
+
+    zf_chunks_recursive(cb, dirnode, 0);
+
+    libflist_dirnode_free(dirnode);
+
+    return 0;
+}
+
+//
 // check
 //
 int zf_check(zf_callback_t *cb) {
@@ -474,10 +492,9 @@ int zf_stat(zf_callback_t *cb) {
 // metadata
 //
 int zf_metadata(zf_callback_t *cb) {
-    if(cb->argc < 2) {
-        zf_error(cb, "metadata", "missing metadata name");
-        return 1;
-    }
+    // list metadata if none defined
+    if(cb->argc < 2)
+        return zf_metadata_list(cb);
 
     // fetching metadata from database
     if(cb->argc == 2)
@@ -506,8 +523,7 @@ int zf_metadata(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "readme") == 0)
         return zf_metadata_set_readme(cb);
 
-    zf_error(cb, "metadata", "unknown metadata name");
-    return 1;
+    return zf_metadata_set_generic(cb);
 }
 
 //
