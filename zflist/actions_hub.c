@@ -44,6 +44,15 @@
 // /api/flist/<repository>/<filename>/light
 #define ZFLIST_HUB_READLINK  "/api/flist/%s/light"
 
+// /api/flist/<repository>/<filename>/taglink
+#define ZFLIST_HUB_TAGLINK   "/api/flist/%s/taglink"
+
+// /api/flist/me/<tagname>/<name>/tag/<repository>/<flist>
+#define ZFLIST_HUB_TAG_SET   "/api/flist/me/%s/%s/tag/%s/%s"
+
+// /api/flist/me/<name>/crosstag/<repository>/<tagname>
+#define ZFLIST_HUB_XTAG      "/api/flist/me/%s/crosstag/%s/%s"
+
 // /api/flist/me
 #define ZFLIST_HUB_SELF      "/api/flist/me"
 
@@ -491,11 +500,6 @@ int zf_hub_readlink(zf_callback_t *cb) {
         return 1;
     }
 
-    if(!(zf_hub_authcheck(cb))) {
-        zf_error(cb, "hub", "hub authentication failed");
-        return 1;
-    }
-
     discard_http http_t response;
     char *linkname = cb->argv[1];
     char endpoint[1024];
@@ -602,3 +606,127 @@ int zf_hub_username(zf_callback_t *cb) {
 
     return 0;
 }
+
+// tag system
+int zf_hub_taglink(zf_callback_t *cb) {
+    if(cb->argc != 2) {
+        zf_error(cb, "hub", "missing arguments: taglink <repository>/<linkname>");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *linkname = cb->argv[1];
+    char endpoint[1024];
+
+    debug("[+] hub: taglink: %s\n", linkname);
+
+    zf_api_url(cb, endpoint, ZFLIST_HUB_TAGLINK, linkname);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    // parse json output
+    json_t *root, *status, *target;
+    json_error_t error;
+
+    if(!(root = json_loads(response.body, 0, &error))) {
+        zf_error(cb, "taglink", "could not parse server response");
+        return 1;
+    }
+
+    if((status = json_object_get(root, "status"))) {
+        status = json_object_get(root, "message");
+        zf_error(cb, "taglink", (char *) json_string_value(status));
+        json_decref(root);
+        return 1;
+    }
+
+    if(!(target = json_object_get(root, "target"))) {
+        zf_error(cb, "readlink", "could not read link target");
+        json_decref(root);
+        return 1;
+    }
+
+    debug("[+] hub: taglink: %s\n", json_string_value(target));
+    printf("%s\n", json_string_value(target));
+
+    json_decref(root);
+
+    return 0;
+}
+
+int zf_hub_crosstag(zf_callback_t *cb) {
+    if(cb->argc != 4) {
+        zf_error(cb, "hub", "missing arguments: crosstag <linkname> <repository> <tagname>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *linkname = cb->argv[1];
+    char *repository = cb->argv[2];
+    char *tagname = cb->argv[3];
+    char endpoint[1024];
+
+    debug("[+] hub: cross taglink: you/%s -> %s/tags/%s\n", linkname, repository, tagname);
+
+    zf_api_url(cb, endpoint, ZFLIST_HUB_XTAG, linkname, repository, tagname);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    return zf_response_check(&response);
+}
+
+int zf_hub_tag(zf_callback_t *cb) {
+    if(cb->argc != 5) {
+        zf_error(cb, "hub", "missing arguments: tag <tagname> <name> <repository> <target>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *tagname = cb->argv[1];
+    char *name = cb->argv[2];
+    char *repository = cb->argv[3];
+    char *target = cb->argv[4];
+    char endpoint[1024];
+
+    debug("[+] hub: tagging: you/%s/%s -> %s/tags/%s\n", tagname, name, repository, target);
+
+    zf_api_url(cb, endpoint, ZFLIST_HUB_TAG_SET, tagname, name, repository, target);
+    response = zf_hub_curl(cb, endpoint, NULL, NULL);
+
+    return zf_response_check(&response);
+}
+
+int zf_hub_untag(zf_callback_t *cb) {
+    if(cb->argc != 5) {
+        zf_error(cb, "hub", "missing arguments: untag <tagname> <name> <repository> <target>");
+        return 1;
+    }
+
+    if(!(zf_hub_authcheck(cb))) {
+        zf_error(cb, "hub", "hub authentication failed");
+        return 1;
+    }
+
+    discard_http http_t response;
+    char *tagname = cb->argv[1];
+    char *name = cb->argv[2];
+    char *repository = cb->argv[3];
+    char *target = cb->argv[4];
+    char endpoint[1024];
+
+    debug("[+] hub: untagging: you/%s/%s -> %s/tags/%s\n", tagname, name, repository, target);
+
+    zf_api_url(cb, endpoint, ZFLIST_HUB_TAG_SET, tagname, name, repository, target);
+    response = zf_hub_curl(cb, endpoint, NULL, "DELETE");
+
+    return zf_response_check(&response);
+}
+
