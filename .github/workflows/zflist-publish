@@ -98,3 +98,33 @@ if [ "$action" == "MERGE" ]; then
     zflist hub merge $filename $targetname
 fi
 
+if [ "$action" == "CROSSTAG" ]; then
+    repository=$(echo $targetname | awk -F/ '{ print $1 }')
+    tagname=$(echo $targetname | awk -F/ '{ print $2 }')
+    
+    echo "Cross-tagging $filename -> $repository/tags/$tagname"
+    zflist hub crosstag $filename $repository $tagname
+fi
+
+if [ "$action" == "TAG" ]; then
+    tagname=$(echo $filename | awk -F/ '{ print $1 }')
+    linkname=$(echo $filename | awk -F/ '{ print $2 }')
+
+    repository=$(echo $targetname | awk -F/ '{ print $1 }')
+    target=$(echo $targetname | awk -F/ '{ print $2 }')
+
+    echo "Tagging $repository/$target tag '$tagname' as '$linkname'"
+    zflist hub tag $tagname $linkname $repository $target
+fi
+
+if [ "$action" == "UNTAG" ]; then
+    tagname=$(echo $filename | awk -F/ '{ print $1 }')
+    linkname=$(echo $filename | awk -F/ '{ print $2 }')
+
+    repository=$(echo $targetname | awk -F/ '{ print $1 }')
+    target=$(echo $targetname | awk -F/ '{ print $2 }')
+
+    echo "Untagging $repository/$target tag '$tagname' as '$linkname'"
+    zflist hub untag $tagname $linkname $repository $target
+fi
+
