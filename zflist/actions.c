@@ -900,6 +900,18 @@ int zf_hub(zf_callback_t *cb) {
     else if(strcmp(cb->argv[0], "readlink") == 0)
         return zf_hub_readlink(cb);
 
+    else if(strcmp(cb->argv[0], "taglink") == 0)
+        return zf_hub_taglink(cb);
+
+    else if(strcmp(cb->argv[0], "crosstag") == 0)
+        return zf_hub_crosstag(cb);
+
+    else if(strcmp(cb->argv[0], "tag") == 0)
+        return zf_hub_tag(cb);
+
+    else if(strcmp(cb->argv[0], "untag") == 0)
+        return zf_hub_untag(cb);
+
     else if(strcmp(cb->argv[0], "login") == 0)
         return zf_hub_login(cb);
 

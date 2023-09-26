@@ -9,6 +9,10 @@
     int zf_hub_delete(zf_callback_t *cb);
     int zf_hub_merge(zf_callback_t *cb);
     int zf_hub_readlink(zf_callback_t *cb);
+    int zf_hub_taglink(zf_callback_t *cb);
+    int zf_hub_crosstag(zf_callback_t *cb);
+    int zf_hub_tag(zf_callback_t *cb);
+    int zf_hub_untag(zf_callback_t *cb);
     int zf_hub_login(zf_callback_t *cb);
     int zf_hub_username(zf_callback_t *cb);
     int zf_hub_refresh(zf_callback_t *cb);
