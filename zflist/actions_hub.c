@@ -127,12 +127,19 @@ static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *payload, char *met
         method = "POST";
 
         curl_mime *form = curl_mime_init(curl.handler);
-        curl_mimepart *field = field = curl_mime_addpart(form);
+        curl_mimepart *field = curl_mime_addpart(form);
 
         curl_mime_name(field, "file");
         curl_mime_filedata(field, payload);
 
         curl_easy_setopt(curl.handler, CURLOPT_MIMEPOST, form);
+
+        char tmpname[1024];
+        struct curl_slist *headers = NULL;
+        sprintf(tmpname, "X-Original-Name: %s", payload);
+        headers = curl_slist_append(headers, tmpname);
+
+        curl_easy_setopt(curl.handler, CURLOPT_HTTPHEADER, headers);
     }
 
     if(payload && strcmp(method, "JSON") == 0) {
@@ -142,9 +149,9 @@ static http_t zf_hub_curl(zf_callback_t *cb, char *url, char *payload, char *met
         curl_easy_setopt(curl.handler, CURLOPT_POSTFIELDS, payload);
 
         struct curl_slist *headers = NULL;
-        curl_slist_append(headers, "Accept: application/json");
-        curl_slist_append(headers, "Content-Type: application/json");
-        curl_slist_append(headers, "Charset: utf-8");
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "Charset: utf-8");
 
         curl_easy_setopt(curl.handler, CURLOPT_HTTPHEADER, headers);
     }
