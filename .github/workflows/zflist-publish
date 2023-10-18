@@ -48,7 +48,7 @@ if [ "$action" == "PUBLISH" ]; then
     zflist putdir $INPUT_ROOT /
     zflist commit /tmp/$filename
 
-    echo "Uploading to the hub"
+    echo "Uploading to the hub [$filename]"
     zflist hub upload /tmp/$filename
 fi
 
