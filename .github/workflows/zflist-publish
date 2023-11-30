@@ -13,7 +13,7 @@ if [ "$INPUT_TOKEN" != "" ]; then
     export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
     export ZFLIST_HUB_USER=$INPUT_USER
     
-    ZFLIST_HUB_TOKEN=$(zflist hub refresh)
+    export ZFLIST_HUB_TOKEN=$(zflist hub refresh)
 
     if [ "$ZFLIST_HUB_USER" != "" ]; then
         echo "Checking logged in username (expected: $ZFLIST_HUB_USER)"
