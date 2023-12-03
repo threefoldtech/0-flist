@@ -472,6 +472,9 @@ int zf_hub_refresh(zf_callback_t *cb) {
         printf("%s\n", refresh.body);
     }
 
+    printf("%s\n", refresh.body);
+    printf(">>>> %ld\n", refresh.code);
+
     debug("[+] hub: token refreshed\n");
 
     return 0;
