@@ -467,13 +467,14 @@ int zf_hub_refresh(zf_callback_t *cb) {
     if(refresh.body == NULL)
         return 1;
 
+    if(refresh.code != 200) {
+        fprintf(stderr, "[-] could not refresh token: %ld\n", refresh.code);
+    }
+
     if(refresh.code == 200) {
         debug("\n[+] hub: token refreshed, storing new token\n");
         printf("%s\n", refresh.body);
     }
-
-    printf("%s\n", refresh.body);
-    printf(">>>> %ld\n", refresh.code);
 
     debug("[+] hub: token refreshed\n");
 

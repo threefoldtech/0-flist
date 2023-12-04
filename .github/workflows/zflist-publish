@@ -5,44 +5,55 @@ filename=$(echo "$INPUT_NAME" | sed 's#refs/tags/##g')
 targetname=$(echo "$INPUT_TARGET" | sed 's#refs/tags/##g')
 action=${INPUT_ACTION^^}
 
+
 if [ "$INPUT_TOKEN" != "" ]; then
-    echo "Using legacy itsyou.online token"
+    echo "Using legacy token field"
 
-    # force token refreshing
-    echo "Refreshing hub token"
-    export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
-    export ZFLIST_HUB_USER=$INPUT_USER
-    
-    ZFLIST_HUB_TOKEN=$(zflist hub refresh)
-    if [ $? == 1 ]; then
-        echo "Could not refresh hub token, is the token valid ?"
-        exit 1
-    fi
+    # detect if there is a period on the token, which is a jwt
+    if [[ $INPUT_TOKEN == *.* ]]; then
+        # force token refreshing
+        echo "Refreshing hub token"
+        export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
 
-    if [ "$ZFLIST_HUB_USER" != "" ]; then
-        echo "Checking logged in username (expected: $ZFLIST_HUB_USER)"
-
-        zflist hub login
-        username=$(zflist hub username)
-
-        if [ "$username" != "$INPUT_USER" ]; then
-            echo "Error: requested username not authorized with this token"
-            echo "Error: logged in: $username"
+        ZFLIST_HUB_TOKEN=$(zflist hub refresh)
+        if [ $? == 1 ]; then
+            echo "Could not refresh hub token, is the token valid ?"
             exit 1
         fi
-    fi
 
-    export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
+    # if there is no period on the token, this is
+    # probably a new threebot connect token
+    else
+        echo "Legacy token looks like threefold connect token, auto-switching"
+    fi
 fi
 
 if [ "$INPUT_THREEFOLD" != "" ]; then
-    echo "Using threefold connect token"
+    echo "Using explicit threefold connect token"
     export ZFLIST_HUB_TOKEN=$INPUT_THREEFOLD
+fi
+
+if [ "$INPUT_USER" != "" ]; then
+    export ZFLIST_HUB_USER=$INPUT_USER
+
+    echo "Checking logged in username (expected: $ZFLIST_HUB_USER)"
+
+    zflist hub login
+    username=$(zflist hub username)
+
+    echo "Authenticated as: $username"
+
+    if [ "$username" != "$INPUT_USER" ]; then
+        echo "Error: requested username not authorized with this token"
+        exit 1
+    fi
 fi
 
 if [ "$ZFLIST_HUB_TOKEN" == "" ]; then
     echo "WARNING: no token found"
 fi
+
+export ZFLIST_BACKEND="{\"host\": \"hub.grid.tf\", \"port\": 9980, \"token\": \"$ZFLIST_HUB_TOKEN\"}"
 
 if [ "$action" == "PUBLISH" ]; then
     echo "Initializing new flist"
