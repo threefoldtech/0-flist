@@ -25,6 +25,7 @@ if [ "$INPUT_TOKEN" != "" ]; then
     # probably a new threebot connect token
     else
         echo "Legacy token looks like threefold connect token, auto-switching"
+        export ZFLIST_HUB_TOKEN=$INPUT_TOKEN
     fi
 fi
 
