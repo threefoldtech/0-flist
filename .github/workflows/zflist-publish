@@ -58,7 +58,7 @@ if [ "$ZFLIST_HUB_TOKEN" == "" ]; then
 fi
 
 export BACKEND_HOST="hub.grid.tf"
-export BACKEND_PORT=9980
+export BACKEND_PORT=9900
 
 if [ "$INPUT_BACKEND" != "" ]; then
     export BACKEND_HOST=$(echo $INPUT_BACKEND | cut -d: -f1)
